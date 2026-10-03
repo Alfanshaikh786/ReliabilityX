@@ -31,6 +31,28 @@ export function TrajectorySvgChart({ data, paramName, simulatedDriftRate }: Traj
   const limitObj = specLimits[paramName] || { max: 50.0, unit: "μA" };
   const maxLimit = limitObj.max;
 
+  if (paramMeasures.length === 0) {
+    return (
+      <div style={{
+        height: "380px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "var(--text-muted)",
+        background: "rgba(15, 23, 42, 0.4)",
+        borderRadius: "8px",
+        border: "1px dashed rgba(148, 163, 184, 0.2)"
+      }}>
+        <div style={{ fontSize: "28px", marginBottom: "8px" }}>📊</div>
+        <div style={{ fontWeight: 600, fontSize: "13px" }}>Telemetry Measurements Unavailable</div>
+        <div style={{ fontSize: "11px", opacity: 0.7, marginTop: "4px" }}>
+          No recorded burn-in test stages (0–168h) for {paramName}.
+        </div>
+      </div>
+    );
+  }
+
   // Professional Engineering Dimensions: 380px height (within 360–420px standard)
   const W = 880;
   const H = 380;

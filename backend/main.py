@@ -12,13 +12,14 @@ from typing import Dict, Any, List, Optional
 import logging
 import time
 from collections import defaultdict
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse, FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.core.config import CONFIG, DEFAULT_PARAMETER_SPECS, ParameterSpec
-from backend.core.db import get_db_connection, init_db, log_audit
+from backend.core.db import get_db_connection, init_db, log_audit, ensure_db_ready
 from backend.core.orchestrator import PipelineOrchestrator
 from backend.data.generator import generate_burnin_dataset
 from backend.explainability.counterfactual import CounterfactualEngine
@@ -27,23 +28,41 @@ from backend.ingestion.manager import IngestionManager
 logger = logging.getLogger("ReliabilityX")
 logging.basicConfig(level=logging.INFO)
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Ensure database is ready and seeded on startup
+    try:
+        ensure_db_ready(CONFIG.db_path)
+    except Exception as e:
+        logger.warning(f"Lifespan DB initialization notice: {e}")
+    yield
+
+
 app = FastAPI(
     title="ReliabilityX API",
     description="Predictive Component Reliability Intelligence — AI-Driven Anomaly Detection in Component Burn-In & Screening",
-    version="1.4.0"
+    version="1.4.0",
+    lifespan=lifespan
 )
 
-# Configurable CORS (Section 20)
-CORS_ORIGINS_ENV = os.environ.get(
-    "CORS_ORIGINS",
-    "http://localhost:8000,http://127.0.0.1:8000,http://localhost:3000,http://localhost:5173"
-)
-ALLOWED_ORIGINS = [orig.strip() for orig in CORS_ORIGINS_ENV.split(",") if orig.strip()]
+# Configurable CORS supporting production Vercel deployment (Section 7 & 20)
+DEFAULT_CORS_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://reliabilityx.vercel.app"
+]
+CORS_ORIGINS_ENV = os.environ.get("CORS_ORIGINS", "")
+EXTRA_ORIGINS = [orig.strip() for orig in CORS_ORIGINS_ENV.split(",") if orig.strip()]
+ALLOWED_ORIGINS = list(set(DEFAULT_CORS_ORIGINS + EXTRA_ORIGINS))
 ALLOW_ALL_ORIGINS = "*" in ALLOWED_ORIGINS
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"] if ALLOW_ALL_ORIGINS else ALLOWED_ORIGINS,
+    allow_origin_regex=r"^https://.*\.vercel\.app$" if not ALLOW_ALL_ORIGINS else None,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
@@ -113,41 +132,43 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": "An internal server error occurred while processing your request. Please retry."}
     )
 
-# Mount static frontend files
-os.makedirs("frontend/static", exist_ok=True)
-app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
+# Path Prefix Compatibility Middleware (ensures /api/* and stripped /* both resolve)
+@app.middleware("http")
+async def path_prefix_compatibility_middleware(request: Request, call_next):
+    path = request.url.path
+    if (
+        not path.startswith("/api")
+        and not path.startswith("/static")
+        and not path.startswith("/docs")
+        and not path.startswith("/openapi.json")
+        and not path.startswith("/ws")
+        and path != "/"
+    ):
+        request.scope["path"] = f"/api{path}"
+    return await call_next(request)
+
+# Mount static frontend files safely
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+static_dir = os.path.join(project_root, "frontend", "static")
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 @app.get("/")
 def serve_index():
-    return FileResponse("frontend/index.html")
+    index_path = os.path.join(project_root, "frontend", "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return JSONResponse({"status": "ONLINE", "message": "ReliabilityX Backend API is operational"})
 
 orchestrator = PipelineOrchestrator()
 counterfactual = CounterfactualEngine()
 ingestion_manager = IngestionManager()
 
 
-
 @app.on_event("startup")
 def startup_event():
     """Initializes the database and auto-loads demo dataset if empty."""
-    init_db()
-    conn = get_db_connection()
-    c = conn.cursor()
-    c.execute("SELECT COUNT(*) as count FROM datasets")
-    count = c.fetchone()["count"]
-    conn.close()
-
-    if count == 0:
-        print("Auto-generating initial Physics-Informed Arrhenius Demo Dataset...")
-        df_demo, meta_demo = generate_burnin_dataset(num_lots=5, components_per_lot=25, seed=42)
-        orchestrator.run_pipeline(
-            raw_df=df_demo,
-            dataset_id="demo-arrhenius-v1",
-            dataset_name="Physics-Informed Arrhenius Burn-In Benchmark (Demo)",
-            dataset_mode="demo",
-            filename="arrhenius_benchmark_stream.csv",
-            ground_truth=meta_demo["ground_truth"]
-        )
+    ensure_db_ready(CONFIG.db_path)
 
 
 # ==============================================================================

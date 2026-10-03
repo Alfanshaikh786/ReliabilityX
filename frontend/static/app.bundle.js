@@ -1,4 +1,4 @@
-// ReliabilityX Bundled Application (2026-10-03T06:50:27.663Z)
+// ReliabilityX Bundled Application (2026-10-03T07:46:10.835Z)
 (function() {
   if (typeof window !== 'undefined') {
     if (window.React && !window.React.default) window.React.default = window.React;
@@ -2311,7 +2311,33 @@ function DashboardTab({
     className: "page-main-title"
   }, "RELIABILITY OVERVIEW & SCREENING INTELLIGENCE"), /*#__PURE__*/_react.default.createElement("p", {
     className: "page-main-subtitle"
-  }, "Early detection of non-linear component degradation during Burn-In and Environmental Stress Screening (ESS). Anticipates latent wearout and limits prior to physical test failures.")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Early detection of non-linear component degradation during Burn-In and Environmental Stress Screening (ESS). Anticipates latent wearout and limits prior to physical test failures.")), !loading && !overview && /*#__PURE__*/_react.default.createElement("div", {
+    className: "alert alert-warning mb-4",
+    style: {
+      background: "rgba(239, 68, 68, 0.12)",
+      border: "1px solid rgba(239, 68, 68, 0.4)",
+      borderRadius: "8px",
+      padding: "14px 18px",
+      color: "#FCA5A5",
+      display: "flex",
+      alignItems: "center",
+      gap: "12px"
+    }
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    style: {
+      fontSize: "20px"
+    }
+  }, "\u26A0\uFE0F"), /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("strong", {
+    style: {
+      fontSize: "13px"
+    }
+  }, "SCREENING DATA SOURCE UNAVAILABLE"), /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      fontSize: "12px",
+      opacity: 0.88,
+      marginTop: "2px"
+    }
+  }, "The screening intelligence API did not return overview metrics. Check backend connectivity at ", /*#__PURE__*/_react.default.createElement("code", null, "/api/health"), "."))), /*#__PURE__*/_react.default.createElement("div", {
     id: "section-kpi-summary",
     className: "kpi-grid mb-4"
   }, /*#__PURE__*/_react.default.createElement("div", {
@@ -2320,15 +2346,15 @@ function DashboardTab({
     className: "kpi-title"
   }, "COMPONENTS MONITORED"), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-value"
-  }, loading ? "--" : overview?.total_components || 125), /*#__PURE__*/_react.default.createElement("div", {
+  }, loading ? "--" : overview ? overview.total_components : "--"), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-sub"
-  }, "Across ", lotsList.length || 5, " active flight lots")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Across ", overview ? lotsList.length || overview.total_lots || 5 : "--", " active flight lots")), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-card"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-title"
   }, "NORMAL (PASS)"), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-value text-green"
-  }, loading ? "--" : riskDist.PASS || 0), /*#__PURE__*/_react.default.createElement("div", {
+  }, loading ? "--" : overview ? riskDist.PASS ?? 0 : "--"), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-sub"
   }, "Nominal burn-in trajectory")), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-card"
@@ -2336,7 +2362,7 @@ function DashboardTab({
     className: "kpi-title"
   }, "WATCH (DRIFT)"), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-value text-yellow"
-  }, loading ? "--" : riskDist.WATCH || 0), /*#__PURE__*/_react.default.createElement("div", {
+  }, loading ? "--" : overview ? riskDist.WATCH ?? 0 : "--"), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-sub"
   }, "Moderate drift within \xB12\u03C3 bounds")), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-card"
@@ -2344,9 +2370,9 @@ function DashboardTab({
     className: "kpi-title"
   }, "ATTENTION REQUIRED"), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-value text-red"
-  }, loading ? "--" : (riskDist["HIGH RISK"] ?? riskDist.HIGH_RISK ?? 0) + (riskDist.REVIEW || 0)), /*#__PURE__*/_react.default.createElement("div", {
+  }, loading ? "--" : overview ? (riskDist["HIGH RISK"] ?? riskDist.HIGH_RISK ?? 0) + (riskDist.REVIEW ?? 0) : "--"), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-sub"
-  }, riskDist["HIGH RISK"] ?? riskDist.HIGH_RISK ?? 0, " High Risk \u2022 ", riskDist.REVIEW || 0, " Review"))), /*#__PURE__*/_react.default.createElement("div", {
+  }, overview ? `${riskDist["HIGH RISK"] ?? riskDist.HIGH_RISK ?? 0} High Risk • ${riskDist.REVIEW ?? 0} Review` : "--"))), /*#__PURE__*/_react.default.createElement("div", {
     id: "section-trajectory-simulation",
     className: "dashboard-hero-grid mb-4"
   }, /*#__PURE__*/_react.default.createElement("div", {
@@ -2437,7 +2463,7 @@ function DashboardTab({
     className: "chart-metric-title"
   }, "168h Forecast"), /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-metric-val"
-  }, pred?.predicted_168h ? pred.predicted_168h.toFixed(2) : "47.20", " ", currentParamObj.label.match(/\((.*?)\)/)?.[1] || "μA"), /*#__PURE__*/_react.default.createElement("div", {
+  }, pred?.predicted_168h != null ? `${pred.predicted_168h.toFixed(2)} ${currentParamObj.label.match(/\((.*?)\)/)?.[1] || "μA"}` : "--"), /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-metric-sub"
   }, "Physics-informed model")), /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-metric-card"
@@ -2453,7 +2479,7 @@ function DashboardTab({
     className: "chart-metric-title"
   }, "Uncertainty (\xB11.96\u03C3)"), /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-metric-val"
-  }, "\xB1", pred?.uncertainty_std ? (pred.uncertainty_std * 1.96).toFixed(2) : "1.85"), /*#__PURE__*/_react.default.createElement("div", {
+  }, pred?.uncertainty_std != null ? `±${(pred.uncertainty_std * 1.96).toFixed(2)}` : "--"), /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-metric-sub"
   }, "Estimated Prediction Interval")), /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-metric-card",
@@ -2461,8 +2487,8 @@ function DashboardTab({
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-metric-title"
   }, "P90 Estimated Upper Bound \u2139\uFE0F"), /*#__PURE__*/_react.default.createElement("div", {
-    className: `chart-metric-val ${(pred?.p90_upper_bound || pred?.p90_worst_case || 49.05) > currentParamObj.limit ? "text-red" : ""}`
-  }, pred?.p90_upper_bound || pred?.p90_worst_case ? (pred?.p90_upper_bound || pred?.p90_worst_case).toFixed(2) : "49.05"), /*#__PURE__*/_react.default.createElement("div", {
+    className: `chart-metric-val ${(pred?.p90_upper_bound || pred?.p90_worst_case) != null && (pred?.p90_upper_bound || pred?.p90_worst_case) > currentParamObj.limit ? "text-red" : ""}`
+  }, (pred?.p90_upper_bound || pred?.p90_worst_case) != null ? (pred?.p90_upper_bound || pred?.p90_worst_case).toFixed(2) : "--"), /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-metric-sub"
   }, "P90 Risk Bound"))), /*#__PURE__*/_react.default.createElement("div", {
     className: "whatif-panel-clean mt-3"
@@ -2566,17 +2592,19 @@ function DashboardTab({
     }
   }, heroCompId), /*#__PURE__*/_react.default.createElement("span", {
     className: "card-badge"
-  }, "LOT: ", comp?.lot_id || "LOT-2411A")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "LOT: ", comp?.lot_id || "--")), /*#__PURE__*/_react.default.createElement("div", {
     style: {
       display: "flex",
       gap: "8px",
       marginBottom: "14px"
     }
-  }, /*#__PURE__*/_react.default.createElement(_Badges.StateBadge, {
-    state: comp?.current_state || "ACCELERATING"
+  }, comp ? /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement(_Badges.StateBadge, {
+    state: comp.current_state
   }), /*#__PURE__*/_react.default.createElement(_Badges.RiskBadge, {
-    risk: comp?.risk_level || "HIGH RISK"
-  })), /*#__PURE__*/_react.default.createElement("div", {
+    risk: comp.risk_level
+  })) : /*#__PURE__*/_react.default.createElement("span", {
+    className: "badge badge-secondary"
+  }, heroCompLoading ? "Loading state..." : "No state data")), /*#__PURE__*/_react.default.createElement("div", {
     style: {
       marginBottom: "16px"
     }
@@ -5810,6 +5838,37 @@ function TrajectorySvgChart({
     unit: "μA"
   };
   const maxLimit = limitObj.max;
+  if (paramMeasures.length === 0) {
+    return /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        height: "380px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "var(--text-muted)",
+        background: "rgba(15, 23, 42, 0.4)",
+        borderRadius: "8px",
+        border: "1px dashed rgba(148, 163, 184, 0.2)"
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: "28px",
+        marginBottom: "8px"
+      }
+    }, "\uD83D\uDCCA"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontWeight: 600,
+        fontSize: "13px"
+      }
+    }, "Telemetry Measurements Unavailable"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: "11px",
+        opacity: 0.7,
+        marginTop: "4px"
+      }
+    }, "No recorded burn-in test stages (0\u2013168h) for ", paramName, "."));
+  }
 
   // Professional Engineering Dimensions: 380px height (within 360–420px standard)
   const W = 880;

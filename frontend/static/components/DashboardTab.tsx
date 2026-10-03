@@ -71,30 +71,52 @@ export function DashboardTab({
         </p>
       </div>
 
-      {/* 2. KPI Row (Exactly 4 Equal-Width Cards with Generous Spacing) */}
+      {/* 2. System State Alert if Screening Data is Unavailable */}
+      {!loading && !overview && (
+        <div className="alert alert-warning mb-4" style={{
+          background: "rgba(239, 68, 68, 0.12)",
+          border: "1px solid rgba(239, 68, 68, 0.4)",
+          borderRadius: "8px",
+          padding: "14px 18px",
+          color: "#FCA5A5",
+          display: "flex",
+          alignItems: "center",
+          gap: "12px"
+        }}>
+          <span style={{ fontSize: "20px" }}>⚠️</span>
+          <div>
+            <strong style={{ fontSize: "13px" }}>SCREENING DATA SOURCE UNAVAILABLE</strong>
+            <div style={{ fontSize: "12px", opacity: 0.88, marginTop: "2px" }}>
+              The screening intelligence API did not return overview metrics. Check backend connectivity at <code>/api/health</code>.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. KPI Row (Calculated from Actual Pipeline Data) */}
       <div id="section-kpi-summary" className="kpi-grid mb-4">
         <div className="kpi-card">
           <div className="kpi-title">COMPONENTS MONITORED</div>
-          <div className="kpi-value">{loading ? "--" : (overview?.total_components || 125)}</div>
-          <div className="kpi-sub">Across {lotsList.length || 5} active flight lots</div>
+          <div className="kpi-value">{loading ? "--" : (overview ? overview.total_components : "--")}</div>
+          <div className="kpi-sub">Across {overview ? (lotsList.length || overview.total_lots || 5) : "--"} active flight lots</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-title">NORMAL (PASS)</div>
-          <div className="kpi-value text-green">{loading ? "--" : (riskDist.PASS || 0)}</div>
+          <div className="kpi-value text-green">{loading ? "--" : (overview ? (riskDist.PASS ?? 0) : "--")}</div>
           <div className="kpi-sub">Nominal burn-in trajectory</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-title">WATCH (DRIFT)</div>
-          <div className="kpi-value text-yellow">{loading ? "--" : (riskDist.WATCH || 0)}</div>
+          <div className="kpi-value text-yellow">{loading ? "--" : (overview ? (riskDist.WATCH ?? 0) : "--")}</div>
           <div className="kpi-sub">Moderate drift within ±2σ bounds</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-title">ATTENTION REQUIRED</div>
           <div className="kpi-value text-red">
-            {loading ? "--" : ((riskDist["HIGH RISK"] ?? riskDist.HIGH_RISK ?? 0) + (riskDist.REVIEW || 0))}
+            {loading ? "--" : (overview ? ((riskDist["HIGH RISK"] ?? riskDist.HIGH_RISK ?? 0) + (riskDist.REVIEW ?? 0)) : "--")}
           </div>
           <div className="kpi-sub">
-            {(riskDist["HIGH RISK"] ?? riskDist.HIGH_RISK ?? 0)} High Risk • {riskDist.REVIEW || 0} Review
+            {overview ? `${(riskDist["HIGH RISK"] ?? riskDist.HIGH_RISK ?? 0)} High Risk • ${riskDist.REVIEW ?? 0} Review` : "--"}
           </div>
         </div>
       </div>
@@ -157,7 +179,7 @@ export function DashboardTab({
                 <div className="chart-metric-card">
                   <div className="chart-metric-title">168h Forecast</div>
                   <div className="chart-metric-val">
-                    {pred?.predicted_168h ? pred.predicted_168h.toFixed(2) : "47.20"} {currentParamObj.label.match(/\((.*?)\)/)?.[1] || "μA"}
+                    {pred?.predicted_168h != null ? `${pred.predicted_168h.toFixed(2)} ${currentParamObj.label.match(/\((.*?)\)/)?.[1] || "μA"}` : "--"}
                   </div>
                   <div className="chart-metric-sub">Physics-informed model</div>
                 </div>
@@ -170,14 +192,14 @@ export function DashboardTab({
 
                 <div className="chart-metric-card">
                   <div className="chart-metric-title">Uncertainty (±1.96σ)</div>
-                  <div className="chart-metric-val">±{pred?.uncertainty_std ? (pred.uncertainty_std * 1.96).toFixed(2) : "1.85"}</div>
+                  <div className="chart-metric-val">{pred?.uncertainty_std != null ? `±${(pred.uncertainty_std * 1.96).toFixed(2)}` : "--"}</div>
                   <div className="chart-metric-sub">Estimated Prediction Interval</div>
                 </div>
 
                 <div className="chart-metric-card" title="P90 represents an estimated upper prediction bound from the current model; it is not a guaranteed physical worst-case limit.">
                   <div className="chart-metric-title">P90 Estimated Upper Bound ℹ️</div>
-                  <div className={`chart-metric-val ${(pred?.p90_upper_bound || pred?.p90_worst_case || 49.05) > currentParamObj.limit ? "text-red" : ""}`}>
-                    {(pred?.p90_upper_bound || pred?.p90_worst_case) ? (pred?.p90_upper_bound || pred?.p90_worst_case).toFixed(2) : "49.05"}
+                  <div className={`chart-metric-val ${((pred?.p90_upper_bound || pred?.p90_worst_case) != null && (pred?.p90_upper_bound || pred?.p90_worst_case) > currentParamObj.limit) ? "text-red" : ""}`}>
+                    {(pred?.p90_upper_bound || pred?.p90_worst_case) != null ? (pred?.p90_upper_bound || pred?.p90_worst_case).toFixed(2) : "--"}
                   </div>
                   <div className="chart-metric-sub">P90 Risk Bound</div>
                 </div>
@@ -238,12 +260,18 @@ export function DashboardTab({
 
           <div style={{ display: "flex", alignItems: "center", gap: "12px", margin: "8px 0" }}>
             <span style={{ fontSize: "18px", fontWeight: 800, color: "var(--text-main)" }}>{heroCompId}</span>
-            <span className="card-badge">LOT: {comp?.lot_id || "LOT-2411A"}</span>
+            <span className="card-badge">LOT: {comp?.lot_id || "--"}</span>
           </div>
 
           <div style={{ display: "flex", gap: "8px", marginBottom: "14px" }}>
-            <StateBadge state={comp?.current_state || "ACCELERATING"} />
-            <RiskBadge risk={comp?.risk_level || "HIGH RISK"} />
+            {comp ? (
+              <>
+                <StateBadge state={comp.current_state} />
+                <RiskBadge risk={comp.risk_level} />
+              </>
+            ) : (
+              <span className="badge badge-secondary">{heroCompLoading ? "Loading state..." : "No state data"}</span>
+            )}
           </div>
 
           {/* Current Behaviour State */}

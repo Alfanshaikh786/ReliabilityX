@@ -3,7 +3,7 @@
  * High-reliability component burn-in screening dashboard logic
  */
 
-const API_BASE = "http://127.0.0.1:8000/api";
+const API_BASE = "/api";
 let currentTab = "dashboard";
 let activeComponentId = null;
 let activeComponentData = null;

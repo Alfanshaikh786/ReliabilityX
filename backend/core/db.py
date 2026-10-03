@@ -3,21 +3,96 @@ Database module for ReliabilityX
 Structured SQLite database with relational tables and audit tracking.
 Designed to be compatible with PostgreSQL if upgraded.
 """
+import os
+import shutil
 import sqlite3
 import json
+import logging
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 from backend.core.config import CONFIG
 
+logger = logging.getLogger("ReliabilityX.DB")
 
-def get_db_connection(db_path: str = CONFIG.db_path) -> sqlite3.Connection:
+
+def _connect_raw(db_path: str) -> sqlite3.Connection:
     conn = sqlite3.connect(db_path, timeout=30.0)
     conn.row_factory = sqlite3.Row
     return conn
 
 
-def init_db(db_path: str = CONFIG.db_path):
-    conn = get_db_connection(db_path)
+def ensure_db_ready(db_path: str = None):
+    """
+    Ensures that the SQLite database file at db_path exists, has all schema tables,
+    and contains an active screening dataset (the Arrhenius benchmark).
+    If the file is missing or has 0 active datasets, it seeds it automatically from
+    the pre-calculated seed_benchmark.db (or runs the generator pipeline as fallback).
+    This guarantees production parity between local and serverless deployments like Vercel.
+    """
+    target_path = db_path or CONFIG.db_path
+
+    # Ensure target parent directory exists (e.g. /tmp on Vercel)
+    db_dir = os.path.dirname(os.path.abspath(target_path))
+    if db_dir:
+        os.makedirs(db_dir, exist_ok=True)
+
+    needs_seed = False
+    if not os.path.exists(target_path) or os.path.getsize(target_path) == 0:
+        needs_seed = True
+    else:
+        try:
+            conn = _connect_raw(target_path)
+            c = conn.cursor()
+            c.execute("SELECT COUNT(*) as cnt FROM datasets WHERE is_active = 1")
+            row = c.fetchone()
+            conn.close()
+            if not row or row["cnt"] == 0:
+                needs_seed = True
+        except Exception:
+            needs_seed = True
+
+    if needs_seed:
+        # Check for bundled seed_benchmark.db
+        seed_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "seed_benchmark.db")
+        if os.path.exists(seed_path) and os.path.getsize(seed_path) > 0 and os.path.abspath(seed_path) != os.path.abspath(target_path):
+            try:
+                shutil.copyfile(seed_path, target_path)
+                logger.info(f"Initialized database from seed benchmark: {target_path}")
+                return
+            except Exception as e:
+                logger.warning(f"Could not copy seed database: {e}")
+
+        # Fallback: initialize schema and run generator
+        init_db(target_path)
+        try:
+            from backend.data.generator import generate_burnin_dataset
+            from backend.core.orchestrator import PipelineOrchestrator
+            df_demo, meta_demo = generate_burnin_dataset(num_lots=5, components_per_lot=25, seed=42)
+            orch = PipelineOrchestrator(db_path=target_path)
+            orch.run_pipeline(
+                raw_df=df_demo,
+                dataset_id="demo-arrhenius-v1",
+                dataset_name="Physics-Informed Arrhenius Burn-In Benchmark (Demo)",
+                dataset_mode="demo",
+                filename="arrhenius_benchmark_stream.csv",
+                ground_truth=meta_demo["ground_truth"]
+            )
+        except Exception as e:
+            logger.error(f"Failed fallback benchmark generation: {e}")
+
+
+def get_db_connection(db_path: str = None) -> sqlite3.Connection:
+    target_path = db_path or CONFIG.db_path
+    ensure_db_ready(target_path)
+    return _connect_raw(target_path)
+
+
+def init_db(db_path: str = None):
+    target_path = db_path or CONFIG.db_path
+    db_dir = os.path.dirname(os.path.abspath(target_path))
+    if db_dir:
+        os.makedirs(db_dir, exist_ok=True)
+    conn = _connect_raw(target_path)
     cursor = conn.cursor()
 
     # Datasets
