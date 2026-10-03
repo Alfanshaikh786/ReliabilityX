@@ -119,3 +119,15 @@ declare namespace React {
   type ReactNode = any;
   type ReactElement = any;
 }
+
+declare module "vite" {
+  export function defineConfig(config: any): any;
+  export function loadEnv(mode: string, envDir: string, prefixes?: string | string[]): Record<string, string>;
+  export interface UserConfig {
+    [key: string]: any;
+  }
+}
+
+declare module "@vitejs/plugin-react" {
+  export default function react(options?: any): any;
+}

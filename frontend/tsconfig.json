@@ -11,8 +11,7 @@
     "noEmit": true,
     "jsx": "react",
     "strict": false,
-    "noImplicitAny": false,
-    "types": ["node"]
+    "noImplicitAny": false
   },
-  "include": ["src/**/*", "static/**/*", "vite.config.ts", "../global.d.ts"]
+  "include": ["src/**/*", "static/**/*", "vite.config.ts", "../global.d.ts", "static/global.d.ts"]
 }
