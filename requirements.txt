@@ -1,4 +1,4 @@
-# ReliabilityX — Python Backend Dependencies
+# ReliabilityX — Python Backend Dependencies (Render / Production Runtime)
 # SIH26170: AI-Driven Anomaly Detection in Component Burn-In & Screening
 
 fastapi>=0.115.0
@@ -6,6 +6,8 @@ uvicorn[standard]>=0.34.0
 pydantic>=2.10.0
 pandas>=2.2.0
 numpy>=1.26.0
+scipy>=1.14.0
+scikit-learn>=1.5.0
 websockets>=13.0
 python-multipart>=0.0.12
 python-dotenv>=1.0.0

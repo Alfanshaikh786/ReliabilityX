@@ -22,9 +22,21 @@ import { EngineeringSuiteTab } from "./components/EngineeringSuiteTab";
 import { ComponentDetailModal } from "./components/ComponentDetailModal";
 import { DatasetModal } from "./components/DatasetModal";
 import { MobileBottomNav } from "./components/MobileBottomNav";
+const getApiBase = (): string => {
+  try {
+    const custom = localStorage.getItem("rx_backend_url");
+    if (custom && custom.trim()) {
+      const clean = custom.trim().replace(/\/+$/, "");
+      return clean.endsWith("/api") ? clean : `${clean}/api`;
+    }
+    if ((window as any).__RELIABILITYX_API_URL__) {
+      return (window as any).__RELIABILITYX_API_URL__;
+    }
+  } catch {}
+  return "/api";
+};
 
-const API_BASE = "/api";
-
+const API_BASE = getApiBase();
 export function ReliabilityXApp() {
   const getInitialTab = (): TabType => {
     try {

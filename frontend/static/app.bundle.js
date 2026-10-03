@@ -1,4 +1,4 @@
-// ReliabilityX Bundled Application (2026-10-03T08:18:19.836Z)
+// ReliabilityX Bundled Application (2026-10-03T08:46:45.863Z)
 (function() {
   if (typeof window !== 'undefined') {
     if (window.React && !window.React.default) window.React.default = window.React;
@@ -85,7 +85,20 @@ function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; 
 // Left Sidebar Navigation + High-Resolution Industrial Decision Support
 // ==============================================================================
 
-const API_BASE = "/api";
+const getApiBase = () => {
+  try {
+    const custom = localStorage.getItem("rx_backend_url");
+    if (custom && custom.trim()) {
+      const clean = custom.trim().replace(/\/+$/, "");
+      return clean.endsWith("/api") ? clean : `${clean}/api`;
+    }
+    if (window.__RELIABILITYX_API_URL__) {
+      return window.__RELIABILITYX_API_URL__;
+    }
+  } catch {}
+  return "/api";
+};
+const API_BASE = getApiBase();
 function ReliabilityXApp() {
   const getInitialTab = () => {
     try {

@@ -1,41 +1,25 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "build": {
-    "env": {
-      "VERCEL_SUPPORT_LARGE_FUNCTIONS": "1"
-    }
-  },
-  "env": {
-    "VERCEL_SUPPORT_LARGE_FUNCTIONS": "1"
-  },
-  "functions": {
-    "api/*.py": {
-      "maxDuration": 60
-    }
-  },
+  "cleanUrls": true,
   "rewrites": [
     {
-      "source": "/api/test",
-      "destination": "/api/test.py"
-    },
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/index.py"
+      "source": "/api/:path*",
+      "destination": "https://reliabilityx-backend.onrender.com/api/:path*"
     },
     {
       "source": "/docs",
-      "destination": "/api/index.py"
+      "destination": "https://reliabilityx-backend.onrender.com/docs"
     },
     {
       "source": "/openapi.json",
-      "destination": "/api/index.py"
+      "destination": "https://reliabilityx-backend.onrender.com/openapi.json"
     },
     {
-      "source": "/static/(.*)",
-      "destination": "/frontend/static/$1"
+      "source": "/static/:path*",
+      "destination": "/frontend/static/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/:path*",
       "destination": "/frontend/index.html"
     }
   ]
