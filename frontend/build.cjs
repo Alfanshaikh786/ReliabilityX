@@ -130,8 +130,22 @@ function build() {
     bundleCode += `})();\n`;
 
     fs.writeFileSync(destPath, bundleCode, 'utf8');
+    
+    // Prepare dist directory for Vercel deployment
+    const distDir = path.join(rootDir, 'dist');
+    if (!fs.existsSync(distDir)) {
+      fs.mkdirSync(distDir, { recursive: true });
+    }
+    fs.copyFileSync(path.join(rootDir, 'index.html'), path.join(distDir, 'index.html'));
+    const distStaticDir = path.join(distDir, 'static');
+    if (fs.existsSync(distStaticDir)) {
+      fs.rmSync(distStaticDir, { recursive: true, force: true });
+    }
+    fs.cpSync(staticDir, distStaticDir, { recursive: true });
+
     const elapsed = Date.now() - startTime;
     console.log(`[ReliabilityX Build] Successfully bundled ${compiledModules.length} modules -> app.bundle.js (${bundleCode.length} bytes in ${elapsed}ms)`);
+    console.log(`[ReliabilityX Build] Production output prepared in ${distDir}`);
   } catch (err) {
     console.error(`[ReliabilityX Build] Transpilation failed:`, err.message);
   }
