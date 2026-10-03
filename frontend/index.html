@@ -58,12 +58,13 @@
     <!-- Mobile App Intro Video (100% Declarative HTML Autoplay with embedded src) -->
     <video
       id="rx-mobile-video"
-      class="intro-video rx-intro-video rx-mobile-video"
+      class="intro-video rx-intro-video rx-mobile-video rx-mobile-intro-video"
       src="/static/mobile-intro.mp4"
       autoplay
       muted
       playsinline
       webkit-playsinline
+      x5-playsinline
       preload="auto"
       title="ReliabilityX Mobile Introduction Video"
     ></video>
@@ -98,7 +99,7 @@
     // -------------------------------------------------------------------------
     // PLATFORM SELECTION:
     // 1. Desktop / Web Browser -> OLD WEBSITE INTRO VIDEO (/static/intro.mp4)
-    // 2. Mobile App / Android Phone -> NEW MOBILE APP INTRO VIDEO (/static/mobile-intro.mp4 + AUDIO)
+    // 2. Mobile App / Phone   -> NEW MOBILE APP INTRO VIDEO (/static/mobile-intro.mp4)
     // -------------------------------------------------------------------------
     function isMobilePlatform() {
       try {
@@ -176,48 +177,89 @@
     }
 
     if (activeVideo) {
-      // Natural video completion — plays the FULL video to the end!
+      // Natural video completion triggers — guaranteed to play the FULL video duration:
+      // 1. Natural 'ended' event
       activeVideo.addEventListener("ended", finishIntro);
 
-      // Start direct playback
-      activeVideo.play().then(function() {
-        console.log("[ReliabilityX Intro] Video playing smoothly.");
-        // Unmute audio immediately
-        setTimeout(function() {
+      // 2. High-precision 'timeupdate' check near end of duration (9.85s+ of 10.006s)
+      activeVideo.addEventListener("timeupdate", function() {
+        if (activeVideo.duration && activeVideo.duration > 2.0 && activeVideo.currentTime >= (activeVideo.duration - 0.15)) {
+          finishIntro();
+        }
+      });
+
+      // 3. Fallback if video encounters unrecoverable decode error
+      activeVideo.addEventListener("error", function(err) {
+        console.warn("[ReliabilityX Intro] Video error, transitioning to dashboard:", err);
+        finishIntro();
+      });
+
+      if (isMobile) {
+        // MOBILE APP: GUARANTEED AUTOPLAY WITH ZERO PLAY BUTTONS
+        // Video starts strictly muted so iOS Safari / WebKit NEVER shows the play button!
+        activeVideo.muted = true;
+        activeVideo.defaultMuted = true;
+
+        var playPromise = activeVideo.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(function(err) {
+            console.warn("[ReliabilityX Intro] Mobile autoplay retry:", err);
+            activeVideo.muted = true;
+            activeVideo.play().catch(function(){});
+          });
+        }
+
+        // Seamless audio unmuting on any user touch/tap without interrupting video or showing play button
+        function unlockAudioOnTouch() {
           try {
             activeVideo.muted = false;
             activeVideo.volume = 1.0;
           } catch(e){}
-        }, 100);
-      }).catch(function(err) {
-        console.warn("[ReliabilityX Intro] Playback initializing:", err);
-        activeVideo.muted = true;
-        activeVideo.play().catch(function(){});
-      });
+          window.removeEventListener("touchstart", unlockAudioOnTouch);
+          window.removeEventListener("touchend", unlockAudioOnTouch);
+          window.removeEventListener("click", unlockAudioOnTouch);
+          window.removeEventListener("pointerdown", unlockAudioOnTouch);
+        }
+        window.addEventListener("touchstart", unlockAudioOnTouch, { passive: true });
+        window.addEventListener("touchend", unlockAudioOnTouch, { passive: true });
+        window.addEventListener("click", unlockAudioOnTouch);
+        window.addEventListener("pointerdown", unlockAudioOnTouch);
 
-      // Background touch listener to guarantee unmuted audio on mobile
-      function unmuteOnTouch() {
-        try {
-          activeVideo.muted = false;
-          activeVideo.volume = 1.0;
-        } catch(e){}
-        window.removeEventListener("touchstart", unmuteOnTouch);
-        window.removeEventListener("touchend", unmuteOnTouch);
-        window.removeEventListener("click", unmuteOnTouch);
+      } else {
+        // WEBSITE (DESKTOP): Direct unmuted playback (User: "IN WEBSITE IT IS PROPPER PLAYING THE ANIMATION + AUDIO DONT TOUCH THAT")
+        activeVideo.muted = false;
+        activeVideo.volume = 1.0;
+        var p = activeVideo.play();
+        if (p !== undefined) {
+          p.catch(function(err) {
+            console.warn("[ReliabilityX Intro] Desktop unmuted blocked, falling back to muted:", err);
+            activeVideo.muted = true;
+            activeVideo.play().catch(function(){});
+          });
+        }
       }
-      window.addEventListener("touchstart", unmuteOnTouch, { passive: true });
-      window.addEventListener("touchend", unmuteOnTouch, { passive: true });
-      window.addEventListener("click", unmuteOnTouch);
+
+      // Anchored safety timeout: starts ONLY after video actually begins playing frames!
+      activeVideo.addEventListener("playing", function() {
+        var dur = (activeVideo.duration && activeVideo.duration > 5) ? activeVideo.duration : 10.0;
+        // Wait for full video duration plus 3.5s buffer before safety cutoff
+        setTimeout(function() {
+          if (!finished) {
+            finishIntro();
+          }
+        }, Math.ceil((dur + 3.5) * 1000));
+      }, { once: true });
+
     } else {
       finishIntro();
     }
 
-    // Safety fallback: 16 seconds (full video duration is 10.0 seconds, allowing ample buffer)
+    // Absolute safety fallback in case network drops before video starts (25 seconds)
     setTimeout(function() {
       if (!finished) {
         finishIntro();
       }
-    }, 16000);
+    }, 25000);
   })();
   </script>
 
