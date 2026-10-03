@@ -22,5 +22,9 @@ dependencies = [
     "Jinja2>=3.1.0"
 ]
 
+[tool.setuptools.packages.find]
+include = ["backend*", "api*"]
+exclude = ["frontend*"]
+
 [tool.vercel]
 entrypoint = "backend.main:app"
