@@ -5267,30 +5267,9 @@ button.d-desktop-only {
 .lot-summary-grid > .rx-scroll-reveal:nth-child(5),
 .mobile-card-list > .mobile-unit-card:nth-child(5) { transition-delay: 240ms; }
 
-/* ── MOBILE DRAWER CLOSE BUTTON ─────────────────────────────────────────── */
+/* ── MOBILE DRAWER CLOSE BUTTON (REMOVED) ─────────────────────────────────── */
 .mobile-drawer-close-btn {
-  position: absolute;
-  top: max(12px, env(safe-area-inset-top, 12px));
-  right: 14px;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: #94A3B8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 10;
-  transition: all 0.2s ease;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.mobile-drawer-close-btn:active {
-  background: rgba(255, 255, 255, 0.2);
-  transform: scale(0.92);
-  color: #FFFFFF;
+  display: none !important;
 }
 
 .mobile-drawer-footer-actions {

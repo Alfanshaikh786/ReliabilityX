@@ -1,4 +1,4 @@
-// ReliabilityX Bundled Application (2026-10-03T15:27:40.799Z)
+// ReliabilityX Bundled Application (2026-10-03T15:41:28.192Z)
 (function() {
   if (typeof window !== 'undefined') {
     if (window.React && !window.React.default) window.React.default = window.React;
@@ -5851,31 +5851,7 @@ function Sidebar({
     src: "/static/logo.png",
     alt: "ReliabilityX",
     className: "sidebar-logo-img"
-  }), mobileOpen && /*#__PURE__*/_react.default.createElement("button", {
-    type: "button",
-    className: "mobile-drawer-close-btn",
-    onClick: onCloseMobile,
-    "aria-label": "Close navigation"
-  }, /*#__PURE__*/_react.default.createElement("svg", {
-    width: "20",
-    height: "20",
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2.2",
-    strokeLinecap: "round",
-    strokeLinejoin: "round"
-  }, /*#__PURE__*/_react.default.createElement("line", {
-    x1: "18",
-    y1: "6",
-    x2: "6",
-    y2: "18"
-  }), /*#__PURE__*/_react.default.createElement("line", {
-    x1: "6",
-    y1: "6",
-    x2: "18",
-    y2: "18"
-  })))), /*#__PURE__*/_react.default.createElement("div", {
+  })), /*#__PURE__*/_react.default.createElement("div", {
     className: "sidebar-nav"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "sidebar-nav-group"
