@@ -3764,15 +3764,23 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* Suppress native iOS Safari / WebKit play button overlays */
+video::-webkit-media-controls,
+video::-webkit-media-controls-start-playback-button,
+video::-webkit-media-controls-play-button,
+video::-webkit-media-controls-panel,
+video::-webkit-media-controls-overlay-play-button,
 .intro-screen video::-webkit-media-controls,
 .intro-screen video::-webkit-media-controls-start-playback-button,
 .intro-screen video::-webkit-media-controls-play-button,
-.intro-screen video::-webkit-media-controls-panel {
+.intro-screen video::-webkit-media-controls-panel,
+.intro-screen video::-webkit-media-controls-overlay-play-button {
   display: none !important;
   -webkit-appearance: none !important;
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 /* Active video display rules (DOM lifecycle keeps active asset only) */

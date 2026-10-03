@@ -40,6 +40,23 @@
   <!-- Production-Grade React 18 Standalone Libraries -->
   <script src="/static/vendor/react.production.min.js"></script>
   <script src="/static/vendor/react-dom.production.min.js"></script>
+
+  <style>
+    /* Immediate WebKit Media Controls suppression to prevent iOS Safari play button flash */
+    video::-webkit-media-controls,
+    video::-webkit-media-controls-start-playback-button,
+    video::-webkit-media-controls-play-button,
+    video::-webkit-media-controls-panel,
+    video::-webkit-media-controls-overlay-play-button {
+      display: none !important;
+      -webkit-appearance: none !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+  </style>
 </head>
 <body>
   <!-- ==========================================================================
@@ -56,7 +73,10 @@
       x5-playsinline
       preload="auto"
       title="ReliabilityX Introduction Video"
-    ></video>
+    >
+      <source src="/static/mobile-intro.mp4" type="video/mp4" media="(max-width: 768px), (orientation: portrait)">
+      <source src="/static/intro.mp4" type="video/mp4">
+    </video>
   </div>
 
   <!-- React 18 Application Root Mount Target -->
@@ -155,9 +175,28 @@
     }
 
     if (video) {
-      // Always reset playback position to 0 so it NEVER starts from the middle or half!
-      video.currentTime = 0;
-      video.src = videoSrc;
+      // Safely ensure playback always starts from frame 0
+      function resetToStart() {
+        try {
+          if (video.currentTime > 0) {
+            video.currentTime = 0;
+          }
+        } catch(e){}
+      }
+
+      if (video.readyState >= 1) {
+        resetToStart();
+      } else {
+        video.addEventListener("loadedmetadata", resetToStart, { once: true });
+        video.addEventListener("canplay", resetToStart, { once: true });
+      }
+
+      // Safety check: ensure selected video asset is active
+      var current = video.currentSrc || video.src || "";
+      if (current && current.indexOf(isMobile ? "mobile-intro" : "intro.mp4") === -1) {
+        video.src = videoSrc;
+        video.load();
+      }
 
       // Natural completion triggers — guaranteed to play the FULL video duration:
       video.addEventListener("ended", finishIntro);
@@ -188,21 +227,24 @@
 
         // Seamless audio unmuting on ANY user touch/tap anywhere on the phone:
         // Instantly activates the embedded audio at full 100% volume in perfect sync!
+        var audioUnlocked = false;
         function unmuteAudioGesture() {
+          if (audioUnlocked || !video) return;
+          audioUnlocked = true;
           try {
             video.muted = false;
             video.volume = 1.0;
           } catch(e){}
-          window.removeEventListener("touchstart", unmuteAudioGesture);
-          window.removeEventListener("touchend", unmuteAudioGesture);
-          window.removeEventListener("click", unmuteAudioGesture);
-          window.removeEventListener("pointerdown", unmuteAudioGesture);
+          ['touchstart', 'touchend', 'click', 'pointerdown', 'keydown'].forEach(function(ev) {
+            window.removeEventListener(ev, unmuteAudioGesture, { capture: true });
+            document.removeEventListener(ev, unmuteAudioGesture, { capture: true });
+          });
         }
 
-        window.addEventListener("touchstart", unmuteAudioGesture, { passive: true });
-        window.addEventListener("touchend", unmuteAudioGesture, { passive: true });
-        window.addEventListener("click", unmuteAudioGesture);
-        window.addEventListener("pointerdown", unmuteAudioGesture);
+        ['touchstart', 'touchend', 'click', 'pointerdown', 'keydown'].forEach(function(ev) {
+          window.addEventListener(ev, unmuteAudioGesture, { passive: true, capture: true });
+          document.addEventListener(ev, unmuteAudioGesture, { passive: true, capture: true });
+        });
 
       } else {
         // WEBSITE (DESKTOP) PLAYBACK:
