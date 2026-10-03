@@ -382,9 +382,6 @@ export function AboutSection() {
                 {/* Top identifier */}
                 <div className="team-card-top-bar">
                   <span className="team-identifier-label">{member.team}</span>
-                  {isLeader && (
-                    <span className="team-leader-corner-tag">LEAD</span>
-                  )}
                 </div>
 
                 {/* Profile / Avatar Area */}

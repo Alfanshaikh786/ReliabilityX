@@ -1,4 +1,4 @@
-// ReliabilityX Bundled Application (2026-10-03T18:08:22.901Z)
+// ReliabilityX Bundled Application (2026-10-03T18:15:55.248Z)
 (function() {
   if (typeof window !== 'undefined') {
     if (window.React && !window.React.default) window.React.default = window.React;
@@ -1324,9 +1324,7 @@ function AboutSection() {
       className: "team-card-top-bar"
     }, /*#__PURE__*/_react.default.createElement("span", {
       className: "team-identifier-label"
-    }, member.team), isLeader && /*#__PURE__*/_react.default.createElement("span", {
-      className: "team-leader-corner-tag"
-    }, "LEAD")), /*#__PURE__*/_react.default.createElement("div", {
+    }, member.team)), /*#__PURE__*/_react.default.createElement("div", {
       className: "team-avatar-container"
     }, /*#__PURE__*/_react.default.createElement("div", {
       className: `team-avatar-frame ${isLeader ? "leader-frame" : "member-frame"}`
