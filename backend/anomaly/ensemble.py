@@ -9,6 +9,7 @@ Harmonizes and fuses calibrated anomaly scores across:
 Applies dynamically weighted fusion based on active detector statuses,
 preventing raw-scale distortion and providing full detector-level traceability.
 """
+from __future__ import annotations
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Tuple

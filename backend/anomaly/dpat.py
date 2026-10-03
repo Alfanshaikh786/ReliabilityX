@@ -5,6 +5,7 @@ Calculates robust outlier limits per lot and parameter:
 Upper = Median + k * 1.4826 * MAD
 Lower = Median - k * 1.4826 * MAD
 """
+from __future__ import annotations
 import numpy as np
 import pandas as pd
 from typing import Dict, Any, List

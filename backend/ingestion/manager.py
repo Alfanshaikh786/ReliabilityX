@@ -3,6 +3,7 @@ ReliabilityX Live Ingestion Manager & Dual-Path Pipeline Orchestrator
 Coordinates Telemetry Sources (Simulator, CSV Replay, MQTT), manages the Fast Path and
 Windowed Path pipelines, immutable database persistence, and WebSocket broadcasting.
 """
+from __future__ import annotations
 import asyncio
 import json
 import math

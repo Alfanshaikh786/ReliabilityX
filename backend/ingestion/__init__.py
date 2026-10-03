@@ -2,6 +2,7 @@
 ReliabilityX Live Telemetry Ingestion Layer
 SIH26170 — AI-Driven Anomaly Detection in Component Burn-In & Screening
 """
+from __future__ import annotations
 from backend.ingestion.base import TelemetryPacket, TelemetrySource
 from backend.ingestion.simulator import LiveSimulatorAdapter
 from backend.ingestion.csv_adapter import CsvReplayAdapter

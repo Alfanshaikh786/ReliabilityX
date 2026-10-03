@@ -3,6 +3,7 @@ ReliabilityX Ingestion Connector Interface
 Defines the generic TelemetrySource abstract base class and standardized TelemetryPacket.
 Compatible with Physical ATE, SECS/GEM, OPC UA, MQTT, CSV Replay, and Live Simulators.
 """
+from __future__ import annotations
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Dict, Any, List, Optional, Callable, Coroutine

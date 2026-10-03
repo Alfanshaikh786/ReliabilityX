@@ -11,6 +11,7 @@ Automated end-to-end test verifying:
 8. Stale connection state detection
 9. High-rate backpressure resilience
 """
+from __future__ import annotations
 import sys
 import os
 import time

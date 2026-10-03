@@ -3,6 +3,7 @@ Local Outlier Factor (LOF) Anomaly Detector
 Measures local density divergence relative to k-nearest lot peers.
 Calibrates raw factor into a [0, 1] normalized anomaly score.
 """
+from __future__ import annotations
 import numpy as np
 import pandas as pd
 from typing import Dict, Any, List

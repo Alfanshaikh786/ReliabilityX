@@ -4,6 +4,7 @@ Computes robust covariance matrix (using MinCovDet / EmpiricalCovariance)
 and maps squared Mahalanobis distance through Chi-Square CDF for exact [0, 1] calibration.
 Gracefully falls back when lot size is small or covariance matrix is ill-conditioned.
 """
+from __future__ import annotations
 import numpy as np
 import pandas as pd
 from typing import Dict, Any, List

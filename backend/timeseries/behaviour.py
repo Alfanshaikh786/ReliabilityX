@@ -9,6 +9,7 @@ Classifies component temporal dynamics into 5 distinct physical states:
 
 Generates an explainable Behaviour Fingerprint for every component.
 """
+from __future__ import annotations
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Tuple

@@ -12,6 +12,7 @@ Verifies:
 5. Path prefix compatibility (/api/health and /health)
 6. Entrypoints: backend.main:app and api.index:app
 """
+from __future__ import annotations
 import os
 import sys
 import shutil

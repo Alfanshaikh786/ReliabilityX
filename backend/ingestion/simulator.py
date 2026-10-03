@@ -3,6 +3,7 @@ ReliabilityX Live Telemetry Simulator Adapter
 Simulates realistic automated test equipment (ATE) burn-in chamber telemetry.
 Provides fine-grained physics-based degradation models and subtle defect injection scenarios.
 """
+from __future__ import annotations
 import asyncio
 import math
 import random

@@ -13,6 +13,7 @@ Quantifies:
 - Predicted drift and limit proximity
 - Supports early prediction at 24h and refined forecast at 96h
 """
+from __future__ import annotations
 import numpy as np
 import pandas as pd
 from typing import Dict, Any, List, Tuple

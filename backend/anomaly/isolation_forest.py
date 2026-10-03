@@ -3,6 +3,7 @@ Isolation Forest Anomaly Detector with Score Calibration
 Builds an isolation tree ensemble over parametric delta and drift features.
 Calibrates raw decision function into a unified [0, 1] anomaly probability.
 """
+from __future__ import annotations
 import numpy as np
 import pandas as pd
 from typing import Dict, Any, List

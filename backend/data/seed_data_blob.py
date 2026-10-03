@@ -3,6 +3,7 @@ Embedded Canonical Seed Database for Serverless Cold Starts
 125 Components, 5 Lots, Full Telemetry and Predictions
 Auto-generated from seed_benchmark.db (Arrhenius Physics Benchmark)
 """
+from __future__ import annotations
 import gzip
 import base64
 

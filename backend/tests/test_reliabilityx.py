@@ -12,6 +12,7 @@ Validates:
 9. Lot health pattern detection (isolated vs lot-wide)
 10. Full end-to-end pipeline execution & SQLite persistence
 """
+from __future__ import annotations
 import os
 import unittest
 import tempfile

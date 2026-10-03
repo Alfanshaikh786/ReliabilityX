@@ -2,6 +2,7 @@
 ReliabilityX Configuration & Engineering Specifications
 Authoritative engineering limits, threshold configurations, and default parameter specs.
 """
+from __future__ import annotations
 import os
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field

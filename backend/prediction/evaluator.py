@@ -8,6 +8,7 @@ Calculates:
 - False Positives, True Positives, True Negatives
 - Confusion Matrix
 """
+from __future__ import annotations
 import numpy as np
 import pandas as pd
 from typing import Dict, Any, List

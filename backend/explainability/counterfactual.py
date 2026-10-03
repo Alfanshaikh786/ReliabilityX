@@ -4,6 +4,7 @@ Calculates engineering margin limits and drift boundaries:
 "To remain below the configured limit of 20.0 µA at 168h, the component's future drift rate must remain below X µA/h."
 Purely engineering decision support; does not simulate physical prevention.
 """
+from __future__ import annotations
 from typing import Dict, Any, List
 from backend.core.config import DEFAULT_PARAMETER_SPECS, ParameterSpec
 

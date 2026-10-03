@@ -10,6 +10,7 @@ Validates raw telemetry before model execution:
 - Preserves immutable raw values while creating clean analysis frames
 - Generates transparent Data Quality Summary
 """
+from __future__ import annotations
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Tuple

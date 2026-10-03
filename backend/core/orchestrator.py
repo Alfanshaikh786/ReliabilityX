@@ -10,6 +10,7 @@ Executes the full 8-stage engineering screening workflow:
 7. Risk Fusion & Rule-Based Screening Decision
 8. Lot Health & Inspection Priority Ranking
 """
+from __future__ import annotations
 import json
 import uuid
 from datetime import datetime

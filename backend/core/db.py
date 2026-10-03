@@ -3,6 +3,7 @@ Database module for ReliabilityX
 Structured SQLite database with relational tables and audit tracking.
 Designed to be compatible with PostgreSQL if upgraded.
 """
+from __future__ import annotations
 import os
 import shutil
 import sqlite3

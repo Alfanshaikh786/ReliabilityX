@@ -1,6 +1,7 @@
 """
 Verification script for Section 18 File Upload Security & Hardening
 """
+from __future__ import annotations
 import io
 import requests
 

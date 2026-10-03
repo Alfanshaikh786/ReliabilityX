@@ -4,6 +4,7 @@ Connects to industrial IoT / MQTT message brokers (e.g., Mosquitto, EMQX, AWS Io
 Receives incoming test equipment telemetry topics, normalizes JSON payloads, and injects into ReliabilityX.
 Includes built-in simulated test socket when external broker is not present.
 """
+from __future__ import annotations
 import asyncio
 import json
 import random

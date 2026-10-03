@@ -10,6 +10,7 @@ Generates transparent, mathematically grounded evidence breakdowns:
   * Prediction Uncertainty Margin
 - Human-readable natural-language engineering evidence linking directly to physical telemetry values.
 """
+from __future__ import annotations
 from typing import Dict, Any, List
 import pandas as pd
 import numpy as np

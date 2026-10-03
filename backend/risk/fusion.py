@@ -15,6 +15,7 @@ Produces:
 3. Inspection Priority Ranking (Priority 1, 2, 3...)
 4. Lot Health pattern detection (Isolated Component vs Lot-Wide Systematic Defect)
 """
+from __future__ import annotations
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Tuple

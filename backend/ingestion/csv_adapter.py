@@ -3,6 +3,7 @@ ReliabilityX CSV Replay Ingestion Adapter
 Replays historical or uploaded CSV burn-in datasets chronologically as live streaming telemetry.
 Emulates physical equipment data arrival at discrete gate milestones (0h -> 24h -> 96h -> 168h).
 """
+from __future__ import annotations
 import asyncio
 import io
 import os

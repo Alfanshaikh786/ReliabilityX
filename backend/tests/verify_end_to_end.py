@@ -11,6 +11,7 @@ Tests all requirements:
 8. Reports summary & aerospace QA certificate generation
 9. Telemetry CSV export
 """
+from __future__ import annotations
 import urllib.request
 import urllib.parse
 import json

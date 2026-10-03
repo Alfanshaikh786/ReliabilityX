@@ -2,6 +2,7 @@
 FastAPI Application Entry Point for ReliabilityX
 Predictive Component Reliability Intelligence Backend
 """
+from __future__ import annotations
 import io
 import os
 import sys
