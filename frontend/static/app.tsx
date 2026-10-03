@@ -32,11 +32,8 @@ const getApiBase = (): string => {
     if ((window as any).__RELIABILITYX_API_URL__) {
       return (window as any).__RELIABILITYX_API_URL__;
     }
-    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-      return "http://127.0.0.1:8000/api";
-    }
   } catch {}
-  return "https://reliabilityx.onrender.com/api";
+  return "/api";
 };
 
 const API_BASE = getApiBase();
@@ -397,6 +394,8 @@ export function ReliabilityXApp() {
       let wsUrl = "";
       if (API_BASE.startsWith("http")) {
         wsUrl = API_BASE.replace(/^http/, "ws").replace(/\/api$/, "") + "/ws/live";
+      } else if (typeof window !== "undefined" && window.location.hostname.includes("vercel.app")) {
+        wsUrl = "wss://reliabilityx.onrender.com/ws/live";
       } else {
         const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
         wsUrl = `${protocol}//${window.location.host}/ws/live`;
