@@ -45,15 +45,14 @@
     <video
       id="rx-intro-video"
       class="intro-video rx-intro-video"
-      src="/static/intro.mp4"
       autoplay
+      muted
       playsinline
+      webkit-playsinline
+      x5-playsinline
       preload="auto"
       title="ReliabilityX Introduction Video"
-    >
-      <source src="/static/intro.mp4" type="video/mp4">
-      <source src="/static/intro.mov" type="video/quicktime">
-    </video>
+    ></video>
   </div>
 
   <!-- React 18 Application Root Mount Target -->
@@ -76,15 +75,17 @@
   <!-- Intro Lifecycle Management Script (Website vs Mobile App Separation with Original Audio) -->
   <script>
   (function() {
-    var overlay = document.getElementById("rx-intro-overlay");
-    var video   = document.getElementById("rx-intro-video");
+    var overlay  = document.getElementById("rx-intro-overlay");
+    var video    = document.getElementById("rx-intro-video");
+    var root     = document.getElementById("root");
     var finished = false;
 
     // Respect prefers-reduced-motion
     var motionQuery = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)");
     if (motionQuery && motionQuery.matches) {
       if (overlay) overlay.style.display = "none";
-      if (video) { try { video.pause(); video.src = ""; } catch(e){} }
+      if (root) root.classList.add("rx-root-revealed");
+      try { window.dispatchEvent(new CustomEvent("rx-intro-complete")); } catch(e){}
       return;
     }
 
@@ -94,25 +95,25 @@
     // 2. Mobile App / Android Phone -> NEW MOBILE APP INTRO VIDEO (/static/mobile-intro.mp4 + AUDIO)
     // -------------------------------------------------------------------------
     function isMobilePlatform() {
-      // 1. Allow explicit URL override for testing (?platform=mobile or ?platform=web)
       try {
         var params = new URLSearchParams(window.location.search);
         if (params.get("platform") === "mobile" || params.get("mode") === "mobile" || params.get("app") === "mobile") return true;
         if (params.get("platform") === "web" || params.get("mode") === "web" || params.get("platform") === "desktop") return false;
-        if (window.location.hash.indexOf("mobile-app") !== -1) return true;
+        if (window.location.hash.indexOf("mobile-app") !== -1 || window.location.hash.indexOf("mobile") !== -1) return true;
       } catch(e) {}
 
-      // 2. Android App Wrapper / PWA Standalone Mode
+      // Android App Wrapper, WebView, PWA Standalone Mode
       var isStandalone = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
       var isNavStandalone = window.navigator.standalone === true;
       var isAndroidAppReferrer = document.referrer && document.referrer.indexOf("android-app://") !== -1;
-      if (isStandalone || isNavStandalone || isAndroidAppReferrer) return true;
+      var isWebView = typeof window !== "undefined" && (window.Android || window.ReactNativeWebView || window.Capacitor || window.Cordova);
+      if (isStandalone || isNavStandalone || isAndroidAppReferrer || isWebView) return true;
 
-      // 3. Mobile Device & Android User Agent Detection
+      // Mobile Device & Android User Agent Detection
       var ua = navigator.userAgent || navigator.vendor || window.opera || "";
-      var isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile|CriOS/i.test(ua);
+      var isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile|CriOS|wv/i.test(ua);
 
-      // 4. Touch screen & portrait phone geometry
+      // Touch screen & portrait phone geometry
       var isSmallTouch = (window.innerWidth <= 820 && window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
       var isPortraitMobile = (window.innerWidth <= 768 && window.innerHeight > window.innerWidth);
 
@@ -120,34 +121,18 @@
     }
 
     var isMobile = isMobilePlatform();
+    var videoFile = isMobile ? "/static/mobile-intro.mp4" : "/static/intro.mp4";
 
-    if (isMobile) {
-      console.log("[ReliabilityX Intro] Platform: MOBILE APP -> Serving new mobile intro animation (/static/mobile-intro.mp4) with embedded audio.");
-      if (overlay) {
-        overlay.classList.add("rx-mobile-intro-overlay");
-      }
-      if (video) {
-        video.classList.add("rx-mobile-intro-video");
-        video.src = "/static/mobile-intro.mp4";
-        while (video.firstChild) {
-          video.removeChild(video.firstChild);
-        }
-        var sourceMobile = document.createElement("source");
-        sourceMobile.src = "/static/mobile-intro.mp4";
-        sourceMobile.type = "video/mp4";
-        video.appendChild(sourceMobile);
-        video.load();
-      }
-    } else {
-      console.log("[ReliabilityX Intro] Platform: WEBSITE -> Preserving original desktop website intro animation (/static/intro.mp4).");
-      // Desktop website strictly uses original video: /static/intro.mp4
+    console.log("[ReliabilityX Intro] Platform:", isMobile ? "MOBILE APP" : "WEBSITE", "-> Target Asset:", videoFile);
+
+    if (overlay && isMobile) {
+      overlay.classList.add("rx-mobile-intro-overlay");
     }
 
     function finishIntro() {
       if (finished) return;
       finished = true;
 
-      // Stop video and audio immediately
       if (video) {
         try {
           video.pause();
@@ -155,66 +140,105 @@
         } catch(e){}
       }
 
-      // Smooth 600ms fade out, then remove overlay from DOM
       if (overlay) {
         overlay.classList.add("rx-intro-fading");
-        setTimeout(function() {
-          if (overlay && overlay.parentNode) {
-            overlay.parentNode.removeChild(overlay);
-          }
-          try {
-            window.dispatchEvent(new CustomEvent("rx-intro-complete"));
-          } catch(e){}
-        }, 600);
       }
+
+      if (root) {
+        root.classList.add("rx-root-revealed");
+      }
+
+      setTimeout(function() {
+        if (overlay && overlay.parentNode) {
+          overlay.parentNode.removeChild(overlay);
+        }
+        try {
+          window.dispatchEvent(new CustomEvent("rx-intro-complete"));
+        } catch(e){}
+      }, 600);
     }
 
     if (video) {
-      // Step 8: Use actual video completion event
-      video.addEventListener("ended", finishIntro);
+      if (isMobile) {
+        video.classList.add("rx-mobile-intro-video");
+      }
 
-      // Handle near-end transition cleanly
+      // Essential mobile inline video attributes
+      video.muted = true;
+      video.playsInline = true;
+      video.setAttribute("playsinline", "true");
+      video.setAttribute("webkit-playsinline", "true");
+      video.setAttribute("x5-playsinline", "true");
+
+      // Set clean target source
+      video.src = videoFile;
+
+      // Completion triggers
+      video.addEventListener("ended", finishIntro);
       video.addEventListener("timeupdate", function() {
-        if (video.duration && video.currentTime >= video.duration - 0.25) {
+        if (video.duration && video.duration > 1.0 && video.currentTime >= video.duration - 0.25) {
           finishIntro();
         }
       });
 
-      // If video errors out, do not block app — remove overlay
+      // Handle video error without blocking app
       video.addEventListener("error", function(e) {
         console.warn("[ReliabilityX Intro] Video element error:", e);
         finishIntro();
       });
 
-      // Preserve original embedded audio track — unmuted at full volume
-      video.muted = false;
-      video.volume = 1.0;
-
-      // Attempt playback with synchronized original audio
+      // Start playback immediately (muted ensures guaranteed autoplay across all browsers)
       var playPromise = video.play();
       if (playPromise !== undefined) {
         playPromise
           .then(function() {
-            console.log("[ReliabilityX Intro] Video and synchronized original audio playing smoothly.");
+            console.log("[ReliabilityX Intro] Video playback active.");
+            if (isMobile) {
+              // Attempt to un-mute for Android WebView / allowed environments
+              try {
+                video.muted = false;
+                video.volume = 1.0;
+              } catch(e) {
+                video.muted = true;
+              }
+            }
           })
-          .catch(function(error) {
-            console.warn("[ReliabilityX Intro] Audio restricted by platform policy; playing animation smoothly:", error);
-            // Audio permission must NEVER stop the animation video or mobile app from loading!
+          .catch(function(err) {
+            console.warn("[ReliabilityX Intro] Autoplay error, retrying muted:", err);
             video.muted = true;
-            video.play().catch(function(err) {
-              console.warn("[ReliabilityX Intro] Playback failed:", err);
+            video.play().catch(function(e) {
+              console.error("[ReliabilityX Intro] Video play error:", e);
               finishIntro();
             });
           });
       }
+
+      // FOR MOBILE: Touch to unmute listener
+      if (isMobile) {
+        function unmuteOnTouch() {
+          try {
+            video.muted = false;
+            video.volume = 1.0;
+          } catch(e){}
+          document.removeEventListener("touchstart", unmuteOnTouch);
+          document.removeEventListener("click", unmuteOnTouch);
+        }
+        document.addEventListener("touchstart", unmuteOnTouch, { once: true, passive: true });
+        document.addEventListener("click", unmuteOnTouch, { once: true });
+      }
+
+      // Start loading video
+      video.load();
+    } else {
+      finishIntro();
     }
 
-    // Safety fallback: ensure overlay is removed after 11 seconds under any circumstance
+    // Safety fallback: maximum 10 seconds under any circumstance
     setTimeout(function() {
       if (!finished) {
         finishIntro();
       }
-    }, 11000);
+    }, 10000);
   })();
   </script>
 

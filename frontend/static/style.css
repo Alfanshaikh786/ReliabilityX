@@ -3846,17 +3846,19 @@ input:focus, select:focus, textarea:focus {
 
 
 
-/* Main root container — independently active and fully interactive (Step 1 & Step 6) */
+/* Main root container — Startup state and graceful reveal transition */
 .rx-root-container {
-  opacity: 1;
-  pointer-events: auto;
+  opacity: 0;
+  pointer-events: none;
   width: 100%;
   min-height: 100vh;
+  transition: opacity 600ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.rx-root-container.rx-root-revealed {
-  opacity: 1;
-  pointer-events: auto;
+.rx-root-container.rx-root-revealed,
+body:not(:has(#rx-intro-overlay)) .rx-root-container {
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 /* ==============================================================================
