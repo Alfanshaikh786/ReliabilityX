@@ -52,7 +52,19 @@ def ensure_db_ready(db_path: str = None):
             needs_seed = True
 
     if needs_seed:
-        # Check for bundled seed_benchmark.db in multiple potential runtime locations
+        # Priority 1: Instant decompression from Python code module (100% bundled by Vercel)
+        try:
+            from backend.data.seed_data_blob import get_seed_db_bytes
+            blob = get_seed_db_bytes()
+            if blob and len(blob) > 0:
+                with open(target_path, "wb") as f:
+                    f.write(blob)
+                logger.info(f"Initialized database from embedded seed blob -> {target_path} ({len(blob)} bytes)")
+                return
+        except Exception as e:
+            logger.warning(f"Could not initialize from seed blob: {e}")
+
+        # Priority 2: Check for bundled seed_benchmark.db in multiple potential runtime locations
         candidate_seeds = [
             os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "seed_benchmark.db"),
             os.path.join(os.getcwd(), "backend", "data", "seed_benchmark.db"),
