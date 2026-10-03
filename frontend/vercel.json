@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "node frontend/build.cjs",
-  "outputDirectory": "frontend/dist",
+  "buildCommand": "node build.cjs",
+  "outputDirectory": "dist",
   "cleanUrls": true,
   "rewrites": [
     {

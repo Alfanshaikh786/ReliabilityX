@@ -1,0 +1,9 @@
+{
+  "name": "reliabilityx-app",
+  "private": true,
+  "version": "1.4.0",
+  "scripts": {
+    "build": "node frontend/build.cjs",
+    "bundle": "node frontend/build.cjs"
+  }
+}
