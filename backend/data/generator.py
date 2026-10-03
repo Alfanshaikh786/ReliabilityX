@@ -9,9 +9,10 @@ Generates semiconductor burn-in telemetry based on real reliability physics:
 Clearly marked as: "DEMO DATASET — PHYSICS-INFORMED SYNTHETIC BENCHMARK"
 Not actual proprietary ISRO flight data.
 """
+from __future__ import annotations
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 from backend.core.config import DEFAULT_PARAMETER_SPECS, CHECKPOINTS
 
 

@@ -6,15 +6,15 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://reliabilityx-backend.onrender.com/api/:path*"
+      "destination": "https://reliabilityx.onrender.com/api/:path*"
     },
     {
       "source": "/docs",
-      "destination": "https://reliabilityx-backend.onrender.com/docs"
+      "destination": "https://reliabilityx.onrender.com/docs"
     },
     {
       "source": "/openapi.json",
-      "destination": "https://reliabilityx-backend.onrender.com/openapi.json"
+      "destination": "https://reliabilityx.onrender.com/openapi.json"
     },
     {
       "source": "/(.*)",

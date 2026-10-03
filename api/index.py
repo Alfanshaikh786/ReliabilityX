@@ -14,6 +14,7 @@ try:
     from backend.main import app
 except Exception as e:
     import traceback
+    err_msg = str(e)
     tb = traceback.format_exc()
     try:
         from fastapi import FastAPI
@@ -24,7 +25,7 @@ except Exception as e:
         async def fallback(path: str):
             return JSONResponse(
                 status_code=500,
-                content={"status": "IMPORT_ERROR", "error": str(e), "traceback": tb}
+                content={"status": "IMPORT_ERROR", "error": err_msg, "traceback": tb}
             )
     except Exception:
         # Ultimate fallback using Python stdlib WSGI app
@@ -33,4 +34,4 @@ except Exception as e:
             headers = [('Content-type', 'application/json')]
             start_response(status, headers)
             import json
-            return [json.dumps({"status": "CRITICAL_IMPORT_ERROR", "error": str(e), "traceback": tb}).encode()]
+            return [json.dumps({"status": "CRITICAL_IMPORT_ERROR", "error": err_msg, "traceback": tb}).encode()]
