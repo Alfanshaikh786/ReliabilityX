@@ -42,16 +42,30 @@
        RELIABILITYX FULL-SCREEN INTRO (Cinematic Full-Screen Centered Video)
        ========================================================================== -->
   <div id="rx-intro-overlay" class="intro-screen rx-intro-overlay" aria-hidden="true">
+    <!-- Desktop Website Intro Video (100% Declarative HTML Autoplay with embedded src) -->
     <video
-      id="rx-intro-video"
-      class="intro-video rx-intro-video"
+      id="rx-website-video"
+      class="intro-video rx-intro-video rx-website-video"
+      src="/static/intro.mp4"
       autoplay
       muted
       playsinline
       webkit-playsinline
-      x5-playsinline
       preload="auto"
       title="ReliabilityX Introduction Video"
+    ></video>
+
+    <!-- Mobile App Intro Video (100% Declarative HTML Autoplay with embedded src) -->
+    <video
+      id="rx-mobile-video"
+      class="intro-video rx-intro-video rx-mobile-video"
+      src="/static/mobile-intro.mp4"
+      autoplay
+      muted
+      playsinline
+      webkit-playsinline
+      preload="auto"
+      title="ReliabilityX Mobile Introduction Video"
     ></video>
   </div>
 
@@ -75,10 +89,11 @@
   <!-- Intro Lifecycle Management Script (Website vs Mobile App Separation with Original Audio) -->
   <script>
   (function() {
-    var overlay  = document.getElementById("rx-intro-overlay");
-    var video    = document.getElementById("rx-intro-video");
-    var root     = document.getElementById("root");
-    var finished = false;
+    var overlay      = document.getElementById("rx-intro-overlay");
+    var websiteVideo = document.getElementById("rx-website-video");
+    var mobileVideo  = document.getElementById("rx-mobile-video");
+    var root         = document.getElementById("root");
+    var finished     = false;
 
     // -------------------------------------------------------------------------
     // PLATFORM SELECTION:
@@ -100,7 +115,7 @@
       var isWebView = typeof window !== "undefined" && (window.Android || window.ReactNativeWebView || window.Capacitor || window.Cordova);
       if (isStandalone || isNavStandalone || isAndroidAppReferrer || isWebView) return true;
 
-      // Mobile Device & Android User Agent Detection
+      // Mobile Device & Android / iOS User Agent Detection
       var ua = navigator.userAgent || navigator.vendor || window.opera || "";
       var isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile|CriOS|wv/i.test(ua);
 
@@ -112,9 +127,20 @@
     }
 
     var isMobile = isMobilePlatform();
-    var videoFile = isMobile ? "/static/mobile-intro.mp4" : "/static/intro.mp4";
+    var activeVideo = isMobile ? mobileVideo : websiteVideo;
+    var inactiveVideo = isMobile ? websiteVideo : mobileVideo;
 
-    console.log("[ReliabilityX Intro] Platform:", isMobile ? "MOBILE APP" : "WEBSITE", "-> Target Asset:", videoFile);
+    console.log("[ReliabilityX Intro] Platform:", isMobile ? "MOBILE APP" : "WEBSITE", "-> Active Asset:", isMobile ? "/static/mobile-intro.mp4" : "/static/intro.mp4");
+
+    // Remove inactive video immediately to avoid downloading or playing both
+    if (inactiveVideo) {
+      try {
+        inactiveVideo.pause();
+        inactiveVideo.src = "";
+        inactiveVideo.load();
+        if (inactiveVideo.parentNode) inactiveVideo.parentNode.removeChild(inactiveVideo);
+      } catch(e){}
+    }
 
     if (overlay && isMobile) {
       overlay.classList.add("rx-mobile-intro-overlay");
@@ -124,10 +150,10 @@
       if (finished) return;
       finished = true;
 
-      if (video) {
+      if (activeVideo) {
         try {
-          video.pause();
-          video.volume = 0;
+          activeVideo.pause();
+          activeVideo.volume = 0;
         } catch(e){}
       }
 
@@ -149,80 +175,49 @@
       }, 600);
     }
 
-    if (video) {
-      if (isMobile) {
-        video.classList.add("rx-mobile-intro-video");
-      }
+    if (activeVideo) {
+      // Natural video completion — plays the FULL video to the end!
+      activeVideo.addEventListener("ended", finishIntro);
 
-      // Essential mobile inline video attributes
-      video.playsInline = true;
-      video.setAttribute("playsinline", "true");
-      video.setAttribute("webkit-playsinline", "true");
-      video.setAttribute("x5-playsinline", "true");
-
-      // Set target video source
-      video.src = videoFile;
-
-      // Completion triggers — ONLY finish when video animation naturally completes
-      video.addEventListener("ended", finishIntro);
-      video.addEventListener("timeupdate", function() {
-        if (video.duration && video.duration > 1.0 && video.currentTime >= video.duration - 0.25) {
-          finishIntro();
-        }
+      // Start direct playback
+      activeVideo.play().then(function() {
+        console.log("[ReliabilityX Intro] Video playing smoothly.");
+        // Unmute audio immediately
+        setTimeout(function() {
+          try {
+            activeVideo.muted = false;
+            activeVideo.volume = 1.0;
+          } catch(e){}
+        }, 100);
+      }).catch(function(err) {
+        console.warn("[ReliabilityX Intro] Playback initializing:", err);
+        activeVideo.muted = true;
+        activeVideo.play().catch(function(){});
       });
 
-      // DIRECT AUDIO + VIDEO PLAYBACK
-      function startDirectPlayback() {
-        // Start playback to guarantee video decoder surface allocation on mobile screen
-        video.muted = true;
-        var p = video.play();
-        if (p !== undefined) {
-          p.then(function() {
-            console.log("[ReliabilityX Intro] Visual frames rendering actively.");
-            // Immediately activate unmuted audio
-            setTimeout(function() {
-              try {
-                video.muted = false;
-                video.volume = 1.0;
-              } catch(e){}
-            }, 60);
-          }).catch(function(err) {
-            console.warn("[ReliabilityX Intro] Playback initializing:", err);
-            video.muted = true;
-            video.play().catch(function(){});
-          });
-        }
-      }
-
-      // Background touch / pointer / click listener to ensure unmuted audio on mobile
-      function unmuteDirectly() {
+      // Background touch listener to guarantee unmuted audio on mobile
+      function unmuteOnTouch() {
         try {
-          video.muted = false;
-          video.volume = 1.0;
+          activeVideo.muted = false;
+          activeVideo.volume = 1.0;
         } catch(e){}
-        window.removeEventListener("touchstart", unmuteDirectly);
-        window.removeEventListener("touchend", unmuteDirectly);
-        window.removeEventListener("click", unmuteDirectly);
-        window.removeEventListener("pointerdown", unmuteDirectly);
+        window.removeEventListener("touchstart", unmuteOnTouch);
+        window.removeEventListener("touchend", unmuteOnTouch);
+        window.removeEventListener("click", unmuteOnTouch);
       }
-      window.addEventListener("touchstart", unmuteDirectly, { passive: true });
-      window.addEventListener("touchend", unmuteDirectly, { passive: true });
-      window.addEventListener("click", unmuteDirectly);
-      window.addEventListener("pointerdown", unmuteDirectly);
-
-      // Start loading and playing directly
-      video.load();
-      startDirectPlayback();
+      window.addEventListener("touchstart", unmuteOnTouch, { passive: true });
+      window.addEventListener("touchend", unmuteOnTouch, { passive: true });
+      window.addEventListener("click", unmuteOnTouch);
     } else {
       finishIntro();
     }
 
-    // Safety fallback: maximum 10 seconds under any circumstance
+    // Safety fallback: 16 seconds (full video duration is 10.0 seconds, allowing ample buffer)
     setTimeout(function() {
       if (!finished) {
         finishIntro();
       }
-    }, 10000);
+    }, 16000);
   })();
   </script>
 

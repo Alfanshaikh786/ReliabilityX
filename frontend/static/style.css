@@ -3774,6 +3774,23 @@ input:focus, select:focus, textarea:focus {
   pointer-events: none !important;
 }
 
+/* Distinct video display rules */
+.rx-website-video {
+  display: block !important;
+}
+.rx-mobile-video {
+  display: none !important;
+}
+
+@media (max-width: 768px), (orientation: portrait) {
+  .rx-website-video {
+    display: none !important;
+  }
+  .rx-mobile-video {
+    display: block !important;
+  }
+}
+
 /* Responsive Mobile & Portrait Screen Optimization (Website Intro):
    Ensure full logo animation and text is 100% visible, centered, and scaled on desktop window resizing */
 @media (orientation: portrait), (max-aspect-ratio: 1/1) {
