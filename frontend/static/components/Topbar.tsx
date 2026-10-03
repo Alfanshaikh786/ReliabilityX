@@ -1,5 +1,5 @@
 import React from "react";
-import { TabType, LiveStreamStatus } from "../types";
+import { TabType, LiveStreamStatus, API_BASE } from "../types";
 import { IconSearch } from "./Icons";
 
 interface TopbarProps {
@@ -91,9 +91,9 @@ export function Topbar({
         >
           <span className={`live-pulse-dot dot-${status.toLowerCase()}`}></span>
           <span className="live-status-label">{status}</span>
-          <span className="live-pill-source">{liveStatus?.source_name || "SIMULATED ATE-01"}</span>
+          <span className="live-pill-source d-desktop-only">{liveStatus?.source_name || "SIMULATED ATE-01"}</span>
           {status === "LIVE" || status === "CONNECTED" ? (
-            <div className="live-pill-metrics">
+            <div className="live-pill-metrics d-desktop-only">
               <span className="metric-tag">
                 {liveStatus?.last_latency_ms ? `${Math.round(liveStatus.last_latency_ms)}ms` : "18ms"}
               </span>
@@ -103,12 +103,12 @@ export function Topbar({
               </span>
             </div>
           ) : (
-            <span className="live-pill-metrics text-muted">Standby</span>
+            <span className="live-pill-metrics text-muted d-desktop-only">Standby</span>
           )}
         </div>
 
         {/* Quick Search Input */}
-        <form onSubmit={onSearchSubmit} className="topbar-search-box">
+        <form onSubmit={onSearchSubmit} className="topbar-search-box d-desktop-only">
           <IconSearch />
           <input
             type="text"
@@ -119,7 +119,7 @@ export function Topbar({
         </form>
 
         {/* Dataset Pill */}
-        <div className="dataset-pill">
+        <div className="dataset-pill d-desktop-only">
           <span className="pill-dot"></span>
           <span>
             {!activeDataset?.dataset_id || activeDataset.dataset_id.startsWith("demo")
@@ -132,10 +132,10 @@ export function Topbar({
         </div>
 
         {/* Action Buttons */}
-        <div className="topbar-actions">
+        <div className="topbar-actions d-desktop-only">
           <button
             className="btn btn-secondary btn-sm"
-            onClick={() => (window.location.href = "/api/reports/export-csv")}
+            onClick={() => (window.location.href = `${API_BASE}/reports/export-csv`)}
           >
             Export CSV
           </button>

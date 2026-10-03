@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import ReactDOM from "react-dom";
 
-import { TabType, ToastInfo, LiveStreamStatus, LiveTelemetryPoint, LiveAlertItem, LiveLotHealth } from "./types";
+import { TabType, ToastInfo, LiveStreamStatus, LiveTelemetryPoint, LiveAlertItem, LiveLotHealth, API_BASE } from "./types";
 import { Sidebar } from "./components/Sidebar";
 import { Topbar } from "./components/Topbar";
 import { SafetyNotice } from "./components/SafetyNotice";
@@ -22,29 +22,7 @@ import { EngineeringSuiteTab } from "./components/EngineeringSuiteTab";
 import { ComponentDetailModal } from "./components/ComponentDetailModal";
 import { DatasetModal } from "./components/DatasetModal";
 import { MobileBottomNav } from "./components/MobileBottomNav";
-const getApiBase = (): string => {
-  try {
-    const custom = localStorage.getItem("rx_backend_url");
-    if (custom && custom.trim()) {
-      const clean = custom.trim().replace(/\/+$/, "");
-      return clean.endsWith("/api") ? clean : `${clean}/api`;
-    }
-    if ((window as any).__RELIABILITYX_API_URL__) {
-      return (window as any).__RELIABILITYX_API_URL__;
-    }
-    if (typeof window !== "undefined") {
-      if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-        return "http://127.0.0.1:8000/api";
-      }
-      if (window.location.hostname.includes("vercel.app")) {
-        return "https://reliabilityx.onrender.com/api";
-      }
-    }
-  } catch {}
-  return "https://reliabilityx.onrender.com/api";
-};
 
-const API_BASE = getApiBase();
 export function ReliabilityXApp() {
   const getInitialTab = (): TabType => {
     try {
@@ -682,6 +660,17 @@ export function ReliabilityXApp() {
     setGlobalSearch("");
   };
 
+  const handleReloadDemo = async () => {
+    try {
+      showToast("Reloading Arrhenius benchmark...", "info");
+      await fetch(`${API_BASE}/data/load-demo`, { method: "POST" });
+      await loadSystemData();
+      showToast("Benchmark reloaded successfully.", "success");
+    } catch (err: any) {
+      showToast("Reload failed: " + err.message, "error");
+    }
+  };
+
   return (
     <div className="app-shell">
       {/* 1. PROFESSIONAL LEFT SIDEBAR */}
@@ -695,6 +684,7 @@ export function ReliabilityXApp() {
         onToggleCollapse={toggleSidebar}
         mobileOpen={mobileMenuOpen}
         onCloseMobile={() => setMobileMenuOpen(false)}
+        onReloadDemo={handleReloadDemo}
       />
 
       {/* 2. MAIN APPLICATION VIEWPORT */}
@@ -718,16 +708,7 @@ export function ReliabilityXApp() {
           liveStatus={liveStatus}
           onNavigateToLive={() => setActiveTab("live_telemetry")}
           onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
-          onReloadDemo={async () => {
-            try {
-              showToast("Reloading Arrhenius benchmark...", "info");
-              await fetch(`${API_BASE}/data/load-demo`, { method: "POST" });
-              await loadSystemData();
-              showToast("Benchmark reloaded successfully.", "success");
-            } catch (err: any) {
-              showToast("Reload failed: " + err.message, "error");
-            }
-          }}
+          onReloadDemo={handleReloadDemo}
         />
 
         {/* Safety Notice Banner */}

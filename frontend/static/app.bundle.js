@@ -1,4 +1,4 @@
-// ReliabilityX Bundled Application (2026-10-03T10:24:16.431Z)
+// ReliabilityX Bundled Application (2026-10-03T13:06:37.641Z)
 (function() {
   if (typeof window !== 'undefined') {
     if (window.React && !window.React.default) window.React.default = window.React;
@@ -61,6 +61,7 @@ Object.defineProperty(exports, "__esModule", {
 exports.ReliabilityXApp = ReliabilityXApp;
 var _react = _interopRequireWildcard(require("react"));
 var _reactDom = _interopRequireDefault(require("react-dom"));
+var _types = require("./types");
 var _Sidebar = require("./components/Sidebar");
 var _Topbar = require("./components/Topbar");
 var _SafetyNotice = require("./components/SafetyNotice");
@@ -85,28 +86,6 @@ function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; 
 // Left Sidebar Navigation + High-Resolution Industrial Decision Support
 // ==============================================================================
 
-const getApiBase = () => {
-  try {
-    const custom = localStorage.getItem("rx_backend_url");
-    if (custom && custom.trim()) {
-      const clean = custom.trim().replace(/\/+$/, "");
-      return clean.endsWith("/api") ? clean : `${clean}/api`;
-    }
-    if (window.__RELIABILITYX_API_URL__) {
-      return window.__RELIABILITYX_API_URL__;
-    }
-    if (typeof window !== "undefined") {
-      if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-        return "http://127.0.0.1:8000/api";
-      }
-      if (window.location.hostname.includes("vercel.app")) {
-        return "https://reliabilityx.onrender.com/api";
-      }
-    }
-  } catch {}
-  return "https://reliabilityx.onrender.com/api";
-};
-const API_BASE = getApiBase();
 function ReliabilityXApp() {
   const getInitialTab = () => {
     try {
@@ -262,7 +241,7 @@ function ReliabilityXApp() {
   const loadSystemData = (0, _react.useCallback)(async () => {
     try {
       setLoading(true);
-      const [healthRes, overviewRes] = await Promise.all([fetch(`${API_BASE}/health`).then(r => r.json()), fetch(`${API_BASE}/dashboard/overview`).then(r => r.json())]);
+      const [healthRes, overviewRes] = await Promise.all([fetch(`${_types.API_BASE}/health`).then(r => r.json()), fetch(`${_types.API_BASE}/dashboard/overview`).then(r => r.json())]);
       setActiveDataset(healthRes.active_dataset);
       setOverview(overviewRes);
       const pList = overviewRes?.top_priorities || overviewRes?.inspection_priority;
@@ -438,7 +417,7 @@ function ReliabilityXApp() {
     let reconnectTimer = null;
 
     // Load initial status via REST
-    fetch(`${API_BASE}/stream/status`).then(r => r.json()).then(d => {
+    fetch(`${_types.API_BASE}/stream/status`).then(r => r.json()).then(d => {
       if (!isMounted) return;
       setLiveStatus(d);
       if (d.recent_alerts) setLiveAlerts(d.recent_alerts);
@@ -446,8 +425,8 @@ function ReliabilityXApp() {
     const connectWs = () => {
       if (!isMounted) return;
       let wsUrl = "";
-      if (API_BASE.startsWith("http")) {
-        wsUrl = API_BASE.replace(/^http/, "ws").replace(/\/api$/, "") + "/ws/live";
+      if (_types.API_BASE.startsWith("http")) {
+        wsUrl = _types.API_BASE.replace(/^http/, "ws").replace(/\/api$/, "") + "/ws/live";
       } else if (typeof window !== "undefined" && window.location.hostname.includes("vercel.app")) {
         wsUrl = "wss://reliabilityx.onrender.com/ws/live";
       } else {
@@ -528,7 +507,7 @@ function ReliabilityXApp() {
   }, []);
   const handleStartStream = async (sourceType, config) => {
     try {
-      const res = await fetch(`${API_BASE}/stream/start`, {
+      const res = await fetch(`${_types.API_BASE}/stream/start`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -547,7 +526,7 @@ function ReliabilityXApp() {
   };
   const handlePauseStream = async () => {
     try {
-      const res = await fetch(`${API_BASE}/stream/pause`, {
+      const res = await fetch(`${_types.API_BASE}/stream/pause`, {
         method: "POST"
       });
       const data = await res.json();
@@ -559,7 +538,7 @@ function ReliabilityXApp() {
   };
   const handleResumeStream = async () => {
     try {
-      const res = await fetch(`${API_BASE}/stream/resume`, {
+      const res = await fetch(`${_types.API_BASE}/stream/resume`, {
         method: "POST"
       });
       const data = await res.json();
@@ -571,7 +550,7 @@ function ReliabilityXApp() {
   };
   const handleStopStream = async () => {
     try {
-      const res = await fetch(`${API_BASE}/stream/stop`, {
+      const res = await fetch(`${_types.API_BASE}/stream/stop`, {
         method: "POST"
       });
       const data = await res.json();
@@ -587,7 +566,7 @@ function ReliabilityXApp() {
     if (!heroCompId) return;
     let isCurrent = true;
     setHeroCompLoading(true);
-    fetch(`${API_BASE}/components/${heroCompId}`).then(r => {
+    fetch(`${_types.API_BASE}/components/${heroCompId}`).then(r => {
       if (!r.ok) throw new Error("Component not found");
       return r.json();
     }).then(d => {
@@ -607,7 +586,7 @@ function ReliabilityXApp() {
   (0, _react.useEffect)(() => {
     if (!heroCompId) return;
     let isCurrent = true;
-    fetch(`${API_BASE}/counterfactual/simulate`, {
+    fetch(`${_types.API_BASE}/counterfactual/simulate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -633,7 +612,7 @@ function ReliabilityXApp() {
     }
     let isCurrent = true;
     setCompLoading(true);
-    fetch(`${API_BASE}/components/${selectedCompId}`).then(r => r.json()).then(data => {
+    fetch(`${_types.API_BASE}/components/${selectedCompId}`).then(r => r.json()).then(data => {
       if (isCurrent) {
         setCompDetail(data);
         setCompLoading(false);
@@ -658,6 +637,18 @@ function ReliabilityXApp() {
     setSelectedCompId(cleanId);
     setGlobalSearch("");
   };
+  const handleReloadDemo = async () => {
+    try {
+      showToast("Reloading Arrhenius benchmark...", "info");
+      await fetch(`${_types.API_BASE}/data/load-demo`, {
+        method: "POST"
+      });
+      await loadSystemData();
+      showToast("Benchmark reloaded successfully.", "success");
+    } catch (err) {
+      showToast("Reload failed: " + err.message, "error");
+    }
+  };
   return /*#__PURE__*/_react.default.createElement("div", {
     className: "app-shell"
   }, /*#__PURE__*/_react.default.createElement(_Sidebar.Sidebar, {
@@ -669,7 +660,8 @@ function ReliabilityXApp() {
     collapsed: sidebarCollapsed,
     onToggleCollapse: toggleSidebar,
     mobileOpen: mobileMenuOpen,
-    onCloseMobile: () => setMobileMenuOpen(false)
+    onCloseMobile: () => setMobileMenuOpen(false),
+    onReloadDemo: handleReloadDemo
   }), /*#__PURE__*/_react.default.createElement("div", {
     className: "app-main-viewport"
   }, /*#__PURE__*/_react.default.createElement("div", {
@@ -693,18 +685,7 @@ function ReliabilityXApp() {
     liveStatus: liveStatus,
     onNavigateToLive: () => setActiveTab("live_telemetry"),
     onToggleMobileMenu: () => setMobileMenuOpen(!mobileMenuOpen),
-    onReloadDemo: async () => {
-      try {
-        showToast("Reloading Arrhenius benchmark...", "info");
-        await fetch(`${API_BASE}/data/load-demo`, {
-          method: "POST"
-        });
-        await loadSystemData();
-        showToast("Benchmark reloaded successfully.", "success");
-      } catch (err) {
-        showToast("Reload failed: " + err.message, "error");
-      }
-    }
+    onReloadDemo: handleReloadDemo
   }), /*#__PURE__*/_react.default.createElement(_SafetyNotice.SafetyNotice, null), /*#__PURE__*/_react.default.createElement("main", {
     className: "app-content"
   }, activeTab === "dashboard" && /*#__PURE__*/_react.default.createElement(_DashboardTab.DashboardTab, {
@@ -1577,6 +1558,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.ComponentDetailModal = ComponentDetailModal;
 var _react = _interopRequireWildcard(require("react"));
+var _types = require("../types");
 var _Badges = require("./Badges");
 var _TrajectorySvgChart = require("./TrajectorySvgChart");
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
@@ -1616,7 +1598,7 @@ function ComponentDetailModal({
   const handleSubmit = async () => {
     try {
       setSubmitting(true);
-      const res = await fetch(`/api/components/${compId}/decision`, {
+      const res = await fetch(`${_types.API_BASE}/components/${compId}/decision`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -2061,6 +2043,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.ComponentsTab = ComponentsTab;
 var _react = _interopRequireWildcard(require("react"));
+var _types = require("../types");
 var _Badges = require("./Badges");
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
 function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
@@ -2087,7 +2070,7 @@ function ComponentsTab({
   }, [selectedLot]);
   (0, _react.useEffect)(() => {
     setLoading(true);
-    let url = "/api/components?limit=250";
+    let url = `${_types.API_BASE}/components?limit=250`;
     if (lotFilter !== "ALL") url += `&lot_id=${lotFilter}`;
     if (riskFilter !== "ALL") url += `&risk_level=${encodeURIComponent(riskFilter)}`;
     fetch(url).then(r => r.json()).then(data => {
@@ -2233,7 +2216,7 @@ function ComponentsTab({
   }, "REVIEW"), /*#__PURE__*/_react.default.createElement("option", {
     value: "HIGH RISK"
   }, "HIGH RISK")))), /*#__PURE__*/_react.default.createElement("div", {
-    className: "table-responsive"
+    className: "table-responsive d-desktop-only"
   }, /*#__PURE__*/_react.default.createElement("table", {
     className: "data-table"
   }, /*#__PURE__*/_react.default.createElement("thead", null, /*#__PURE__*/_react.default.createElement("tr", null, /*#__PURE__*/_react.default.createElement("th", null, "Component ID"), /*#__PURE__*/_react.default.createElement("th", null, "Lot ID"), /*#__PURE__*/_react.default.createElement("th", null, "Behaviour State"), /*#__PURE__*/_react.default.createElement("th", null, "Risk Status"), /*#__PURE__*/_react.default.createElement("th", null, "Priority Rank"), /*#__PURE__*/_react.default.createElement("th", null, "Primary Degradation Factor"), /*#__PURE__*/_react.default.createElement("th", null, "Action"))), /*#__PURE__*/_react.default.createElement("tbody", null, loading ? /*#__PURE__*/_react.default.createElement("tr", null, /*#__PURE__*/_react.default.createElement("td", {
@@ -2266,7 +2249,53 @@ function ComponentsTab({
   }, comp.priority_reason || "Nominal parameters"), /*#__PURE__*/_react.default.createElement("td", null, /*#__PURE__*/_react.default.createElement("button", {
     className: "btn btn-secondary btn-sm",
     onClick: () => onInspectComp(comp.component_id)
-  }, "Inspect Unit"))))))), !loading && filtered.length > pageSize && /*#__PURE__*/_react.default.createElement("div", {
+  }, "Inspect Unit"))))))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "mobile-card-list d-mobile-only"
+  }, loading ? /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "30px",
+      color: "var(--text-muted)"
+    }
+  }, "Loading component database...") : filtered.length === 0 ? /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "30px",
+      color: "var(--text-muted)"
+    }
+  }, "No components matching the selected criteria.") : paginated.map(comp => /*#__PURE__*/_react.default.createElement("div", {
+    key: comp.component_id,
+    className: "mobile-unit-card rx-float-card"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "mobile-unit-card-header"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "mobile-unit-card-id-group"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "mobile-priority-badge"
+  }, "#", comp.inspection_priority), /*#__PURE__*/_react.default.createElement("strong", {
+    className: "mobile-unit-id"
+  }, comp.component_id), /*#__PURE__*/_react.default.createElement("span", {
+    className: "mobile-lot-pill"
+  }, comp.lot_id)), /*#__PURE__*/_react.default.createElement(_Badges.RiskBadge, {
+    risk: comp.risk_level
+  })), /*#__PURE__*/_react.default.createElement("div", {
+    className: "mobile-unit-card-body"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "mobile-unit-field"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "mobile-field-label"
+  }, "BEHAVIOUR STATE"), /*#__PURE__*/_react.default.createElement(_Badges.StateBadge, {
+    state: comp.current_state
+  })), /*#__PURE__*/_react.default.createElement("div", {
+    className: "mobile-unit-field"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "mobile-field-label"
+  }, "DEGRADATION FACTOR"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "mobile-field-val"
+  }, comp.priority_reason || "Nominal parameters"))), /*#__PURE__*/_react.default.createElement("button", {
+    className: "btn btn-secondary btn-block mobile-inspect-btn",
+    onClick: () => onInspectComp(comp.component_id)
+  }, "Inspect Unit \u2192")))), !loading && filtered.length > pageSize && /*#__PURE__*/_react.default.createElement("div", {
     style: {
       display: "flex",
       justifyContent: "space-between",
@@ -2461,26 +2490,17 @@ function DashboardTab({
       padding: "18px"
     }
   }, /*#__PURE__*/_react.default.createElement("div", {
-    className: "card-header"
+    className: "card-header trajectory-card-header"
   }, /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: "10px",
-      flexWrap: "wrap"
-    }
+    className: "trajectory-title-control-group"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "card-title"
   }, "COMPONENT RELIABILITY TRAJECTORY"), /*#__PURE__*/_react.default.createElement("div", {
-    className: "btn-group"
+    className: "btn-group chart-param-btn-group"
   }, paramsList.map(p => /*#__PURE__*/_react.default.createElement("button", {
     key: p.id,
     className: `btn btn-sm ${heroParam === p.id ? "btn-primary" : "btn-secondary"}`,
-    onClick: () => onSelectHeroParam(p.id),
-    style: {
-      fontSize: "11px",
-      padding: "3px 8px"
-    }
+    onClick: () => onSelectHeroParam(p.id)
   }, p.label.split(" ")[0])))), /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-legend-clean"
   }, /*#__PURE__*/_react.default.createElement("span", {
@@ -2622,18 +2642,18 @@ function DashboardTab({
       textAlign: "right"
     }
   }, "+", (heroSimulatedDrift * 100).toFixed(1), "% / 24h")), heroSimResult && /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      marginTop: "8px",
-      fontSize: "11.5px",
-      color: "var(--text-sub)",
-      display: "flex",
-      gap: "16px"
-    }
-  }, /*#__PURE__*/_react.default.createElement("span", null, "Simulated 168h: ", /*#__PURE__*/_react.default.createElement("strong", null, heroSimResult.counterfactual_predicted_168h?.toFixed(2), " \u03BCA")), /*#__PURE__*/_react.default.createElement("span", null, "Delta: ", /*#__PURE__*/_react.default.createElement("strong", {
+    className: "whatif-stats-row"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "whatif-stat-chip"
+  }, "Simulated 168h: ", /*#__PURE__*/_react.default.createElement("strong", null, heroSimResult.counterfactual_predicted_168h?.toFixed(2), " \u03BCA")), /*#__PURE__*/_react.default.createElement("span", {
+    className: "whatif-stat-chip"
+  }, "Delta: ", /*#__PURE__*/_react.default.createElement("strong", {
     style: {
       color: heroSimResult.delta_vs_baseline > 0 ? "#DC2626" : "#16A34A"
     }
-  }, "+", heroSimResult.delta_vs_baseline?.toFixed(2))), /*#__PURE__*/_react.default.createElement("span", null, "Spec Breach: ", /*#__PURE__*/_react.default.createElement("strong", {
+  }, "+", heroSimResult.delta_vs_baseline?.toFixed(2))), /*#__PURE__*/_react.default.createElement("span", {
+    className: "whatif-stat-chip"
+  }, "Spec Breach: ", /*#__PURE__*/_react.default.createElement("strong", {
     style: {
       color: heroSimResult.counterfactual_exceeds_limit ? "#DC2626" : "#16A34A"
     }
@@ -2785,7 +2805,7 @@ function DashboardTab({
     className: "btn btn-secondary btn-sm",
     onClick: () => onNavigateTab("inspection")
   }, "View All (", prioritiesList.length, ")")), /*#__PURE__*/_react.default.createElement("div", {
-    className: "table-responsive"
+    className: "table-responsive d-desktop-only"
   }, /*#__PURE__*/_react.default.createElement("table", {
     className: "data-table"
   }, /*#__PURE__*/_react.default.createElement("thead", null, /*#__PURE__*/_react.default.createElement("tr", null, /*#__PURE__*/_react.default.createElement("th", null, "Priority"), /*#__PURE__*/_react.default.createElement("th", null, "Component ID"), /*#__PURE__*/_react.default.createElement("th", null, "Lot ID"), /*#__PURE__*/_react.default.createElement("th", null, "State"), /*#__PURE__*/_react.default.createElement("th", null, "Risk Tier"), /*#__PURE__*/_react.default.createElement("th", null, "Primary Degradation Factor"), /*#__PURE__*/_react.default.createElement("th", null, "Action"))), /*#__PURE__*/_react.default.createElement("tbody", null, loading ? /*#__PURE__*/_react.default.createElement("tr", null, /*#__PURE__*/_react.default.createElement("td", {
@@ -2812,7 +2832,47 @@ function DashboardTab({
   }, item.priority_reason || "Critical wearout"), /*#__PURE__*/_react.default.createElement("td", null, /*#__PURE__*/_react.default.createElement("button", {
     className: "btn btn-secondary btn-sm",
     onClick: () => onOpenInspectModal(item.component_id)
-  }, "Inspect Unit")))))))));
+  }, "Inspect Unit"))))))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "mobile-card-list d-mobile-only"
+  }, loading ? /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "24px",
+      color: "var(--text-muted)"
+    }
+  }, "Loading priority telemetry...") : prioritiesList.slice(0, 5).map((item, idx) => /*#__PURE__*/_react.default.createElement("div", {
+    key: item.component_id,
+    className: "mobile-unit-card rx-float-card"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "mobile-unit-card-header"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "mobile-unit-card-id-group"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "mobile-priority-badge"
+  }, "#", idx + 1), /*#__PURE__*/_react.default.createElement("strong", {
+    className: "mobile-unit-id"
+  }, item.component_id), /*#__PURE__*/_react.default.createElement("span", {
+    className: "mobile-lot-pill"
+  }, item.lot_id)), /*#__PURE__*/_react.default.createElement(_Badges.RiskBadge, {
+    risk: item.risk_level
+  })), /*#__PURE__*/_react.default.createElement("div", {
+    className: "mobile-unit-card-body"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "mobile-unit-field"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "mobile-field-label"
+  }, "BEHAVIOUR STATE"), /*#__PURE__*/_react.default.createElement(_Badges.StateBadge, {
+    state: item.current_state
+  })), /*#__PURE__*/_react.default.createElement("div", {
+    className: "mobile-unit-field"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "mobile-field-label"
+  }, "DEGRADATION FACTOR"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "mobile-field-val"
+  }, item.priority_reason || "Critical wearout"))), /*#__PURE__*/_react.default.createElement("button", {
+    className: "btn btn-secondary btn-block mobile-inspect-btn",
+    onClick: () => onOpenInspectModal(item.component_id)
+  }, "Inspect Unit \u2192"))))));
 }
   });
 
@@ -2825,6 +2885,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.DatasetModal = DatasetModal;
 var _react = _interopRequireWildcard(require("react"));
+var _types = require("../types");
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
 function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
 // ==============================================================================
@@ -2848,7 +2909,7 @@ function DatasetModal({
       setUploading(true);
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch("/api/data/upload", {
+      const res = await fetch(`${_types.API_BASE}/data/upload`, {
         method: "POST",
         body: formData
       });
@@ -2899,7 +2960,7 @@ function DatasetModal({
     className: "btn btn-secondary btn-block mt-2",
     onClick: async () => {
       try {
-        const res = await fetch("/api/data/load-demo", {
+        const res = await fetch(`${_types.API_BASE}/data/load-demo`, {
           method: "POST"
         });
         await res.json();
@@ -2956,6 +3017,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.EngineeringSuiteTab = EngineeringSuiteTab;
 var _react = _interopRequireWildcard(require("react"));
+var _types = require("../types");
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
 function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
 // ==============================================================================
@@ -2979,9 +3041,9 @@ function EngineeringSuiteTab({
     if (initialSubTab) setSubTab(initialSubTab);
   }, [initialSubTab]);
   (0, _react.useEffect)(() => {
-    fetch("/api/models/benchmark").then(r => r.json()).then(d => setBenchmarks(d.models || [])).catch(() => {});
-    fetch("/api/traceability/audit-log?limit=50").then(r => r.json()).then(d => setAuditLog(d.audit_logs || d.logs || [])).catch(() => {});
-    fetch("/api/config").then(r => r.json()).then(d => {
+    fetch(`${_types.API_BASE}/models/benchmark`).then(r => r.json()).then(d => setBenchmarks(d.models || [])).catch(() => {});
+    fetch(`${_types.API_BASE}/traceability/audit-log?limit=50`).then(r => r.json()).then(d => setAuditLog(d.audit_logs || d.logs || [])).catch(() => {});
+    fetch(`${_types.API_BASE}/config`).then(r => r.json()).then(d => {
       const th = d.thresholds || d;
       setConfig({
         dpat_k_factor: d.dpat_k_factor ?? th.dpat_k_factor ?? 3.0,
@@ -2992,7 +3054,7 @@ function EngineeringSuiteTab({
   }, []);
   const handleSaveConfig = async () => {
     try {
-      const res = await fetch("/api/config", {
+      const res = await fetch(`${_types.API_BASE}/config`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -3047,11 +3109,11 @@ function EngineeringSuiteTab({
   }, "SHA-256 signed records"))), /*#__PURE__*/_react.default.createElement("div", {
     className: "card mb-4"
   }, /*#__PURE__*/_react.default.createElement("div", {
-    className: "card-header"
+    className: "card-header engineering-card-header"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "card-title"
   }, "SYSTEM CALIBRATION & VERIFICATION"), /*#__PURE__*/_react.default.createElement("div", {
-    className: "btn-group"
+    className: "btn-group engineering-subtab-group"
   }, /*#__PURE__*/_react.default.createElement("button", {
     className: `btn btn-sm ${subTab === "benchmarks" ? "btn-primary" : "btn-secondary"}`,
     onClick: () => setSubTab("benchmarks")
@@ -3589,23 +3651,43 @@ function IconLivePulse({
   }));
 }
 function IconPlay({
-  className = "w-4 h-4"
+  className = "w-4 h-4",
+  size = 16
 }) {
   return /*#__PURE__*/_react.default.createElement("svg", {
     className: className,
+    width: size,
+    height: size,
     viewBox: "0 0 24 24",
-    fill: "currentColor"
+    fill: "currentColor",
+    style: {
+      width: size,
+      height: size,
+      minWidth: size,
+      minHeight: size,
+      flexShrink: 0
+    }
   }, /*#__PURE__*/_react.default.createElement("polygon", {
     points: "5 3 19 12 5 21 5 3"
   }));
 }
 function IconPause({
-  className = "w-4 h-4"
+  className = "w-4 h-4",
+  size = 16
 }) {
   return /*#__PURE__*/_react.default.createElement("svg", {
     className: className,
+    width: size,
+    height: size,
     viewBox: "0 0 24 24",
-    fill: "currentColor"
+    fill: "currentColor",
+    style: {
+      width: size,
+      height: size,
+      minWidth: size,
+      minHeight: size,
+      flexShrink: 0
+    }
   }, /*#__PURE__*/_react.default.createElement("rect", {
     x: "6",
     y: "4",
@@ -3621,12 +3703,22 @@ function IconPause({
   }));
 }
 function IconStop({
-  className = "w-4 h-4"
+  className = "w-4 h-4",
+  size = 16
 }) {
   return /*#__PURE__*/_react.default.createElement("svg", {
     className: className,
+    width: size,
+    height: size,
     viewBox: "0 0 24 24",
-    fill: "currentColor"
+    fill: "currentColor",
+    style: {
+      width: size,
+      height: size,
+      minWidth: size,
+      minHeight: size,
+      flexShrink: 0
+    }
   }, /*#__PURE__*/_react.default.createElement("rect", {
     x: "4",
     y: "4",
@@ -3636,16 +3728,26 @@ function IconStop({
   }));
 }
 function IconRadioWave({
-  className = "w-4 h-4"
+  className = "w-4 h-4",
+  size = 16
 }) {
   return /*#__PURE__*/_react.default.createElement("svg", {
     className: className,
+    width: size,
+    height: size,
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
     strokeWidth: "2",
     strokeLinecap: "round",
-    strokeLinejoin: "round"
+    strokeLinejoin: "round",
+    style: {
+      width: size,
+      height: size,
+      minWidth: size,
+      minHeight: size,
+      flexShrink: 0
+    }
   }, /*#__PURE__*/_react.default.createElement("circle", {
     cx: "12",
     cy: "12",
@@ -3655,16 +3757,26 @@ function IconRadioWave({
   }));
 }
 function IconAlertTriangle({
-  className = "w-4 h-4"
+  className = "w-4 h-4",
+  size = 16
 }) {
   return /*#__PURE__*/_react.default.createElement("svg", {
     className: className,
+    width: size,
+    height: size,
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
     strokeWidth: "2",
     strokeLinecap: "round",
-    strokeLinejoin: "round"
+    strokeLinejoin: "round",
+    style: {
+      width: size,
+      height: size,
+      minWidth: size,
+      minHeight: size,
+      flexShrink: 0
+    }
   }, /*#__PURE__*/_react.default.createElement("path", {
     d: "M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
   }), /*#__PURE__*/_react.default.createElement("line", {
@@ -3680,16 +3792,26 @@ function IconAlertTriangle({
   }));
 }
 function IconArrowUp({
-  className = "w-4 h-4"
+  className = "w-4 h-4",
+  size = 16
 }) {
   return /*#__PURE__*/_react.default.createElement("svg", {
     className: className,
+    width: size,
+    height: size,
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
     strokeWidth: "2.2",
     strokeLinecap: "round",
-    strokeLinejoin: "round"
+    strokeLinejoin: "round",
+    style: {
+      width: size,
+      height: size,
+      minWidth: size,
+      minHeight: size,
+      flexShrink: 0
+    }
   }, /*#__PURE__*/_react.default.createElement("line", {
     x1: "12",
     y1: "19",
@@ -3700,16 +3822,26 @@ function IconArrowUp({
   }));
 }
 function IconFloating({
-  className = "w-4 h-4"
+  className = "w-4 h-4",
+  size = 16
 }) {
   return /*#__PURE__*/_react.default.createElement("svg", {
     className: className,
+    width: size,
+    height: size,
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
     strokeWidth: "1.8",
     strokeLinecap: "round",
-    strokeLinejoin: "round"
+    strokeLinejoin: "round",
+    style: {
+      width: size,
+      height: size,
+      minWidth: size,
+      minHeight: size,
+      flexShrink: 0
+    }
   }, /*#__PURE__*/_react.default.createElement("path", {
     d: "M12 2L2 7l10 5 10-5-10-5z"
   }), /*#__PURE__*/_react.default.createElement("path", {
@@ -3729,6 +3861,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.InspectionTriageTab = InspectionTriageTab;
 var _react = _interopRequireWildcard(require("react"));
+var _types = require("../types");
 var _Badges = require("./Badges");
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
 function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
@@ -3743,14 +3876,14 @@ function InspectionTriageTab({
   const [queue, setQueue] = (0, _react.useState)([]);
   const [loading, setLoading] = (0, _react.useState)(true);
   (0, _react.useEffect)(() => {
-    fetch("/api/components?limit=250").then(r => r.json()).then(d => {
+    fetch(`${_types.API_BASE}/components?limit=250`).then(r => r.json()).then(d => {
       const comps = d.components || [];
       const flagged = comps.filter(c => c.risk_level !== "PASS");
       flagged.sort((a, b) => (a.inspection_priority || 999) - (b.inspection_priority || 999));
       setQueue(flagged);
       setLoading(false);
     }).catch(() => {
-      fetch("/api/dashboard/overview").then(r => r.json()).then(ov => {
+      fetch(`${_types.API_BASE}/dashboard/overview`).then(r => r.json()).then(ov => {
         setQueue(ov.top_priorities || []);
         setLoading(false);
       }).catch(() => setLoading(false));
@@ -3814,7 +3947,7 @@ function InspectionTriageTab({
   }, "\uD83D\uDEA8 ACTIVE TRIAGE PIPELINE"), /*#__PURE__*/_react.default.createElement("span", {
     className: "card-badge"
   }, queue.length, " Units in Queue")), /*#__PURE__*/_react.default.createElement("div", {
-    className: "table-responsive",
+    className: "table-responsive d-desktop-only",
     style: {
       marginTop: "12px"
     }
@@ -3857,7 +3990,66 @@ function InspectionTriageTab({
   }, item.risk_level === "HIGH RISK" ? "Quarantine & Physical FA" : "QA Review Sign-off")), /*#__PURE__*/_react.default.createElement("td", null, /*#__PURE__*/_react.default.createElement("button", {
     className: "btn btn-primary btn-sm",
     onClick: () => onInspectComp(item.component_id)
-  }, "Inspect Unit")))))))));
+  }, "Inspect Unit"))))))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "mobile-card-list d-mobile-only",
+    style: {
+      marginTop: "12px"
+    }
+  }, loading ? /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "30px",
+      color: "var(--text-muted)"
+    }
+  }, "Loading triage queue...") : queue.length === 0 ? /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "30px",
+      color: "var(--text-muted)"
+    }
+  }, "No components requiring inspection. All active lots nominal.") : queue.map((item, idx) => /*#__PURE__*/_react.default.createElement("div", {
+    key: item.component_id,
+    className: "mobile-unit-card rx-float-card"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "mobile-unit-card-header"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "mobile-unit-card-id-group"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "mobile-priority-badge"
+  }, "#", idx + 1), /*#__PURE__*/_react.default.createElement("strong", {
+    className: "mobile-unit-id"
+  }, item.component_id), /*#__PURE__*/_react.default.createElement("span", {
+    className: "mobile-lot-pill"
+  }, item.lot_id)), /*#__PURE__*/_react.default.createElement(_Badges.RiskBadge, {
+    risk: item.risk_level
+  })), /*#__PURE__*/_react.default.createElement("div", {
+    className: "mobile-unit-card-body"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "mobile-unit-field"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "mobile-field-label"
+  }, "BEHAVIOUR STATE"), /*#__PURE__*/_react.default.createElement(_Badges.StateBadge, {
+    state: item.current_state
+  })), /*#__PURE__*/_react.default.createElement("div", {
+    className: "mobile-unit-field"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "mobile-field-label"
+  }, "PRIMARY EVIDENCE"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "mobile-field-val"
+  }, item.priority_reason || "Multiple rule violations")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "mobile-unit-field"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "mobile-field-label"
+  }, "ACTION"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "badge badge-review",
+    style: {
+      fontSize: "11px",
+      alignSelf: "flex-start"
+    }
+  }, item.risk_level === "HIGH RISK" ? "Quarantine & Physical FA" : "QA Review Sign-off"))), /*#__PURE__*/_react.default.createElement("button", {
+    className: "btn btn-primary btn-block mobile-inspect-btn",
+    onClick: () => onInspectComp(item.component_id)
+  }, "Inspect Unit \u2192"))))));
 }
   });
 
@@ -3870,6 +4062,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.LiveScreeningTab = LiveScreeningTab;
 var _react = _interopRequireWildcard(require("react"));
+var _types = require("../types");
 var _Badges = require("./Badges");
 var _Icons = require("./Icons");
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
@@ -3908,7 +4101,7 @@ function LiveScreeningTab({
   // Fetch raw audit history when drawer is opened
   const loadRawHistory = async () => {
     try {
-      const res = await fetch("/api/stream/raw-history?limit=30");
+      const res = await fetch(`${_types.API_BASE}/stream/raw-history?limit=30`);
       const d = await res.json();
       setRawRecords(d.records || []);
     } catch {}
@@ -4101,29 +4294,44 @@ function LiveScreeningTab({
     className: "stream-action-buttons"
   }, !isLive ? /*#__PURE__*/_react.default.createElement("button", {
     className: "btn btn-emerald",
-    onClick: handleStart
+    onClick: handleStart,
+    title: "Start Telemetry Stream"
   }, /*#__PURE__*/_react.default.createElement(_Icons.IconPlay, {
-    className: "w-4 h-4"
-  }), " Start Telemetry Stream") : isPaused ? /*#__PURE__*/_react.default.createElement("button", {
+    size: 16
+  }), " ", /*#__PURE__*/_react.default.createElement("span", null, "Start", /*#__PURE__*/_react.default.createElement("span", {
+    className: "d-desktop-only"
+  }, " Stream"))) : isPaused ? /*#__PURE__*/_react.default.createElement("button", {
     className: "btn btn-warning",
-    onClick: onResumeStream
+    onClick: onResumeStream,
+    title: "Resume Stream"
   }, /*#__PURE__*/_react.default.createElement(_Icons.IconPlay, {
-    className: "w-4 h-4"
-  }), " Resume Stream") : /*#__PURE__*/_react.default.createElement("button", {
+    size: 16
+  }), " ", /*#__PURE__*/_react.default.createElement("span", null, "Resume", /*#__PURE__*/_react.default.createElement("span", {
+    className: "d-desktop-only"
+  }, " Stream"))) : /*#__PURE__*/_react.default.createElement("button", {
     className: "btn btn-warning",
-    onClick: onPauseStream
+    onClick: onPauseStream,
+    title: "Pause Stream"
   }, /*#__PURE__*/_react.default.createElement(_Icons.IconPause, {
-    className: "w-4 h-4"
-  }), " Pause Stream"), /*#__PURE__*/_react.default.createElement("button", {
+    size: 16
+  }), " ", /*#__PURE__*/_react.default.createElement("span", null, "Pause", /*#__PURE__*/_react.default.createElement("span", {
+    className: "d-desktop-only"
+  }, " Stream"))), /*#__PURE__*/_react.default.createElement("button", {
     className: "btn btn-danger",
     onClick: onStopStream,
-    disabled: !isLive && !isPaused
+    disabled: !isLive && !isPaused,
+    title: "Stop Stream"
   }, /*#__PURE__*/_react.default.createElement(_Icons.IconStop, {
-    className: "w-4 h-4"
-  }), " Stop Stream"), /*#__PURE__*/_react.default.createElement("button", {
+    size: 16
+  }), " ", /*#__PURE__*/_react.default.createElement("span", null, "Stop", /*#__PURE__*/_react.default.createElement("span", {
+    className: "d-desktop-only"
+  }, " Stream"))), /*#__PURE__*/_react.default.createElement("button", {
     className: "btn btn-secondary btn-sm",
-    onClick: onClearPoints
-  }, "Clear Chart")), /*#__PURE__*/_react.default.createElement("div", {
+    onClick: onClearPoints,
+    title: "Clear Chart"
+  }, /*#__PURE__*/_react.default.createElement("span", null, "Clear", /*#__PURE__*/_react.default.createElement("span", {
+    className: "d-desktop-only"
+  }, " Chart")))), /*#__PURE__*/_react.default.createElement("div", {
     className: "stream-raw-toggle"
   }, /*#__PURE__*/_react.default.createElement("button", {
     className: `btn btn-outline btn-sm ${rawDrawerOpen ? "active" : ""}`,
@@ -4245,7 +4453,7 @@ function LiveScreeningTab({
   }, "WARN: ", liveStatus?.data_quality?.warnings_pct ?? 1.2, "% \u2022 REJ: ", liveStatus?.data_quality?.rejected_pct ?? 0.4, "%"))), /*#__PURE__*/_react.default.createElement("div", {
     className: "card mb-4"
   }, /*#__PURE__*/_react.default.createElement("div", {
-    className: "card-header"
+    className: "card-header live-trajectory-header"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-title-group"
   }, /*#__PURE__*/_react.default.createElement("span", {
@@ -4259,7 +4467,7 @@ function LiveScreeningTab({
       fontSize: "11px"
     }
   }, "Prediction unavailable \u2014 insufficient history"))), /*#__PURE__*/_react.default.createElement("div", {
-    className: "chart-legend"
+    className: "chart-legend live-chart-legend"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "legend-item"
   }, /*#__PURE__*/_react.default.createElement("span", {
@@ -4606,6 +4814,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.LotsTab = LotsTab;
 var _react = _interopRequireWildcard(require("react"));
+var _types = require("../types");
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
 function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
 // ==============================================================================
@@ -4619,7 +4828,7 @@ function LotsTab({
   const [lots, setLots] = (0, _react.useState)([]);
   const [loading, setLoading] = (0, _react.useState)(true);
   (0, _react.useEffect)(() => {
-    fetch("/api/lots").then(r => r.json()).then(data => {
+    fetch(`${_types.API_BASE}/lots`).then(r => r.json()).then(data => {
       setLots(data.lots || []);
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -4878,6 +5087,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.PredictionsTab = PredictionsTab;
 var _react = _interopRequireWildcard(require("react"));
+var _types = require("../types");
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
 function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
 // ==============================================================================
@@ -4898,7 +5108,7 @@ function PredictionsTab({
   const [loading, setLoading] = (0, _react.useState)(true);
   const [paramFilter, setParamFilter] = (0, _react.useState)("ALL");
   (0, _react.useEffect)(() => {
-    fetch("/api/predictions?limit=200").then(r => r.json()).then(d => {
+    fetch(`${_types.API_BASE}/predictions?limit=200`).then(r => r.json()).then(d => {
       setPredictions(d.predictions || []);
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -4994,7 +5204,7 @@ function PredictionsTab({
   }, "Propagation Delay (ns)"), /*#__PURE__*/_react.default.createElement("option", {
     value: "voltage_ref_V"
   }, "Reference Voltage (V)"))), /*#__PURE__*/_react.default.createElement("div", {
-    className: "table-responsive"
+    className: "table-responsive d-desktop-only"
   }, /*#__PURE__*/_react.default.createElement("table", {
     className: "data-table"
   }, /*#__PURE__*/_react.default.createElement("thead", null, /*#__PURE__*/_react.default.createElement("tr", null, /*#__PURE__*/_react.default.createElement("th", null, "Component"), /*#__PURE__*/_react.default.createElement("th", null, "Parameter"), /*#__PURE__*/_react.default.createElement("th", null, "Stage Used"), /*#__PURE__*/_react.default.createElement("th", null, "Predicted 168h"), /*#__PURE__*/_react.default.createElement("th", null, "Spec Limit"), /*#__PURE__*/_react.default.createElement("th", null, "Estimated Interval (\xB11.96\u03C3)"), /*#__PURE__*/_react.default.createElement("th", {
@@ -5036,7 +5246,77 @@ function PredictionsTab({
       className: "btn btn-secondary btn-sm",
       onClick: () => onInspectComp(p.component_id)
     }, "Inspect")));
-  }))))));
+  })))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "mobile-card-list d-mobile-only"
+  }, loading ? /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "30px",
+      color: "var(--text-muted)"
+    }
+  }, "Loading prognostic forecasts...") : filtered.length === 0 ? /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "30px",
+      color: "var(--text-muted)"
+    }
+  }, "No predictions found for this filter.") : filtered.map(p => {
+    const limit = p.engineering_limit ?? SPEC_LIMITS[p.parameter_name] ?? 50.0;
+    const predVal = p.predicted_168h != null ? Number(p.predicted_168h).toFixed(2) : "--";
+    const limitVal = Number(limit).toFixed(1);
+    const p90 = p.p90_worst_case ?? p.predicted_168h;
+    const p90Val = p90 != null ? Number(p90).toFixed(2) : "--";
+    const isBreach = p90 != null && limit != null && p90 > limit;
+    const paramShort = p.parameter_name.replace("leakage_current_uA", "Leakage Current (μA)").replace("standby_current_mA", "Standby Current (mA)").replace("propagation_delay_ns", "Prop Delay (ns)").replace("voltage_ref_V", "Ref Voltage (V)");
+    return /*#__PURE__*/_react.default.createElement("div", {
+      key: `${p.component_id}-${p.parameter_name}`,
+      className: "mobile-unit-card rx-float-card"
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      className: "mobile-unit-card-header"
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      className: "mobile-unit-card-id-group"
+    }, /*#__PURE__*/_react.default.createElement("strong", {
+      className: "mobile-unit-id"
+    }, p.component_id), /*#__PURE__*/_react.default.createElement("span", {
+      className: "mobile-lot-pill"
+    }, p.stage_used || "96h")), /*#__PURE__*/_react.default.createElement("span", {
+      className: `badge ${isBreach ? "badge-risk" : "badge-pass"}`
+    }, isBreach ? "BREACH RISK" : "NOMINAL")), /*#__PURE__*/_react.default.createElement("div", {
+      className: "mobile-unit-card-body"
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      className: "mobile-unit-field"
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      className: "mobile-field-label"
+    }, "PARAMETER"), /*#__PURE__*/_react.default.createElement("span", {
+      className: "mobile-field-val",
+      style: {
+        fontWeight: 600
+      }
+    }, paramShort)), /*#__PURE__*/_react.default.createElement("div", {
+      className: "mobile-card-metrics-row"
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      className: "mobile-sub-metric"
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      className: "mobile-field-label"
+    }, "168h FORECAST"), /*#__PURE__*/_react.default.createElement("span", {
+      className: "mobile-metric-value"
+    }, predVal)), /*#__PURE__*/_react.default.createElement("div", {
+      className: "mobile-sub-metric"
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      className: "mobile-field-label"
+    }, "SPEC LIMIT"), /*#__PURE__*/_react.default.createElement("span", {
+      className: "mobile-metric-value"
+    }, limitVal)), /*#__PURE__*/_react.default.createElement("div", {
+      className: "mobile-sub-metric"
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      className: "mobile-field-label"
+    }, "P90 BOUND"), /*#__PURE__*/_react.default.createElement("span", {
+      className: `mobile-metric-value ${isBreach ? "text-red" : ""}`
+    }, p90Val, " ", isBreach && "⚠️")))), /*#__PURE__*/_react.default.createElement("button", {
+      className: "btn btn-secondary btn-block mobile-inspect-btn",
+      onClick: () => onInspectComp(p.component_id)
+    }, "Inspect Unit \u2192"));
+  }))));
 }
   });
 
@@ -5049,6 +5329,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.ReportsTab = ReportsTab;
 var _react = _interopRequireDefault(require("react"));
+var _types = require("../types");
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
 // ==============================================================================
 // ReliabilityX — Reports & Aerospace Certificate Tab Component
@@ -5115,27 +5396,27 @@ function ReportsTab({
   }, "Tamper-evident verification"))), /*#__PURE__*/_react.default.createElement("div", {
     className: "card mb-4"
   }, /*#__PURE__*/_react.default.createElement("div", {
-    className: "card-header"
+    className: "card-header reports-card-header"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "card-title"
   }, "AI-ASSISTED SCREENING ANALYSIS REPORT PREVIEW"), /*#__PURE__*/_react.default.createElement("div", {
-    className: "btn-group"
+    className: "btn-group reports-btn-group"
   }, /*#__PURE__*/_react.default.createElement("button", {
     className: "btn btn-secondary btn-sm",
-    onClick: () => window.open("/api/reports/certificate-html", "_blank")
+    onClick: () => window.open(`${_types.API_BASE}/reports/certificate-html`, "_blank")
   }, "View Standalone Report"), /*#__PURE__*/_react.default.createElement("button", {
     className: "btn btn-primary btn-sm",
-    onClick: () => window.location.href = "/api/reports/export-csv"
+    onClick: () => window.location.href = `${_types.API_BASE}/reports/export-csv`
   }, "Export Telemetry CSV"))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "report-iframe-container",
     style: {
       marginTop: "16px",
       border: "1px solid var(--border-color)",
       borderRadius: "10px",
-      overflow: "hidden",
-      height: "720px"
+      overflow: "hidden"
     }
   }, /*#__PURE__*/_react.default.createElement("iframe", {
-    src: "/api/reports/certificate-html",
+    src: `${_types.API_BASE}/reports/certificate-html`,
     style: {
       width: "100%",
       height: "100%",
@@ -5596,6 +5877,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.Sidebar = Sidebar;
 var _react = _interopRequireDefault(require("react"));
+var _types = require("../types");
 var _Icons = require("./Icons");
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
 // ==============================================================================
@@ -5609,7 +5891,8 @@ function Sidebar({
   collapsed,
   onToggleCollapse,
   mobileOpen,
-  onCloseMobile
+  onCloseMobile,
+  onReloadDemo
 }) {
   const handleItemClick = tab => {
     onSelectTab(tab);
@@ -5637,7 +5920,31 @@ function Sidebar({
     src: "/static/logo.png",
     alt: "ReliabilityX",
     className: "sidebar-logo-img"
-  })), /*#__PURE__*/_react.default.createElement("div", {
+  }), mobileOpen && /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "mobile-drawer-close-btn",
+    onClick: onCloseMobile,
+    "aria-label": "Close navigation"
+  }, /*#__PURE__*/_react.default.createElement("svg", {
+    width: "20",
+    height: "20",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2.2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/_react.default.createElement("line", {
+    x1: "18",
+    y1: "6",
+    x2: "6",
+    y2: "18"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "6",
+    y1: "6",
+    x2: "18",
+    y2: "18"
+  })))), /*#__PURE__*/_react.default.createElement("div", {
     className: "sidebar-nav"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "sidebar-nav-group"
@@ -5723,8 +6030,27 @@ function Sidebar({
     className: "sidebar-status-pill"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "status-pulse"
-  }), !collapsed && /*#__PURE__*/_react.default.createElement("span", null, "Screening Engine Ready")), /*#__PURE__*/_react.default.createElement("button", {
-    className: "sidebar-collapse-btn",
+  }), !collapsed && /*#__PURE__*/_react.default.createElement("span", null, "Screening Engine Ready")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "mobile-drawer-footer-actions d-mobile-only"
+  }, /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "btn btn-secondary btn-sm btn-block",
+    onClick: () => {
+      if (onCloseMobile) onCloseMobile();
+      window.location.href = `${_types.API_BASE}/reports/export-csv`;
+    }
+  }, "Export Telemetry CSV"), onReloadDemo && /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "btn btn-primary btn-sm btn-block",
+    style: {
+      marginTop: "8px"
+    },
+    onClick: () => {
+      if (onCloseMobile) onCloseMobile();
+      onReloadDemo();
+    }
+  }, "Reload Demo Benchmark")), /*#__PURE__*/_react.default.createElement("button", {
+    className: "sidebar-collapse-btn d-desktop-only",
     onClick: onToggleCollapse
   }, collapsed ? /*#__PURE__*/_react.default.createElement(_Icons.IconExpand, null) : /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement(_Icons.IconCollapse, null), " ", /*#__PURE__*/_react.default.createElement("span", null, "Collapse Sidebar"))))));
 }
@@ -5739,6 +6065,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.Topbar = Topbar;
 var _react = _interopRequireDefault(require("react"));
+var _types = require("../types");
 var _Icons = require("./Icons");
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
 function Topbar({
@@ -5831,9 +6158,9 @@ function Topbar({
   }), /*#__PURE__*/_react.default.createElement("span", {
     className: "live-status-label"
   }, status), /*#__PURE__*/_react.default.createElement("span", {
-    className: "live-pill-source"
+    className: "live-pill-source d-desktop-only"
   }, liveStatus?.source_name || "SIMULATED ATE-01"), status === "LIVE" || status === "CONNECTED" ? /*#__PURE__*/_react.default.createElement("div", {
-    className: "live-pill-metrics"
+    className: "live-pill-metrics d-desktop-only"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "metric-tag"
   }, liveStatus?.last_latency_ms ? `${Math.round(liveStatus.last_latency_ms)}ms` : "18ms"), /*#__PURE__*/_react.default.createElement("span", {
@@ -5841,27 +6168,27 @@ function Topbar({
   }, "\u2022"), /*#__PURE__*/_react.default.createElement("span", {
     className: "metric-tag"
   }, (liveStatus?.messages_count ?? 1145).toLocaleString(), " msgs")) : /*#__PURE__*/_react.default.createElement("span", {
-    className: "live-pill-metrics text-muted"
+    className: "live-pill-metrics text-muted d-desktop-only"
   }, "Standby")), /*#__PURE__*/_react.default.createElement("form", {
     onSubmit: onSearchSubmit,
-    className: "topbar-search-box"
+    className: "topbar-search-box d-desktop-only"
   }, /*#__PURE__*/_react.default.createElement(_Icons.IconSearch, null), /*#__PURE__*/_react.default.createElement("input", {
     type: "text",
     placeholder: "Search component (e.g. C-01008)...",
     value: globalSearch,
     onChange: e => onSearchChange(e.target.value)
   })), /*#__PURE__*/_react.default.createElement("div", {
-    className: "dataset-pill"
+    className: "dataset-pill d-desktop-only"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "pill-dot"
   }), /*#__PURE__*/_react.default.createElement("span", null, !activeDataset?.dataset_id || activeDataset.dataset_id.startsWith("demo") ? "Demo Benchmark" : activeDataset?.name || "User Dataset"), /*#__PURE__*/_react.default.createElement("button", {
     className: "pill-action-btn",
     onClick: onOpenDatasetModal
   }, "Change")), /*#__PURE__*/_react.default.createElement("div", {
-    className: "topbar-actions"
+    className: "topbar-actions d-desktop-only"
   }, /*#__PURE__*/_react.default.createElement("button", {
     className: "btn btn-secondary btn-sm",
-    onClick: () => window.location.href = "/api/reports/export-csv"
+    onClick: () => window.location.href = `${_types.API_BASE}/reports/export-csv`
   }, "Export CSV"), /*#__PURE__*/_react.default.createElement("button", {
     className: "btn btn-primary btn-sm",
     onClick: onReloadDemo
@@ -6145,6 +6472,39 @@ function TrajectorySvgChart({
   // Module: types.ts
   define("types.ts", function(module, exports, require) {
 "use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.getApiBase = exports.API_BASE = void 0;
+// ==============================================================================
+// ReliabilityX — Data Types & Interface Specifications
+// SIH26170: AI-Driven Anomaly Detection in Component Burn-In & Screening
+// ==============================================================================
+
+const getApiBase = () => {
+  try {
+    const custom = typeof window !== "undefined" ? localStorage.getItem("rx_backend_url") : null;
+    if (custom && custom.trim()) {
+      const clean = custom.trim().replace(/\/+$/, "");
+      return clean.endsWith("/api") ? clean : `${clean}/api`;
+    }
+    if (typeof window !== "undefined") {
+      if (window.__RELIABILITYX_API_URL__) {
+        return window.__RELIABILITYX_API_URL__;
+      }
+      if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+        return "http://127.0.0.1:8000/api";
+      }
+      if (window.location.hostname.includes("vercel.app")) {
+        return "https://reliabilityx.onrender.com/api";
+      }
+    }
+  } catch {}
+  return "https://reliabilityx.onrender.com/api";
+};
+exports.getApiBase = getApiBase;
+const API_BASE = exports.API_BASE = getApiBase();
   });
 
   makeRequire('')('app.tsx');

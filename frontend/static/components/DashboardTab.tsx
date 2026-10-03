@@ -125,16 +125,15 @@ export function DashboardTab({
       <div id="section-trajectory-simulation" className="dashboard-hero-grid mb-4">
         {/* Left / Center: Trajectory Chart & What-If Simulator */}
         <div className="card" style={{ padding: "18px" }}>
-          <div className="card-header">
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+          <div className="card-header trajectory-card-header">
+            <div className="trajectory-title-control-group">
               <span className="card-title">COMPONENT RELIABILITY TRAJECTORY</span>
-              <div className="btn-group">
+              <div className="btn-group chart-param-btn-group">
                 {paramsList.map(p => (
                   <button
                     key={p.id}
                     className={`btn btn-sm ${heroParam === p.id ? "btn-primary" : "btn-secondary"}`}
                     onClick={() => onSelectHeroParam(p.id)}
-                    style={{ fontSize: "11px", padding: "3px 8px" }}
                   >
                     {p.label.split(" ")[0]}
                   </button>
@@ -231,10 +230,10 @@ export function DashboardTab({
                 </div>
 
                 {heroSimResult && (
-                  <div style={{ marginTop: "8px", fontSize: "11.5px", color: "var(--text-sub)", display: "flex", gap: "16px" }}>
-                    <span>Simulated 168h: <strong>{heroSimResult.counterfactual_predicted_168h?.toFixed(2)} μA</strong></span>
-                    <span>Delta: <strong style={{ color: heroSimResult.delta_vs_baseline > 0 ? "#DC2626" : "#16A34A" }}>+{heroSimResult.delta_vs_baseline?.toFixed(2)}</strong></span>
-                    <span>Spec Breach: <strong style={{ color: heroSimResult.counterfactual_exceeds_limit ? "#DC2626" : "#16A34A" }}>{heroSimResult.counterfactual_exceeds_limit ? "YES (HIGH RISK)" : "NO (SAFE)"}</strong></span>
+                  <div className="whatif-stats-row">
+                    <span className="whatif-stat-chip">Simulated 168h: <strong>{heroSimResult.counterfactual_predicted_168h?.toFixed(2)} μA</strong></span>
+                    <span className="whatif-stat-chip">Delta: <strong style={{ color: heroSimResult.delta_vs_baseline > 0 ? "#DC2626" : "#16A34A" }}>+{heroSimResult.delta_vs_baseline?.toFixed(2)}</strong></span>
+                    <span className="whatif-stat-chip">Spec Breach: <strong style={{ color: heroSimResult.counterfactual_exceeds_limit ? "#DC2626" : "#16A34A" }}>{heroSimResult.counterfactual_exceeds_limit ? "YES (HIGH RISK)" : "NO (SAFE)"}</strong></span>
                   </div>
                 )}
               </div>
@@ -361,7 +360,8 @@ export function DashboardTab({
           </button>
         </div>
 
-        <div className="table-responsive">
+        {/* Desktop Table View */}
+        <div className="table-responsive d-desktop-only">
           <table className="data-table">
             <thead>
               <tr>
@@ -399,6 +399,44 @@ export function DashboardTab({
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Cards View */}
+        <div className="mobile-card-list d-mobile-only">
+          {loading ? (
+            <div style={{ textAlign: "center", padding: "24px", color: "var(--text-muted)" }}>
+              Loading priority telemetry...
+            </div>
+          ) : prioritiesList.slice(0, 5).map((item: any, idx: number) => (
+            <div key={item.component_id} className="mobile-unit-card rx-float-card">
+              <div className="mobile-unit-card-header">
+                <div className="mobile-unit-card-id-group">
+                  <span className="mobile-priority-badge">#{idx + 1}</span>
+                  <strong className="mobile-unit-id">{item.component_id}</strong>
+                  <span className="mobile-lot-pill">{item.lot_id}</span>
+                </div>
+                <RiskBadge risk={item.risk_level} />
+              </div>
+
+              <div className="mobile-unit-card-body">
+                <div className="mobile-unit-field">
+                  <span className="mobile-field-label">BEHAVIOUR STATE</span>
+                  <StateBadge state={item.current_state} />
+                </div>
+                <div className="mobile-unit-field">
+                  <span className="mobile-field-label">DEGRADATION FACTOR</span>
+                  <span className="mobile-field-val">{item.priority_reason || "Critical wearout"}</span>
+                </div>
+              </div>
+
+              <button
+                className="btn btn-secondary btn-block mobile-inspect-btn"
+                onClick={() => onOpenInspectModal(item.component_id)}
+              >
+                Inspect Unit →
+              </button>
+            </div>
+          ))}
         </div>
       </div>
     </div>

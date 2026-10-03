@@ -3,6 +3,7 @@
 // Prioritized Human-in-the-Loop QA Engineering Verification Queue
 // ==============================================================================
 import React, { useState, useEffect } from "react";
+import { API_BASE } from "../types";
 import { StateBadge, RiskBadge } from "./Badges";
 
 interface InspectionTriageTabProps {
@@ -14,7 +15,7 @@ export function InspectionTriageTab({ onInspectComp }: InspectionTriageTabProps)
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    fetch("/api/components?limit=250")
+    fetch(`${API_BASE}/components?limit=250`)
       .then((r) => r.json())
       .then((d) => {
         const comps = d.components || [];
@@ -24,7 +25,7 @@ export function InspectionTriageTab({ onInspectComp }: InspectionTriageTabProps)
         setLoading(false);
       })
       .catch(() => {
-        fetch("/api/dashboard/overview")
+        fetch(`${API_BASE}/dashboard/overview`)
           .then((r) => r.json())
           .then((ov) => {
             setQueue(ov.top_priorities || []);
@@ -80,7 +81,8 @@ export function InspectionTriageTab({ onInspectComp }: InspectionTriageTabProps)
           <span className="card-badge">{queue.length} Units in Queue</span>
         </div>
 
-        <div className="table-responsive" style={{ marginTop: "12px" }}>
+        {/* Desktop Table View */}
+        <div className="table-responsive d-desktop-only" style={{ marginTop: "12px" }}>
           <table className="data-table">
             <thead>
               <tr>
@@ -146,6 +148,56 @@ export function InspectionTriageTab({ onInspectComp }: InspectionTriageTabProps)
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Triage Cards */}
+        <div className="mobile-card-list d-mobile-only" style={{ marginTop: "12px" }}>
+          {loading ? (
+            <div style={{ textAlign: "center", padding: "30px", color: "var(--text-muted)" }}>
+              Loading triage queue...
+            </div>
+          ) : queue.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "30px", color: "var(--text-muted)" }}>
+              No components requiring inspection. All active lots nominal.
+            </div>
+          ) : (
+            queue.map((item, idx) => (
+              <div key={item.component_id} className="mobile-unit-card rx-float-card">
+                <div className="mobile-unit-card-header">
+                  <div className="mobile-unit-card-id-group">
+                    <span className="mobile-priority-badge">#{idx + 1}</span>
+                    <strong className="mobile-unit-id">{item.component_id}</strong>
+                    <span className="mobile-lot-pill">{item.lot_id}</span>
+                  </div>
+                  <RiskBadge risk={item.risk_level} />
+                </div>
+
+                <div className="mobile-unit-card-body">
+                  <div className="mobile-unit-field">
+                    <span className="mobile-field-label">BEHAVIOUR STATE</span>
+                    <StateBadge state={item.current_state} />
+                  </div>
+                  <div className="mobile-unit-field">
+                    <span className="mobile-field-label">PRIMARY EVIDENCE</span>
+                    <span className="mobile-field-val">{item.priority_reason || "Multiple rule violations"}</span>
+                  </div>
+                  <div className="mobile-unit-field">
+                    <span className="mobile-field-label">ACTION</span>
+                    <span className="badge badge-review" style={{ fontSize: "11px", alignSelf: "flex-start" }}>
+                      {item.risk_level === "HIGH RISK" ? "Quarantine & Physical FA" : "QA Review Sign-off"}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  className="btn btn-primary btn-block mobile-inspect-btn"
+                  onClick={() => onInspectComp(item.component_id)}
+                >
+                  Inspect Unit →
+                </button>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

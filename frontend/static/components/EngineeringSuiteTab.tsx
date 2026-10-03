@@ -3,6 +3,7 @@
 // Benchmark Comparison, SHA-256 Audit Ledger, and DPAT Specifications Form
 // ==============================================================================
 import React, { useState, useEffect } from "react";
+import { API_BASE } from "../types";
 
 interface EngineeringSuiteTabProps {
   onSaved: () => void;
@@ -24,17 +25,17 @@ export function EngineeringSuiteTab({ onSaved, initialSubTab = "benchmarks" }: E
   }, [initialSubTab]);
 
   useEffect(() => {
-    fetch("/api/models/benchmark")
+    fetch(`${API_BASE}/models/benchmark`)
       .then((r) => r.json())
       .then((d) => setBenchmarks(d.models || []))
       .catch(() => {});
 
-    fetch("/api/traceability/audit-log?limit=50")
+    fetch(`${API_BASE}/traceability/audit-log?limit=50`)
       .then((r) => r.json())
       .then((d) => setAuditLog(d.audit_logs || d.logs || []))
       .catch(() => {});
 
-    fetch("/api/config")
+    fetch(`${API_BASE}/config`)
       .then((r) => r.json())
       .then((d) => {
         const th = d.thresholds || d;
@@ -49,7 +50,7 @@ export function EngineeringSuiteTab({ onSaved, initialSubTab = "benchmarks" }: E
 
   const handleSaveConfig = async () => {
     try {
-      const res = await fetch("/api/config", {
+      const res = await fetch(`${API_BASE}/config`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(config)
@@ -94,9 +95,9 @@ export function EngineeringSuiteTab({ onSaved, initialSubTab = "benchmarks" }: E
 
       {/* 3. Engineering Suite Tabs Card */}
       <div className="card mb-4">
-        <div className="card-header">
+        <div className="card-header engineering-card-header">
           <span className="card-title">SYSTEM CALIBRATION & VERIFICATION</span>
-          <div className="btn-group">
+          <div className="btn-group engineering-subtab-group">
             <button
               className={`btn btn-sm ${subTab === "benchmarks" ? "btn-primary" : "btn-secondary"}`}
               onClick={() => setSubTab("benchmarks")}

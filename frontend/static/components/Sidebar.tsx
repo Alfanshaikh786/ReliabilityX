@@ -3,7 +3,7 @@
 // Aerospace Enterprise Dark Sidebar with Thin Crisp SVG Icons
 // ==============================================================================
 import React from "react";
-import { TabType } from "../types";
+import { TabType, API_BASE } from "../types";
 import {
   IconDashboard,
   IconLivePulse,
@@ -26,9 +26,10 @@ interface SidebarProps {
   onToggleCollapse: () => void;
   mobileOpen?: boolean;
   onCloseMobile?: () => void;
+  onReloadDemo?: () => void;
 }
 
-export function Sidebar({ activeTab, onSelectTab, collapsed, onToggleCollapse, mobileOpen, onCloseMobile }: SidebarProps) {
+export function Sidebar({ activeTab, onSelectTab, collapsed, onToggleCollapse, mobileOpen, onCloseMobile, onReloadDemo }: SidebarProps) {
   const handleItemClick = (tab: TabType) => {
     onSelectTab(tab);
     if (onCloseMobile) onCloseMobile();
@@ -60,6 +61,19 @@ export function Sidebar({ activeTab, onSelectTab, collapsed, onToggleCollapse, m
               alt="ReliabilityX"
               className="sidebar-logo-img"
             />
+          )}
+          {mobileOpen && (
+            <button
+              type="button"
+              className="mobile-drawer-close-btn"
+              onClick={onCloseMobile}
+              aria-label="Close navigation"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
           )}
         </div>
 
@@ -182,7 +196,34 @@ export function Sidebar({ activeTab, onSelectTab, collapsed, onToggleCollapse, m
           {!collapsed && <span>Screening Engine Ready</span>}
         </div>
 
-        <button className="sidebar-collapse-btn" onClick={onToggleCollapse}>
+        {/* Mobile quick action in drawer */}
+        <div className="mobile-drawer-footer-actions d-mobile-only">
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm btn-block"
+            onClick={() => {
+              if (onCloseMobile) onCloseMobile();
+              window.location.href = `${API_BASE}/reports/export-csv`;
+            }}
+          >
+            Export Telemetry CSV
+          </button>
+          {onReloadDemo && (
+            <button
+              type="button"
+              className="btn btn-primary btn-sm btn-block"
+              style={{ marginTop: "8px" }}
+              onClick={() => {
+                if (onCloseMobile) onCloseMobile();
+                onReloadDemo();
+              }}
+            >
+              Reload Demo Benchmark
+            </button>
+          )}
+        </div>
+
+        <button className="sidebar-collapse-btn d-desktop-only" onClick={onToggleCollapse}>
           {collapsed ? <IconExpand /> : <><IconCollapse /> <span>Collapse Sidebar</span></>}
         </button>
       </div>

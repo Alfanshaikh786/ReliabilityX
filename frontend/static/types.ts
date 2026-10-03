@@ -188,3 +188,27 @@ export interface ToastInfo {
   message: string;
   type: "success" | "error" | "info";
 }
+
+export const getApiBase = (): string => {
+  try {
+    const custom = typeof window !== "undefined" ? localStorage.getItem("rx_backend_url") : null;
+    if (custom && custom.trim()) {
+      const clean = custom.trim().replace(/\/+$/, "");
+      return clean.endsWith("/api") ? clean : `${clean}/api`;
+    }
+    if (typeof window !== "undefined") {
+      if ((window as any).__RELIABILITYX_API_URL__) {
+        return (window as any).__RELIABILITYX_API_URL__;
+      }
+      if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+        return "http://127.0.0.1:8000/api";
+      }
+      if (window.location.hostname.includes("vercel.app")) {
+        return "https://reliabilityx.onrender.com/api";
+      }
+    }
+  } catch {}
+  return "https://reliabilityx.onrender.com/api";
+};
+
+export const API_BASE = getApiBase();

@@ -3,7 +3,7 @@
 // Lot-Level Anomaly Detection & Systemic Wafer-Wide Flaw Identification
 // ==============================================================================
 import React, { useState, useEffect } from "react";
-import { LotItem } from "../types";
+import { LotItem, API_BASE } from "../types";
 
 interface LotsTabProps {
   onSelectLot: (lotId: string) => void;
@@ -14,7 +14,7 @@ export function LotsTab({ onSelectLot }: LotsTabProps) {
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    fetch("/api/lots")
+    fetch(`${API_BASE}/lots`)
       .then((r) => r.json())
       .then((data) => {
         setLots(data.lots || []);

@@ -3,6 +3,7 @@
 // Official Screening Certificate & Parametric Data Export
 // ==============================================================================
 import React from "react";
+import { API_BASE } from "../types";
 
 interface ReportsTabProps {
   onInspectComp: (id: string) => void;
@@ -45,18 +46,18 @@ export function ReportsTab({ onInspectComp }: ReportsTabProps) {
 
       {/* 3. Report Preview & Action Card */}
       <div className="card mb-4">
-        <div className="card-header">
+        <div className="card-header reports-card-header">
           <span className="card-title">AI-ASSISTED SCREENING ANALYSIS REPORT PREVIEW</span>
-          <div className="btn-group">
+          <div className="btn-group reports-btn-group">
             <button
               className="btn btn-secondary btn-sm"
-              onClick={() => window.open("/api/reports/certificate-html", "_blank")}
+              onClick={() => window.open(`${API_BASE}/reports/certificate-html`, "_blank")}
             >
               View Standalone Report
             </button>
             <button
               className="btn btn-primary btn-sm"
-              onClick={() => (window.location.href = "/api/reports/export-csv")}
+              onClick={() => (window.location.href = `${API_BASE}/reports/export-csv`)}
             >
               Export Telemetry CSV
             </button>
@@ -65,16 +66,16 @@ export function ReportsTab({ onInspectComp }: ReportsTabProps) {
 
         {/* Report Frame Preview */}
         <div
+          className="report-iframe-container"
           style={{
             marginTop: "16px",
             border: "1px solid var(--border-color)",
             borderRadius: "10px",
-            overflow: "hidden",
-            height: "720px"
+            overflow: "hidden"
           }}
         >
           <iframe
-            src="/api/reports/certificate-html"
+            src={`${API_BASE}/reports/certificate-html`}
             style={{ width: "100%", height: "100%", border: "none" }}
             title="Screening Analysis Report"
           />

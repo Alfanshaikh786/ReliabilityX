@@ -2,6 +2,7 @@
 // ReliabilityX — Component Detail & Authoritative QA Sign-off Modal
 // ==============================================================================
 import React, { useState, useEffect } from "react";
+import { API_BASE } from "../types";
 import { StateBadge, RiskBadge } from "./Badges";
 import { TrajectorySvgChart } from "./TrajectorySvgChart";
 
@@ -46,7 +47,7 @@ export function ComponentDetailModal({
   const handleSubmit = async () => {
     try {
       setSubmitting(true);
-      const res = await fetch(`/api/components/${compId}/decision`, {
+      const res = await fetch(`${API_BASE}/components/${compId}/decision`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

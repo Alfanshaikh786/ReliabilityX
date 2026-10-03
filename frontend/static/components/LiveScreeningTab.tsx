@@ -4,7 +4,7 @@
 // Supports: 1. Demo Data  2. File Data  3. Live Telemetry
 // ==============================================================================
 import React, { useState, useEffect, useRef } from "react";
-import { LiveStreamStatus, LiveTelemetryPoint, LiveAlertItem, LiveLotHealth, RawMeasurementRecord } from "../types";
+import { LiveStreamStatus, LiveTelemetryPoint, LiveAlertItem, LiveLotHealth, RawMeasurementRecord, API_BASE } from "../types";
 import { StateBadge, RiskBadge } from "./Badges";
 import { IconPlay, IconPause, IconStop, IconRadioWave, IconAlertTriangle } from "./Icons";
 
@@ -50,7 +50,7 @@ export function LiveScreeningTab({
   // Fetch raw audit history when drawer is opened
   const loadRawHistory = async () => {
     try {
-      const res = await fetch("/api/stream/raw-history?limit=30");
+      const res = await fetch(`${API_BASE}/stream/raw-history?limit=30`);
       const d = await res.json();
       setRawRecords(d.records || []);
     } catch {}
@@ -256,16 +256,16 @@ export function LiveScreeningTab({
         <div className="controls-row-bottom">
           <div className="stream-action-buttons">
             {!isLive ? (
-              <button className="btn btn-emerald" onClick={handleStart}>
-                <IconPlay className="w-4 h-4" /> Start Telemetry Stream
+              <button className="btn btn-emerald" onClick={handleStart} title="Start Telemetry Stream">
+                <IconPlay size={16} /> <span>Start<span className="d-desktop-only"> Stream</span></span>
               </button>
             ) : isPaused ? (
-              <button className="btn btn-warning" onClick={onResumeStream}>
-                <IconPlay className="w-4 h-4" /> Resume Stream
+              <button className="btn btn-warning" onClick={onResumeStream} title="Resume Stream">
+                <IconPlay size={16} /> <span>Resume<span className="d-desktop-only"> Stream</span></span>
               </button>
             ) : (
-              <button className="btn btn-warning" onClick={onPauseStream}>
-                <IconPause className="w-4 h-4" /> Pause Stream
+              <button className="btn btn-warning" onClick={onPauseStream} title="Pause Stream">
+                <IconPause size={16} /> <span>Pause<span className="d-desktop-only"> Stream</span></span>
               </button>
             )}
 
@@ -273,12 +273,13 @@ export function LiveScreeningTab({
               className="btn btn-danger" 
               onClick={onStopStream}
               disabled={!isLive && !isPaused}
+              title="Stop Stream"
             >
-              <IconStop className="w-4 h-4" /> Stop Stream
+              <IconStop size={16} /> <span>Stop<span className="d-desktop-only"> Stream</span></span>
             </button>
 
-            <button className="btn btn-secondary btn-sm" onClick={onClearPoints}>
-              Clear Chart
+            <button className="btn btn-secondary btn-sm" onClick={onClearPoints} title="Clear Chart">
+              <span>Clear<span className="d-desktop-only"> Chart</span></span>
             </button>
           </div>
 
@@ -382,7 +383,7 @@ export function LiveScreeningTab({
 
       {/* 2. MAIN LIVE TRAJECTORY CHART (Spanning Full Width) */}
       <div className="card mb-4">
-        <div className="card-header">
+        <div className="card-header live-trajectory-header">
           <div className="chart-title-group">
             <span className="card-title">MAIN LIVE SCREENING TRAJECTORY (0–168h BURN-IN)</span>
             <span className="chart-subtitle">
@@ -396,7 +397,7 @@ export function LiveScreeningTab({
               )}
             </span>
           </div>
-          <div className="chart-legend">
+          <div className="chart-legend live-chart-legend">
             <span className="legend-item"><span className="legend-dot live-cyan"></span> Actual Telemetry</span>
             <span className="legend-item"><span className="legend-line limit-red"></span> Datasheet Limit ({paramLimit} {latestPoint?.unit || "µA"})</span>
             <span className="legend-item"><span className="legend-line nominal-green"></span> Baseline</span>

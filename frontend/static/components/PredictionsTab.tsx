@@ -3,7 +3,7 @@
 // Physics-Informed Forecasting with 95% Confidence & P90 Worst-Case Bounds
 // ==============================================================================
 import React, { useState, useEffect } from "react";
-import { PredictionItem } from "../types";
+import { PredictionItem, API_BASE } from "../types";
 
 interface PredictionsTabProps {
   onInspectComp: (id: string) => void;
@@ -22,7 +22,7 @@ export function PredictionsTab({ onInspectComp }: PredictionsTabProps) {
   const [paramFilter, setParamFilter] = useState<string>("ALL");
 
   useEffect(() => {
-    fetch("/api/predictions?limit=200")
+    fetch(`${API_BASE}/predictions?limit=200`)
       .then((r) => r.json())
       .then((d) => {
         setPredictions(d.predictions || []);
@@ -96,8 +96,8 @@ export function PredictionsTab({ onInspectComp }: PredictionsTabProps) {
           </select>
         </div>
 
-        {/* Table */}
-        <div className="table-responsive">
+        {/* Desktop Table View */}
+        <div className="table-responsive d-desktop-only">
           <table className="data-table">
             <thead>
               <tr>
@@ -168,6 +168,77 @@ export function PredictionsTab({ onInspectComp }: PredictionsTabProps) {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Predictions Cards */}
+        <div className="mobile-card-list d-mobile-only">
+          {loading ? (
+            <div style={{ textAlign: "center", padding: "30px", color: "var(--text-muted)" }}>
+              Loading prognostic forecasts...
+            </div>
+          ) : filtered.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "30px", color: "var(--text-muted)" }}>
+              No predictions found for this filter.
+            </div>
+          ) : (
+            filtered.map((p) => {
+              const limit = p.engineering_limit ?? SPEC_LIMITS[p.parameter_name] ?? 50.0;
+              const predVal = p.predicted_168h != null ? Number(p.predicted_168h).toFixed(2) : "--";
+              const limitVal = Number(limit).toFixed(1);
+              const p90 = p.p90_worst_case ?? p.predicted_168h;
+              const p90Val = p90 != null ? Number(p90).toFixed(2) : "--";
+              const isBreach = p90 != null && limit != null && p90 > limit;
+              const paramShort = p.parameter_name.replace("leakage_current_uA", "Leakage Current (μA)")
+                .replace("standby_current_mA", "Standby Current (mA)")
+                .replace("propagation_delay_ns", "Prop Delay (ns)")
+                .replace("voltage_ref_V", "Ref Voltage (V)");
+
+              return (
+                <div key={`${p.component_id}-${p.parameter_name}`} className="mobile-unit-card rx-float-card">
+                  <div className="mobile-unit-card-header">
+                    <div className="mobile-unit-card-id-group">
+                      <strong className="mobile-unit-id">{p.component_id}</strong>
+                      <span className="mobile-lot-pill">{p.stage_used || "96h"}</span>
+                    </div>
+                    <span className={`badge ${isBreach ? "badge-risk" : "badge-pass"}`}>
+                      {isBreach ? "BREACH RISK" : "NOMINAL"}
+                    </span>
+                  </div>
+
+                  <div className="mobile-unit-card-body">
+                    <div className="mobile-unit-field">
+                      <span className="mobile-field-label">PARAMETER</span>
+                      <span className="mobile-field-val" style={{ fontWeight: 600 }}>{paramShort}</span>
+                    </div>
+
+                    <div className="mobile-card-metrics-row">
+                      <div className="mobile-sub-metric">
+                        <span className="mobile-field-label">168h FORECAST</span>
+                        <span className="mobile-metric-value">{predVal}</span>
+                      </div>
+                      <div className="mobile-sub-metric">
+                        <span className="mobile-field-label">SPEC LIMIT</span>
+                        <span className="mobile-metric-value">{limitVal}</span>
+                      </div>
+                      <div className="mobile-sub-metric">
+                        <span className="mobile-field-label">P90 BOUND</span>
+                        <span className={`mobile-metric-value ${isBreach ? "text-red" : ""}`}>
+                          {p90Val} {isBreach && "⚠️"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    className="btn btn-secondary btn-block mobile-inspect-btn"
+                    onClick={() => onInspectComp(p.component_id)}
+                  >
+                    Inspect Unit →
+                  </button>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
     </div>

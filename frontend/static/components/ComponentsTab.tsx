@@ -3,7 +3,7 @@
 // Telemetry & Diagnostics Table with KPI Summary & Advanced Multi-Filter
 // ==============================================================================
 import React, { useState, useEffect } from "react";
-import { ComponentItem } from "../types";
+import { ComponentItem, API_BASE } from "../types";
 import { StateBadge, RiskBadge } from "./Badges";
 
 interface ComponentsTabProps {
@@ -28,7 +28,7 @@ export function ComponentsTab({ onInspectComp, selectedLot }: ComponentsTabProps
 
   useEffect(() => {
     setLoading(true);
-    let url = "/api/components?limit=250";
+    let url = `${API_BASE}/components?limit=250`;
     if (lotFilter !== "ALL") url += `&lot_id=${lotFilter}`;
     if (riskFilter !== "ALL") url += `&risk_level=${encodeURIComponent(riskFilter)}`;
 
@@ -139,8 +139,8 @@ export function ComponentsTab({ onInspectComp, selectedLot }: ComponentsTabProps
           </div>
         </div>
 
-        {/* Telemetry Data Table */}
-        <div className="table-responsive">
+        {/* Telemetry Data Table - Desktop */}
+        <div className="table-responsive d-desktop-only">
           <table className="data-table">
             <thead>
               <tr>
@@ -200,6 +200,50 @@ export function ComponentsTab({ onInspectComp, selectedLot }: ComponentsTabProps
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Telemetry Data Cards - Mobile */}
+        <div className="mobile-card-list d-mobile-only">
+          {loading ? (
+            <div style={{ textAlign: "center", padding: "30px", color: "var(--text-muted)" }}>
+              Loading component database...
+            </div>
+          ) : filtered.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "30px", color: "var(--text-muted)" }}>
+              No components matching the selected criteria.
+            </div>
+          ) : (
+            paginated.map((comp) => (
+              <div key={comp.component_id} className="mobile-unit-card rx-float-card">
+                <div className="mobile-unit-card-header">
+                  <div className="mobile-unit-card-id-group">
+                    <span className="mobile-priority-badge">#{comp.inspection_priority}</span>
+                    <strong className="mobile-unit-id">{comp.component_id}</strong>
+                    <span className="mobile-lot-pill">{comp.lot_id}</span>
+                  </div>
+                  <RiskBadge risk={comp.risk_level} />
+                </div>
+
+                <div className="mobile-unit-card-body">
+                  <div className="mobile-unit-field">
+                    <span className="mobile-field-label">BEHAVIOUR STATE</span>
+                    <StateBadge state={comp.current_state} />
+                  </div>
+                  <div className="mobile-unit-field">
+                    <span className="mobile-field-label">DEGRADATION FACTOR</span>
+                    <span className="mobile-field-val">{comp.priority_reason || "Nominal parameters"}</span>
+                  </div>
+                </div>
+
+                <button
+                  className="btn btn-secondary btn-block mobile-inspect-btn"
+                  onClick={() => onInspectComp(comp.component_id)}
+                >
+                  Inspect Unit →
+                </button>
+              </div>
+            ))
+          )}
         </div>
 
         {/* Pagination Controls Bar (Section 12 Table Performance) */}

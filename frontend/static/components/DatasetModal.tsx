@@ -3,6 +3,7 @@
 // Load Synthetic Arrhenius Benchmark or Upload Flight Telemetry Data
 // ==============================================================================
 import React, { useState } from "react";
+import { API_BASE } from "../types";
 
 interface DatasetModalProps {
   onClose: () => void;
@@ -23,7 +24,7 @@ export function DatasetModal({ onClose, onDatasetLoaded, showToast }: DatasetMod
       setUploading(true);
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch("/api/data/upload", {
+      const res = await fetch(`${API_BASE}/data/upload`, {
         method: "POST",
         body: formData
       });
@@ -58,7 +59,7 @@ export function DatasetModal({ onClose, onDatasetLoaded, showToast }: DatasetMod
               className="btn btn-secondary btn-block mt-2"
               onClick={async () => {
                 try {
-                  const res = await fetch("/api/data/load-demo", { method: "POST" });
+                  const res = await fetch(`${API_BASE}/data/load-demo`, { method: "POST" });
                   await res.json();
                   onDatasetLoaded();
                 } catch (err: any) {
