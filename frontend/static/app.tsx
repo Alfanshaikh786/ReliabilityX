@@ -32,8 +32,16 @@ const getApiBase = (): string => {
     if ((window as any).__RELIABILITYX_API_URL__) {
       return (window as any).__RELIABILITYX_API_URL__;
     }
+    if (typeof window !== "undefined") {
+      if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+        return "http://127.0.0.1:8000/api";
+      }
+      if (window.location.hostname.includes("vercel.app")) {
+        return "https://reliabilityx.onrender.com/api";
+      }
+    }
   } catch {}
-  return "/api";
+  return "https://reliabilityx.onrender.com/api";
 };
 
 const API_BASE = getApiBase();

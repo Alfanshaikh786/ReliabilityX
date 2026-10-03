@@ -1,4 +1,4 @@
-// ReliabilityX Bundled Application (2026-10-03T09:33:23.870Z)
+// ReliabilityX Bundled Application (2026-10-03T09:38:49.983Z)
 (function() {
   if (typeof window !== 'undefined') {
     if (window.React && !window.React.default) window.React.default = window.React;
@@ -95,8 +95,16 @@ const getApiBase = () => {
     if (window.__RELIABILITYX_API_URL__) {
       return window.__RELIABILITYX_API_URL__;
     }
+    if (typeof window !== "undefined") {
+      if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+        return "http://127.0.0.1:8000/api";
+      }
+      if (window.location.hostname.includes("vercel.app")) {
+        return "https://reliabilityx.onrender.com/api";
+      }
+    }
   } catch {}
-  return "/api";
+  return "https://reliabilityx.onrender.com/api";
 };
 const API_BASE = getApiBase();
 function ReliabilityXApp() {

@@ -1,21 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
   "buildCommand": "node frontend/build.cjs",
   "outputDirectory": "frontend/dist",
   "cleanUrls": true,
   "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://reliabilityx.onrender.com/api/:path*"
-    },
-    {
-      "source": "/docs",
-      "destination": "https://reliabilityx.onrender.com/docs"
-    },
-    {
-      "source": "/openapi.json",
-      "destination": "https://reliabilityx.onrender.com/openapi.json"
-    },
     {
       "source": "/(.*)",
       "destination": "/index.html"

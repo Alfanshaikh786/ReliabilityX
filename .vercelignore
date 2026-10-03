@@ -1,0 +1,8 @@
+backend/
+api/
+requirements.txt
+runtime.txt
+render.yaml
+*.py
+__pycache__/
+.pytest_cache/
