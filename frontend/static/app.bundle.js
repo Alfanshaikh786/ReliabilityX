@@ -1,4 +1,4 @@
-// ReliabilityX Bundled Application (2026-10-03T15:41:28.192Z)
+// ReliabilityX Bundled Application (2026-10-03T18:08:22.901Z)
 (function() {
   if (typeof window !== 'undefined') {
     if (window.React && !window.React.default) window.React.default = window.React;
@@ -77,6 +77,7 @@ var _EngineeringSuiteTab = require("./components/EngineeringSuiteTab");
 var _ComponentDetailModal = require("./components/ComponentDetailModal");
 var _DatasetModal = require("./components/DatasetModal");
 var _MobileBottomNav = require("./components/MobileBottomNav");
+var _AboutSection = require("./components/AboutSection");
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
 function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
@@ -90,7 +91,7 @@ function ReliabilityXApp() {
   const getInitialTab = () => {
     try {
       const hash = window.location.hash.replace("#", "");
-      const validTabs = ["dashboard", "screening", "live_telemetry", "components", "lots", "predictions", "inspection", "reports", "engineering", "audit"];
+      const validTabs = ["dashboard", "screening", "live_telemetry", "components", "lots", "predictions", "inspection", "reports", "engineering", "audit", "about"];
       if (validTabs.includes(hash)) return hash;
     } catch {}
     return "dashboard";
@@ -142,7 +143,7 @@ function ReliabilityXApp() {
   (0, _react.useEffect)(() => {
     const handleHash = () => {
       const hash = window.location.hash.replace("#", "");
-      const validTabs = ["dashboard", "screening", "live_telemetry", "components", "lots", "predictions", "inspection", "reports", "engineering", "audit"];
+      const validTabs = ["dashboard", "screening", "live_telemetry", "components", "lots", "predictions", "inspection", "reports", "engineering", "audit", "about"];
       if (validTabs.includes(hash)) {
         setActiveTabState(hash);
         smoothScrollToTop();
@@ -163,7 +164,7 @@ function ReliabilityXApp() {
       const href = anchor.getAttribute("href");
       if (href && href.startsWith("#") && href.length > 1) {
         const targetId = href.substring(1);
-        const validTabs = ["dashboard", "screening", "live_telemetry", "components", "lots", "predictions", "inspection", "reports", "engineering", "audit"];
+        const validTabs = ["dashboard", "screening", "live_telemetry", "components", "lots", "predictions", "inspection", "reports", "engineering", "audit", "about"];
         if (validTabs.includes(targetId)) {
           e.preventDefault();
           setActiveTab(targetId);
@@ -735,7 +736,7 @@ function ReliabilityXApp() {
   }), activeTab === "audit" && /*#__PURE__*/_react.default.createElement(_EngineeringSuiteTab.EngineeringSuiteTab, {
     onSaved: () => showToast("Specifications updated successfully.", "success"),
     initialSubTab: "audit"
-  })), /*#__PURE__*/_react.default.createElement(_MobileBottomNav.MobileBottomNav, {
+  }), activeTab === "about" && /*#__PURE__*/_react.default.createElement(_AboutSection.AboutSection, null)), /*#__PURE__*/_react.default.createElement(_MobileBottomNav.MobileBottomNav, {
     activeTab: activeTab,
     onSelectTab: tab => {
       setActiveTab(tab);
@@ -778,6 +779,582 @@ const container = document.getElementById("root");
 if (container) {
   const root = _reactDom.default.createRoot(container);
   root.render(/*#__PURE__*/_react.default.createElement(ReliabilityXApp, null));
+}
+  });
+
+  // Module: components/AboutSection.tsx
+  define("components/AboutSection.tsx", function(module, exports, require) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.AboutSection = AboutSection;
+var _react = _interopRequireWildcard(require("react"));
+function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
+function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
+// ==============================================================================
+// ReliabilityX — Dedicated About Page & Team Brigebytes Component
+// Separate Informational View Accessible from Left Sidebar
+// ==============================================================================
+
+const TEAM_MEMBERS = [{
+  id: "alfan",
+  name: "Alfan Yaseen Shaikh",
+  role: "TEAM LEADER",
+  initials: "AS",
+  team: "Brigebytes",
+  isLeader: true
+}, {
+  id: "samrudhi",
+  name: "Samrudhi Shetty",
+  role: "TEAM MEMBER",
+  initials: "SA",
+  team: "Brigebytes"
+}, {
+  id: "amrutha",
+  name: "Amrutha Somashekar Shetty",
+  role: "TEAM MEMBER",
+  initials: "AS",
+  team: "Brigebytes"
+}, {
+  id: "amarnath",
+  name: "Amarnath Singh",
+  role: "TEAM MEMBER",
+  initials: "AM",
+  team: "Brigebytes"
+}, {
+  id: "manish",
+  name: "Manish Kumar Verma",
+  role: "TEAM MEMBER",
+  initials: "MA",
+  team: "Brigebytes"
+}, {
+  id: "janith",
+  name: "Janith Bopanna A M",
+  role: "TEAM MEMBER",
+  initials: "JA",
+  team: "Brigebytes"
+}];
+const IMPACT_AREAS = [{
+  id: "early_detection",
+  title: "Early Detection",
+  description: "Identifies subtle degradation patterns, parameter drift, and abnormal behavior during early Burn-In and ESS screening.",
+  icon: /*#__PURE__*/_react.default.createElement("svg", {
+    width: "20",
+    height: "20",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/_react.default.createElement("circle", {
+    cx: "12",
+    cy: "12",
+    r: "10"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "12",
+    y1: "8",
+    x2: "12",
+    y2: "12"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "12",
+    y1: "16",
+    x2: "12.01",
+    y2: "16"
+  }))
+}, {
+  id: "predictive_reliability",
+  title: "Predictive Reliability",
+  description: "Estimates future parameter trajectories and reliability risk from observed screening behavior, with uncertainty-aware predictions.",
+  icon: /*#__PURE__*/_react.default.createElement("svg", {
+    width: "20",
+    height: "20",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/_react.default.createElement("polyline", {
+    points: "23 6 13.5 15.5 8.5 10.5 1 18"
+  }), /*#__PURE__*/_react.default.createElement("polyline", {
+    points: "17 6 23 6 23 12"
+  }))
+}, {
+  id: "engineering_decision_support",
+  title: "Engineering Decision Support",
+  description: "Provides actionable risk classifications, supporting evidence, and inspection insights to assist engineering and quality teams.",
+  icon: /*#__PURE__*/_react.default.createElement("svg", {
+    width: "20",
+    height: "20",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/_react.default.createElement("rect", {
+    x: "2",
+    y: "3",
+    width: "20",
+    height: "14",
+    rx: "2"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "8",
+    y1: "21",
+    x2: "16",
+    y2: "21"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "12",
+    y1: "17",
+    x2: "12",
+    y2: "21"
+  }))
+}, {
+  id: "lot_level_intelligence",
+  title: "Lot-Level Intelligence",
+  description: "Analyzes multi-unit screening distributions to distinguish individual component anomalies from broader lot-level patterns.",
+  icon: /*#__PURE__*/_react.default.createElement("svg", {
+    width: "20",
+    height: "20",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/_react.default.createElement("path", {
+    d: "M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+  }), /*#__PURE__*/_react.default.createElement("polyline", {
+    points: "3.27 6.96 12 12.01 20.73 6.96"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "12",
+    y1: "22.08",
+    x2: "12",
+    y2: "12"
+  }))
+}, {
+  id: "explainable_screening",
+  title: "Explainable Screening",
+  description: "Links anomaly and prediction results to measured parameters, observed trends, and relevant screening conditions for transparent analysis.",
+  icon: /*#__PURE__*/_react.default.createElement("svg", {
+    width: "20",
+    height: "20",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/_react.default.createElement("circle", {
+    cx: "11",
+    cy: "11",
+    r: "8"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "21",
+    y1: "21",
+    x2: "16.65",
+    y2: "16.65"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "11",
+    y1: "8",
+    x2: "11",
+    y2: "14"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "8",
+    y1: "11",
+    x2: "14",
+    y2: "11"
+  }))
+}, {
+  id: "inspection_prioritization",
+  title: "Inspection Prioritization",
+  description: "Prioritizes components showing stronger anomaly or degradation indicators to help focus engineering inspection resources.",
+  icon: /*#__PURE__*/_react.default.createElement("svg", {
+    width: "20",
+    height: "20",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/_react.default.createElement("polygon", {
+    points: "12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+  }))
+}];
+const VALUES = [{
+  num: "01",
+  title: "Reliability",
+  description: "Focused on dependable screening analysis and consistent identification of abnormal component behavior.",
+  icon: /*#__PURE__*/_react.default.createElement("svg", {
+    width: "18",
+    height: "18",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/_react.default.createElement("path", {
+    d: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
+  }))
+}, {
+  num: "02",
+  title: "Explainability",
+  description: "Every anomaly and prediction should be supported by understandable evidence, trends, and measurable parameters.",
+  icon: /*#__PURE__*/_react.default.createElement("svg", {
+    width: "18",
+    height: "18",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/_react.default.createElement("circle", {
+    cx: "12",
+    cy: "12",
+    r: "10"
+  }), /*#__PURE__*/_react.default.createElement("path", {
+    d: "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "12",
+    y1: "17",
+    x2: "12.01",
+    y2: "17"
+  }))
+}, {
+  num: "03",
+  title: "Accuracy",
+  description: "Prioritizing reliable measurement analysis, robust modeling, and evidence-based interpretation of screening data.",
+  icon: /*#__PURE__*/_react.default.createElement("svg", {
+    width: "18",
+    height: "18",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/_react.default.createElement("circle", {
+    cx: "12",
+    cy: "12",
+    r: "10"
+  }), /*#__PURE__*/_react.default.createElement("circle", {
+    cx: "12",
+    cy: "12",
+    r: "6"
+  }), /*#__PURE__*/_react.default.createElement("circle", {
+    cx: "12",
+    cy: "12",
+    r: "2"
+  }))
+}, {
+  num: "04",
+  title: "Innovation",
+  description: "Advancing beyond static threshold checks through predictive degradation analysis and intelligent screening methods.",
+  icon: /*#__PURE__*/_react.default.createElement("svg", {
+    width: "18",
+    height: "18",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/_react.default.createElement("polygon", {
+    points: "13 2 3 14 12 14 11 22 21 10 12 10 13 2"
+  }))
+}, {
+  num: "05",
+  title: "Engineering First",
+  description: "Designed to support engineers and quality teams with practical, interpretable insights for screening and inspection decisions.",
+  icon: /*#__PURE__*/_react.default.createElement("svg", {
+    width: "18",
+    height: "18",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/_react.default.createElement("line", {
+    x1: "4",
+    y1: "21",
+    x2: "4",
+    y2: "14"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "4",
+    y1: "10",
+    x2: "4",
+    y2: "3"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "12",
+    y1: "21",
+    x2: "12",
+    y2: "12"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "12",
+    y1: "8",
+    x2: "12",
+    y2: "3"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "20",
+    y1: "21",
+    x2: "20",
+    y2: "16"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "20",
+    y1: "12",
+    x2: "20",
+    y2: "3"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "1",
+    y1: "14",
+    x2: "7",
+    y2: "14"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "9",
+    y1: "8",
+    x2: "15",
+    y2: "8"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "17",
+    y1: "16",
+    x2: "23",
+    y2: "16"
+  }))
+}];
+function AboutSection() {
+  const sectionRef = (0, _react.useRef)(null);
+  (0, _react.useEffect)(() => {
+    const rootEl = sectionRef.current;
+    if (!rootEl) return;
+    const prefersReduced = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const targets = rootEl.querySelectorAll(".rx-about-fade, .rx-about-heading, .rx-about-card, .team-card, .about-hero-intro");
+    if (prefersReduced || !("IntersectionObserver" in window)) {
+      targets.forEach(el => {
+        el.classList.add("rx-settled-in");
+      });
+      return;
+    }
+
+    // High-performance IntersectionObserver with once-only reveal
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("rx-settled-in");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, {
+      root: null,
+      rootMargin: "0px 0px -30px 0px",
+      threshold: 0.08
+    });
+    targets.forEach(el => observer.observe(el));
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+  return /*#__PURE__*/_react.default.createElement("section", {
+    id: "section-about",
+    ref: sectionRef,
+    className: "about-section-container mb-4",
+    "aria-labelledby": "about-main-heading"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "card about-hero-intro mb-4 rx-about-fade"
+  }, /*#__PURE__*/_react.default.createElement("h1", {
+    id: "about-main-heading",
+    className: "about-hero-title"
+  }, "About Reliability", /*#__PURE__*/_react.default.createElement("span", {
+    style: {
+      color: "var(--accent-blue)"
+    }
+  }, "X")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "about-hero-divider",
+    "aria-hidden": "true"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "about-divider-line line-left"
+  }), /*#__PURE__*/_react.default.createElement("span", {
+    className: "about-divider-accent"
+  }), /*#__PURE__*/_react.default.createElement("span", {
+    className: "about-divider-line line-right"
+  })), /*#__PURE__*/_react.default.createElement("p", {
+    className: "about-hero-tagline"
+  }, "AI-assisted reliability intelligence for high-reliability component screening and space applications.")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "card mb-4 rx-about-fade"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "card-header about-section-inner-header"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "about-section-header-left"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "card-title rx-about-heading"
+  }, "OUR IMPACT AREAS"), /*#__PURE__*/_react.default.createElement("p", {
+    className: "about-subheading-note"
+  }, "Advancing high-reliability component screening through predictive reliability intelligence.")), /*#__PURE__*/_react.default.createElement("span", {
+    className: "card-badge d-desktop-only"
+  }, "6 OPERATIONAL DOMAINS")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "about-impact-grid"
+  }, IMPACT_AREAS.map(item => /*#__PURE__*/_react.default.createElement("div", {
+    key: item.id,
+    className: "about-impact-item rx-about-card"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "about-impact-icon-badge"
+  }, item.icon), /*#__PURE__*/_react.default.createElement("h4", {
+    className: "about-impact-title"
+  }, item.title), /*#__PURE__*/_react.default.createElement("p", {
+    className: "about-impact-text"
+  }, item.description))))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "about-two-col-grid mb-4"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "card about-mv-card rx-about-card"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "about-card-top-icon-row"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "about-icon-box icon-mission"
+  }, /*#__PURE__*/_react.default.createElement("svg", {
+    width: "22",
+    height: "22",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/_react.default.createElement("circle", {
+    cx: "12",
+    cy: "12",
+    r: "10"
+  }), /*#__PURE__*/_react.default.createElement("circle", {
+    cx: "12",
+    cy: "12",
+    r: "6"
+  }), /*#__PURE__*/_react.default.createElement("circle", {
+    cx: "12",
+    cy: "12",
+    r: "2"
+  }))), /*#__PURE__*/_react.default.createElement("span", {
+    className: "about-mv-label"
+  }, "CORE DIRECTIVE")), /*#__PURE__*/_react.default.createElement("h3", {
+    className: "about-card-title rx-about-heading"
+  }, "Our Mission"), /*#__PURE__*/_react.default.createElement("p", {
+    className: "about-card-body-text"
+  }, "To make high-reliability component screening more intelligent, predictive, and explainable by transforming Burn-In and ESS measurements into actionable reliability insights for engineering teams.")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "card about-mv-card rx-about-card"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "about-card-top-icon-row"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "about-icon-box icon-vision"
+  }, /*#__PURE__*/_react.default.createElement("svg", {
+    width: "22",
+    height: "22",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/_react.default.createElement("circle", {
+    cx: "12",
+    cy: "12",
+    r: "3"
+  }), /*#__PURE__*/_react.default.createElement("path", {
+    d: "M2 12c2.5-5 6.5-8 10-8s7.5 3 10 8c-2.5 5-6.5 8-10 8s-7.5-3-10-8z"
+  }))), /*#__PURE__*/_react.default.createElement("span", {
+    className: "about-mv-label"
+  }, "FUTURE HORIZON")), /*#__PURE__*/_react.default.createElement("h3", {
+    className: "about-card-title rx-about-heading"
+  }, "Our Vision"), /*#__PURE__*/_react.default.createElement("p", {
+    className: "about-card-body-text"
+  }, "To advance reliability engineering for space applications through data-driven intelligence that helps engineers identify emerging degradation earlier, understand screening behavior, and make better-informed reliability decisions."))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "card mb-4 rx-about-fade"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "card-header about-section-inner-header"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "about-section-header-left"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "card-title rx-about-heading"
+  }, "OUR VALUES"), /*#__PURE__*/_react.default.createElement("p", {
+    className: "about-subheading-note"
+  }, "Core engineering principles guiding reliable, explainable, and evidence-based screening intelligence.")), /*#__PURE__*/_react.default.createElement("span", {
+    className: "card-badge d-desktop-only"
+  }, "5 PILLARS")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "about-values-grid"
+  }, VALUES.map(val => /*#__PURE__*/_react.default.createElement("div", {
+    key: val.num,
+    className: "about-value-item rx-about-card"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "about-value-header"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "about-value-num"
+  }, val.num), /*#__PURE__*/_react.default.createElement("div", {
+    className: "about-value-icon-box"
+  }, val.icon)), /*#__PURE__*/_react.default.createElement("h4", {
+    className: "about-value-title"
+  }, val.title), /*#__PURE__*/_react.default.createElement("p", {
+    className: "about-value-text"
+  }, val.description))))), /*#__PURE__*/_react.default.createElement("div", {
+    id: "section-team-brigebytes",
+    className: "card about-team-card-wrapper mb-4 rx-about-fade"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "about-team-header-block text-center"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "team-identifier-tag"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "team-tag-pulse"
+  }), "TEAM BRIGEBYTES"), /*#__PURE__*/_react.default.createElement("h3", {
+    className: "team-main-heading rx-about-heading"
+  }, "Team Brigebytes")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "team-cards-grid",
+    role: "list"
+  }, TEAM_MEMBERS.map((member, idx) => {
+    const isLeader = member.isLeader === true;
+    return /*#__PURE__*/_react.default.createElement("div", {
+      key: member.id,
+      role: "listitem",
+      className: `team-card ${isLeader ? "is-leader" : "is-member"}`,
+      style: {
+        "--stagger-index": idx
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      className: "team-card-top-bar"
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      className: "team-identifier-label"
+    }, member.team), isLeader && /*#__PURE__*/_react.default.createElement("span", {
+      className: "team-leader-corner-tag"
+    }, "LEAD")), /*#__PURE__*/_react.default.createElement("div", {
+      className: "team-avatar-container"
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      className: `team-avatar-frame ${isLeader ? "leader-frame" : "member-frame"}`
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      className: "team-avatar-initials"
+    }, member.initials))), /*#__PURE__*/_react.default.createElement("div", {
+      className: "team-member-info"
+    }, /*#__PURE__*/_react.default.createElement("h4", {
+      className: "team-member-name",
+      title: member.name
+    }, member.name), /*#__PURE__*/_react.default.createElement("div", {
+      className: "team-role-wrap"
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      className: `team-role-badge ${isLeader ? "role-leader" : "role-member"}`
+    }, isLeader ? /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("svg", {
+      className: "leader-star-icon",
+      width: "12",
+      height: "12",
+      viewBox: "0 0 24 24",
+      fill: "currentColor"
+    }, /*#__PURE__*/_react.default.createElement("polygon", {
+      points: "12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+    })), /*#__PURE__*/_react.default.createElement("span", null, "TEAM LEADER")) : /*#__PURE__*/_react.default.createElement("span", null, "TEAM MEMBER")))), /*#__PURE__*/_react.default.createElement("div", {
+      className: "team-card-footer"
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      className: "team-footer-meta"
+    }, "Brigebytes \xB7 ReliabilityX")));
+  }))));
 }
   });
 
@@ -3192,6 +3769,7 @@ function EngineeringSuiteTab({
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.IconAbout = IconAbout;
 exports.IconAlertTriangle = IconAlertTriangle;
 exports.IconArrowUp = IconArrowUp;
 exports.IconAudit = IconAudit;
@@ -3514,6 +4092,33 @@ function IconAudit({
     d: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
   }), /*#__PURE__*/_react.default.createElement("path", {
     d: "m9 12 2 2 4-4"
+  }));
+}
+function IconAbout({
+  className = "sidebar-icon"
+}) {
+  return /*#__PURE__*/_react.default.createElement("svg", {
+    className: className,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/_react.default.createElement("circle", {
+    cx: "12",
+    cy: "12",
+    r: "10"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "12",
+    y1: "16",
+    x2: "12",
+    y2: "12"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "12",
+    y1: "8",
+    x2: "12.01",
+    y2: "8"
   }));
 }
 function IconSearch({
@@ -5259,9 +5864,10 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.ReportsTab = ReportsTab;
-var _react = _interopRequireDefault(require("react"));
+var _react = _interopRequireWildcard(require("react"));
 var _types = require("../types");
-function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
+function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
 // ==============================================================================
 // ReliabilityX — Reports & Aerospace Certificate Tab Component
 // Official Screening Certificate & Parametric Data Export
@@ -5270,6 +5876,7 @@ function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e
 function ReportsTab({
   onInspectComp
 }) {
+  const [isExpanded, setIsExpanded] = (0, _react.useState)(false);
   return /*#__PURE__*/_react.default.createElement("div", {
     className: "tab-pane active"
   }, /*#__PURE__*/_react.default.createElement("div", {
@@ -5333,27 +5940,24 @@ function ReportsTab({
   }, "AI-ASSISTED SCREENING ANALYSIS REPORT PREVIEW"), /*#__PURE__*/_react.default.createElement("div", {
     className: "btn-group reports-btn-group"
   }, /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "btn btn-secondary btn-sm",
+    onClick: () => setIsExpanded(prev => !prev),
+    title: isExpanded ? "Collapse preview height" : "Expand to full report height"
+  }, isExpanded ? "Collapse View" : "Expand Height"), /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
     className: "btn btn-secondary btn-sm",
     onClick: () => window.open(`${_types.API_BASE}/reports/certificate-html`, "_blank")
   }, "View Standalone Report"), /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
     className: "btn btn-primary btn-sm",
     onClick: () => window.location.href = `${_types.API_BASE}/reports/export-csv`
   }, "Export Telemetry CSV"))), /*#__PURE__*/_react.default.createElement("div", {
-    className: "report-iframe-container",
-    style: {
-      marginTop: "16px",
-      border: "1px solid var(--border-color)",
-      borderRadius: "10px",
-      overflow: "hidden"
-    }
+    className: `report-iframe-container ${isExpanded ? "is-expanded" : ""}`
   }, /*#__PURE__*/_react.default.createElement("iframe", {
     src: `${_types.API_BASE}/reports/certificate-html`,
-    style: {
-      width: "100%",
-      height: "100%",
-      border: "none"
-    },
-    title: "Screening Analysis Report"
+    title: "Screening Analysis Report",
+    loading: "lazy"
   }))));
 }
   });
@@ -5931,7 +6535,17 @@ function Sidebar({
     title: "Audit & Traceability"
   }, /*#__PURE__*/_react.default.createElement(_Icons.IconAudit, null), /*#__PURE__*/_react.default.createElement("span", {
     className: "sidebar-item-label"
-  }, "Audit / Traceability")))), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Audit / Traceability"))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "sidebar-nav-group"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "sidebar-group-title"
+  }, !collapsed ? "SYSTEM" : "•••"), /*#__PURE__*/_react.default.createElement("button", {
+    className: `sidebar-item ${activeTab === "about" ? "active" : ""}`,
+    onClick: () => handleItemClick("about"),
+    title: "About ReliabilityX & Team Brigebytes"
+  }, /*#__PURE__*/_react.default.createElement(_Icons.IconAbout, null), /*#__PURE__*/_react.default.createElement("span", {
+    className: "sidebar-item-label"
+  }, "About")))), /*#__PURE__*/_react.default.createElement("div", {
     className: "sidebar-footer"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "sidebar-status-pill"
@@ -6009,6 +6623,8 @@ function Topbar({
         return "Engineering Suite";
       case "audit":
         return "Audit & Traceability Ledger";
+      case "about":
+        return "About ReliabilityX & Team Brigebytes";
       default:
         return "ReliabilityX Suite";
     }

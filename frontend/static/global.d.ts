@@ -48,6 +48,7 @@ declare module "react" {
   export type ReactNode = any;
   export type ReactElement = any;
   export type ComponentType<P = {}> = (props: P) => any;
+  export type CSSProperties = Record<string, any>;
 
   export function useState<T>(initialState: T | (() => T)): [T, (val: T | ((prev: T) => T)) => void];
   export function useEffect(effect: () => void | (() => void), deps?: readonly any[]): void;
@@ -118,6 +119,7 @@ declare namespace React {
   type FC<P = {}> = (props: P) => any;
   type ReactNode = any;
   type ReactElement = any;
+  type CSSProperties = Record<string, any>;
 }
 
 declare module "vite" {

@@ -15,6 +15,7 @@ import {
   IconReports,
   IconEngineering,
   IconAudit,
+  IconAbout,
   IconCollapse,
   IconExpand
 } from "./Icons";
@@ -172,6 +173,21 @@ export function Sidebar({ activeTab, onSelectTab, collapsed, onToggleCollapse, m
           >
             <IconAudit />
             <span className="sidebar-item-label">Audit / Traceability</span>
+          </button>
+        </div>
+
+        {/* GROUP 5: SYSTEM */}
+        <div className="sidebar-nav-group">
+          <div className="sidebar-group-title">
+            {!collapsed ? "SYSTEM" : "•••"}
+          </div>
+          <button
+            className={`sidebar-item ${activeTab === "about" ? "active" : ""}`}
+            onClick={() => handleItemClick("about")}
+            title="About ReliabilityX & Team Brigebytes"
+          >
+            <IconAbout />
+            <span className="sidebar-item-label">About</span>
           </button>
         </div>
       </div>

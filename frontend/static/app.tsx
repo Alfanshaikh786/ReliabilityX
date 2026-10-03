@@ -22,6 +22,7 @@ import { EngineeringSuiteTab } from "./components/EngineeringSuiteTab";
 import { ComponentDetailModal } from "./components/ComponentDetailModal";
 import { DatasetModal } from "./components/DatasetModal";
 import { MobileBottomNav } from "./components/MobileBottomNav";
+import { AboutSection } from "./components/AboutSection";
 
 export function ReliabilityXApp() {
   const getInitialTab = (): TabType => {
@@ -37,7 +38,8 @@ export function ReliabilityXApp() {
         "inspection",
         "reports",
         "engineering",
-        "audit"
+        "audit",
+        "about"
       ];
       if (validTabs.includes(hash)) return hash;
     } catch {}
@@ -99,7 +101,8 @@ export function ReliabilityXApp() {
         "inspection",
         "reports",
         "engineering",
-        "audit"
+        "audit",
+        "about"
       ];
       if (validTabs.includes(hash)) {
         setActiveTabState(hash);
@@ -131,7 +134,8 @@ export function ReliabilityXApp() {
           "inspection",
           "reports",
           "engineering",
-          "audit"
+          "audit",
+          "about"
         ];
         if (validTabs.includes(targetId as TabType)) {
           e.preventDefault();
@@ -791,6 +795,10 @@ export function ReliabilityXApp() {
               onSaved={() => showToast("Specifications updated successfully.", "success")}
               initialSubTab="audit"
             />
+          )}
+
+          {activeTab === "about" && (
+            <AboutSection />
           )}
         </main>
         {/* Mobile Bottom Navigation Dock */}

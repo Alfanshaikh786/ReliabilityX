@@ -13,7 +13,8 @@ export type TabType =
   | "inspection"
   | "reports"
   | "engineering"
-  | "audit";
+  | "audit"
+  | "about";
 
 export interface LiveStreamStatus {
   connection_status: "CONNECTED" | "DISCONNECTED" | "RECONNECTING" | "STALE" | "PAUSED" | "LIVE" | "OFFLINE" | string;

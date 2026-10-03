@@ -49,6 +49,8 @@ export function Topbar({
         return "Engineering Suite";
       case "audit":
         return "Audit & Traceability Ledger";
+      case "about":
+        return "About ReliabilityX & Team Brigebytes";
       default:
         return "ReliabilityX Suite";
     }

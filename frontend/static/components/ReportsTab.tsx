@@ -2,7 +2,7 @@
 // ReliabilityX — Reports & Aerospace Certificate Tab Component
 // Official Screening Certificate & Parametric Data Export
 // ==============================================================================
-import React from "react";
+import React, { useState } from "react";
 import { API_BASE } from "../types";
 
 interface ReportsTabProps {
@@ -10,6 +10,8 @@ interface ReportsTabProps {
 }
 
 export function ReportsTab({ onInspectComp }: ReportsTabProps) {
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+
   return (
     <div className="tab-pane active">
       {/* 1. Page Header */}
@@ -50,12 +52,22 @@ export function ReportsTab({ onInspectComp }: ReportsTabProps) {
           <span className="card-title">AI-ASSISTED SCREENING ANALYSIS REPORT PREVIEW</span>
           <div className="btn-group reports-btn-group">
             <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => setIsExpanded((prev) => !prev)}
+              title={isExpanded ? "Collapse preview height" : "Expand to full report height"}
+            >
+              {isExpanded ? "Collapse View" : "Expand Height"}
+            </button>
+            <button
+              type="button"
               className="btn btn-secondary btn-sm"
               onClick={() => window.open(`${API_BASE}/reports/certificate-html`, "_blank")}
             >
               View Standalone Report
             </button>
             <button
+              type="button"
               className="btn btn-primary btn-sm"
               onClick={() => (window.location.href = `${API_BASE}/reports/export-csv`)}
             >
@@ -66,18 +78,12 @@ export function ReportsTab({ onInspectComp }: ReportsTabProps) {
 
         {/* Report Frame Preview */}
         <div
-          className="report-iframe-container"
-          style={{
-            marginTop: "16px",
-            border: "1px solid var(--border-color)",
-            borderRadius: "10px",
-            overflow: "hidden"
-          }}
+          className={`report-iframe-container ${isExpanded ? "is-expanded" : ""}`}
         >
           <iframe
             src={`${API_BASE}/reports/certificate-html`}
-            style={{ width: "100%", height: "100%", border: "none" }}
             title="Screening Analysis Report"
+            loading="lazy"
           />
         </div>
       </div>
