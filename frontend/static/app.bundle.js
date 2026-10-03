@@ -1,4 +1,4 @@
-// ReliabilityX Bundled Application (2026-10-03T09:38:49.983Z)
+// ReliabilityX Bundled Application (2026-10-03T10:24:16.431Z)
 (function() {
   if (typeof window !== 'undefined') {
     if (window.React && !window.React.default) window.React.default = window.React;
@@ -279,19 +279,28 @@ function ReliabilityXApp() {
     loadSystemData();
   }, [loadSystemData]);
 
-  // ---------------------------------------------------------------------------
   // ==============================================================================
-  // RELIABILITYX SECTION-SLIDING SCROLL-REVEAL SYSTEM (60 FPS GPU-COMPOSITED)
-  // Inspired by reliabilityx.com smooth section-sliding feel:
-  // As user scrolls: SECTION ENTERS VIEWPORT -> SUBTLE UPWARD SLIDE (26px desktop / 12px mobile)
-  // -> SMOOTH SETTLE via cubic-bezier(0.16, 1, 0.3, 1) -> STATIC POSITION.
-  // IntersectionObserver detects entries once with zero repeated calculations.
-  // Reverse scrolling never replays or flickers. Live data & charts remain stable.
+  // RELIABILITYX VASUKI-QUALITY SCROLL REVEAL SYSTEM v3.0
+  // Matched to vasukicabs.com interaction quality:
+  // - Native scroll preserved (CSS scroll-behavior on viewport container)
+  // - Multi-directional entrance: Y for cards, X for panels, scale for heroes
+  // - 500ms cubic-bezier(0.16,1,0.3,1) — silky deceleration easing
+  // - 100ms stagger between siblings via CSS nth-child transitions
+  // - Once-only: elements stay visible after first reveal
+  // - Single IntersectionObserver — no RAF loops, no scroll hijacking
+  // - GPU-only: transform + opacity. Never top/left/width/height.
   // ==============================================================================
   (0, _react.useEffect)(() => {
     const prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const viewport = document.querySelector(".app-main-viewport");
-    const targetSelectors = [".hero-header", ".page-header", ".kpi-grid > .kpi-card", ".live-kpi-grid > .live-kpi-card", ".dashboard-hero-grid > .card", ".lot-summary-grid > .lot-summary-card", ".card", ".insight-panel", ".table-container", ".table-responsive", ".alert-stream-card", ".flowchart-node", ".whatif-card", ".dossier-tab-strip", ".rx-scroll-reveal", ".rx-floating-card", ".rx-reveal-item"];
+
+    // Enable smooth scroll on viewport (CSS approach, zero JS overhead)
+    if (viewport && !prefersReduced) {
+      viewport.style.scrollBehavior = "smooth";
+    }
+    const targetSelectors = [".hero-header", ".page-header", ".kpi-grid > .kpi-card", ".live-kpi-grid > .live-kpi-card", ".dashboard-hero-grid > .card", ".lot-summary-grid > .lot-summary-card", ".lots-grid > .lot-summary-card", ".card", ".insight-panel", ".table-container", ".table-responsive", ".alert-stream-card", ".flowchart-node", ".whatif-card", ".dossier-tab-strip", ".rx-scroll-reveal", ".rx-floating-card", ".rx-reveal-item"];
+
+    // Immediate reveal for reduced-motion or old browsers
     if (prefersReduced || !("IntersectionObserver" in window)) {
       document.querySelectorAll(targetSelectors.join(", ")).forEach(el => {
         el.classList.add("rx-scroll-reveal", "rx-revealed", "rx-settled", "rx-floating-card");
@@ -299,10 +308,58 @@ function ReliabilityXApp() {
       return;
     }
     let observer = null;
+
+    // ── Assign directional reveal classes to elements ──────────────────────────
+    // Hero/page titles → subtle left slide  (rx-reveal-left)
+    // Right insight panels → subtle right slide (rx-reveal-right, desktop only)
+    // Large panels/charts → scale + fade    (rx-reveal-scale)
+    // Everything else → slide from below    (rx-scroll-reveal, default)
+    const assignRevealDirections = () => {
+      const isMobile = window.innerWidth <= 768;
+
+      // Hero titles → left slide
+      document.querySelectorAll(".hero-header, .page-header").forEach(el => {
+        if (!el.classList.contains("rx-reveal-left") && !el.classList.contains("rx-revealed")) {
+          el.classList.add("rx-reveal-left");
+        }
+      });
+
+      // Right-column insight panels → right slide (desktop only)
+      if (!isMobile) {
+        document.querySelectorAll(".dashboard-hero-grid > :nth-child(2), .live-main-split > :nth-child(2)").forEach(el => {
+          if (!el.classList.contains("rx-reveal-right") && !el.classList.contains("rx-revealed")) {
+            el.classList.add("rx-reveal-right");
+          }
+        });
+      }
+
+      // Large insight panels → scale + fade
+      document.querySelectorAll(".insight-panel").forEach(el => {
+        if (!el.classList.contains("rx-reveal-scale") && !el.classList.contains("rx-revealed")) {
+          el.classList.add("rx-reveal-scale");
+        }
+      });
+
+      // Mobile floating classes
+      if (isMobile) {
+        document.querySelectorAll(".kpi-grid > .kpi-card, .live-kpi-grid > .live-kpi-card").forEach(el => {
+          if (!el.classList.contains("rx-float-kpi")) el.classList.add("rx-float-kpi");
+        });
+        document.querySelectorAll(".lot-summary-grid > .lot-summary-card, .lots-grid > .lot-summary-card").forEach(el => {
+          if (!el.classList.contains("rx-float-card")) el.classList.add("rx-float-card");
+        });
+        document.querySelectorAll(".alert-stream-card").forEach(el => {
+          if (!el.classList.contains("rx-float-live")) el.classList.add("rx-float-live");
+        });
+      }
+    };
     const setupScrollReveal = () => {
       if (observer) observer.disconnect();
       const vp = document.querySelector(".app-main-viewport") || viewport;
       const isMobile = window.innerWidth <= 768;
+      assignRevealDirections();
+
+      // Single unified IntersectionObserver — once-only trigger
       observer = new IntersectionObserver(entries => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
@@ -312,53 +369,50 @@ function ReliabilityXApp() {
         });
       }, {
         root: vp || null,
-        rootMargin: isMobile ? "0px 0px -15px 0px" : "0px 0px -35px 0px",
-        threshold: 0.04
+        // Trigger earlier so motion starts as element enters (Vasuki feel)
+        rootMargin: isMobile ? "0px 0px -8px 0px" : "0px 0px -40px 0px",
+        threshold: 0.08
       });
-
-      // Collect candidate elements
-      const candidateElements = document.querySelectorAll(targetSelectors.join(", "));
+      const allSelectors = [...targetSelectors, ".rx-reveal-left", ".rx-reveal-right", ".rx-reveal-scale"];
+      const candidateElements = document.querySelectorAll(allSelectors.join(", "));
       const viewportRect = vp ? vp.getBoundingClientRect() : {
         top: 0,
         bottom: window.innerHeight,
         height: window.innerHeight
       };
       candidateElements.forEach(el => {
-        // Skip nested cards inside another observed card (prevents double-animation of inner components)
+        // Skip nested inner cards (no double-animation)
         if (el.matches(".card .card, .insight-panel .card, .card .table-container, .card .table-responsive, .card .chart-metric-card")) {
           return;
         }
 
-        // Add base sliding reveal class
-        if (!el.classList.contains("rx-scroll-reveal")) {
+        // Assign base slide class if no directional class yet
+        const hasDirectionalClass = el.classList.contains("rx-reveal-left") || el.classList.contains("rx-reveal-right") || el.classList.contains("rx-reveal-scale");
+        if (!hasDirectionalClass && !el.classList.contains("rx-scroll-reveal")) {
           el.classList.add("rx-scroll-reveal", "rx-floating-card");
         }
 
-        // If already revealed from a previous scroll, preserve revealed state
+        // Already revealed — don't reset
         if (el.classList.contains("rx-revealed") || el.classList.contains("rx-settled")) {
           return;
         }
 
-        // Check if element is in the initial visible fold
+        // Above-the-fold: reveal instantly (dashboard loads readable)
         const rect = el.getBoundingClientRect();
-        const isInInitialView = rect.top < viewportRect.bottom - (isMobile ? 20 : 50) && rect.bottom > viewportRect.top + 20;
-        if (isInInitialView) {
-          // Immediately settle above-the-fold elements so initial screen is instantly readable
+        const isAboveFold = rect.top < viewportRect.bottom - (isMobile ? 10 : 40) && rect.bottom > viewportRect.top + 10;
+        if (isAboveFold) {
           el.classList.add("rx-revealed", "rx-settled");
         } else {
-          // Off-screen element: observe for user scroll entrance
           observer?.observe(el);
         }
       });
     };
 
-    // If intro overlay is active, wait until intro finishes before initiating scroll reveals
+    // Wait for intro animation to complete before starting scroll reveals
     const introOverlay = document.getElementById("rx-intro-overlay");
     let introHandler = null;
     if (introOverlay) {
-      introHandler = () => {
-        setTimeout(setupScrollReveal, 80);
-      };
+      introHandler = () => setTimeout(setupScrollReveal, 80);
       window.addEventListener("rx-intro-complete", introHandler, {
         once: true
       });
@@ -366,15 +420,13 @@ function ReliabilityXApp() {
       setupScrollReveal();
     }
 
-    // Refresh observer after DOM layout settles and when dynamic datasets render
-    const t1 = setTimeout(setupScrollReveal, 120);
-    const t2 = setTimeout(setupScrollReveal, 400);
+    // Re-run after dynamic data/components render
+    const t1 = setTimeout(setupScrollReveal, 150);
+    const t2 = setTimeout(setupScrollReveal, 500);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
-      if (introHandler) {
-        window.removeEventListener("rx-intro-complete", introHandler);
-      }
+      if (introHandler) window.removeEventListener("rx-intro-complete", introHandler);
       if (observer) observer.disconnect();
     };
   }, [activeTab, loading, heroCompLoading, overview]);

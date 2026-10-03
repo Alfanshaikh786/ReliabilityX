@@ -4154,102 +4154,120 @@ select:focus, .control-select:focus {
 }
 
 /* ==============================================================================
-   HIGH-PERFORMANCE FLOATING SCROLL SYSTEM (SECTION 24)
-/* ==============================================================================
-   RELIABILITYX PREMIUM SECTION-SLIDING / SCROLL-REVEAL SYSTEM
-   Fluid, section-based slide + fade entrance with gentle settle (60 FPS, GPU-accelerated)
-   Inspired by premium engineering interactions (reliabilityx.com feel)
-   Movement: subtle translateY(26px desktop, 18px tablet, 12px mobile) + opacity(0 -> 1)
-   Easing: cubic-bezier(0.16, 1, 0.3, 1) — silky smooth deceleration curve
+   RELIABILITYX VASUKI-QUALITY SCROLL REVEAL SYSTEM v3.0
+   Research-matched to vasukicabs.com interaction quality:
+   ─ Native scroll preserved (no hijacking)
+   ─ fade + translateY(30px→0) primary motion, translateX for side panels
+   ─ 500ms cubic-bezier(0.16,1,0.3,1) — smooth deceleration (ease-out feel)
+   ─ 100ms card stagger between siblings
+   ─ Once-only trigger — elements stay visible after first reveal
+   ─ GPU-only: transform + opacity, never top/left/margin/height
+   ─ Desktop: 30px • Tablet: 22px • Mobile: 14px entrance distance
+   ─ Reduced-motion: instant reveal, no movement
    ============================================================================== */
 
+/* ── BASE: Slide-up from below (primary — sections, cards, KPI, tables) ─── */
 .rx-scroll-reveal,
 .rx-floating-card,
 .rx-reveal-item {
   opacity: 0;
-  transform: translate3d(0, 26px, 0);
-  transition: opacity 620ms cubic-bezier(0.16, 1, 0.3, 1),
-              transform 620ms cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.22s ease,
-              box-shadow 0.22s ease;
+  transform: translate3d(0, 30px, 0);
+  transition: opacity 500ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 500ms cubic-bezier(0.16, 1, 0.3, 1);
   will-change: opacity, transform;
 }
 
+/* ── SLIDE FROM LEFT (section title lines, left-aligned panels) ─────────── */
+.rx-reveal-left {
+  opacity: 0;
+  transform: translate3d(-28px, 0, 0);
+  transition: opacity 520ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+/* ── SLIDE FROM RIGHT (right-aligned panels, insight side columns) ───────── */
+.rx-reveal-right {
+  opacity: 0;
+  transform: translate3d(28px, 0, 0);
+  transition: opacity 520ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+/* ── SCALE + FADE (hero blocks, large visual panels, chart containers) ───── */
+.rx-reveal-scale {
+  opacity: 0;
+  transform: scale3d(0.97, 0.97, 1) translateY(16px);
+  transition: opacity 580ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 580ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+/* ── REVEALED STATE: All variants settle here ────────────────────────────── */
 .rx-scroll-reveal.rx-revealed,
 .rx-floating-card.rx-settled,
-.rx-reveal-item.rx-revealed {
+.rx-reveal-item.rx-revealed,
+.rx-reveal-left.rx-revealed,
+.rx-reveal-right.rx-revealed,
+.rx-reveal-scale.rx-revealed {
   opacity: 1;
-  transform: translate3d(0, 0, 0);
-  will-change: auto; /* Free compositor memory after settling into resting position */
+  transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
+  will-change: auto;
 }
 
-/* Subtle staggered delays for multi-card groupings (Desktop / Laptop) */
+/* ── CARD STAGGER: 100ms per sibling (matches Vasuki card timing) ─────────── */
+/* KPI Grid */
 .kpi-grid > .rx-scroll-reveal:nth-child(1),
+.kpi-grid > .rx-floating-card:nth-child(1),
 .live-kpi-grid > .rx-scroll-reveal:nth-child(1),
+.live-kpi-grid > .rx-floating-card:nth-child(1),
 .chart-metrics-grid > .rx-scroll-reveal:nth-child(1),
 .lot-summary-grid > .rx-scroll-reveal:nth-child(1),
-.dashboard-hero-grid > .rx-scroll-reveal:nth-child(1),
-.kpi-grid > .rx-floating-card:nth-child(1),
-.live-kpi-grid > .rx-floating-card:nth-child(1),
-.chart-metrics-grid > .rx-floating-card:nth-child(1),
-.lot-summary-grid > .rx-floating-card:nth-child(1),
-.dashboard-hero-grid > .rx-floating-card:nth-child(1) {
-  transition-delay: 0ms;
-}
+.dashboard-hero-grid > .rx-scroll-reveal:nth-child(1) { transition-delay: 0ms; }
 
 .kpi-grid > .rx-scroll-reveal:nth-child(2),
+.kpi-grid > .rx-floating-card:nth-child(2),
 .live-kpi-grid > .rx-scroll-reveal:nth-child(2),
+.live-kpi-grid > .rx-floating-card:nth-child(2),
 .chart-metrics-grid > .rx-scroll-reveal:nth-child(2),
 .lot-summary-grid > .rx-scroll-reveal:nth-child(2),
-.dashboard-hero-grid > .rx-scroll-reveal:nth-child(2),
-.kpi-grid > .rx-floating-card:nth-child(2),
-.live-kpi-grid > .rx-floating-card:nth-child(2),
-.chart-metrics-grid > .rx-floating-card:nth-child(2),
-.lot-summary-grid > .rx-floating-card:nth-child(2),
-.dashboard-hero-grid > .rx-floating-card:nth-child(2) {
-  transition-delay: 60ms;
-}
+.dashboard-hero-grid > .rx-scroll-reveal:nth-child(2) { transition-delay: 100ms; }
 
 .kpi-grid > .rx-scroll-reveal:nth-child(3),
-.live-kpi-grid > .rx-scroll-reveal:nth-child(3),
-.chart-metrics-grid > .rx-scroll-reveal:nth-child(3),
-.lot-summary-grid > .rx-scroll-reveal:nth-child(3),
 .kpi-grid > .rx-floating-card:nth-child(3),
+.live-kpi-grid > .rx-scroll-reveal:nth-child(3),
 .live-kpi-grid > .rx-floating-card:nth-child(3),
-.chart-metrics-grid > .rx-floating-card:nth-child(3),
-.lot-summary-grid > .rx-floating-card:nth-child(3) {
-  transition-delay: 120ms;
-}
+.chart-metrics-grid > .rx-scroll-reveal:nth-child(3),
+.lot-summary-grid > .rx-scroll-reveal:nth-child(3) { transition-delay: 200ms; }
 
 .kpi-grid > .rx-scroll-reveal:nth-child(4),
-.live-kpi-grid > .rx-scroll-reveal:nth-child(4),
-.chart-metrics-grid > .rx-scroll-reveal:nth-child(4),
-.lot-summary-grid > .rx-scroll-reveal:nth-child(4),
 .kpi-grid > .rx-floating-card:nth-child(4),
+.live-kpi-grid > .rx-scroll-reveal:nth-child(4),
 .live-kpi-grid > .rx-floating-card:nth-child(4),
-.chart-metrics-grid > .rx-floating-card:nth-child(4),
-.lot-summary-grid > .rx-floating-card:nth-child(4) {
-  transition-delay: 180ms;
-}
+.chart-metrics-grid > .rx-scroll-reveal:nth-child(4),
+.lot-summary-grid > .rx-scroll-reveal:nth-child(4) { transition-delay: 300ms; }
 
 .kpi-grid > .rx-scroll-reveal:nth-child(5),
 .live-kpi-grid > .rx-scroll-reveal:nth-child(5),
-.lot-summary-grid > .rx-scroll-reveal:nth-child(5),
-.kpi-grid > .rx-floating-card:nth-child(5),
-.live-kpi-grid > .rx-floating-card:nth-child(5),
-.lot-summary-grid > .rx-floating-card:nth-child(5) {
-  transition-delay: 240ms;
-}
+.lot-summary-grid > .rx-scroll-reveal:nth-child(5) { transition-delay: 400ms; }
 
-/* Enhanced Tab Transition */
+/* Lot cards — larger stagger spread for multi-column grids */
+.lots-grid > .rx-scroll-reveal:nth-child(1) { transition-delay: 0ms; }
+.lots-grid > .rx-scroll-reveal:nth-child(2) { transition-delay: 80ms; }
+.lots-grid > .rx-scroll-reveal:nth-child(3) { transition-delay: 160ms; }
+.lots-grid > .rx-scroll-reveal:nth-child(4) { transition-delay: 240ms; }
+.lots-grid > .rx-scroll-reveal:nth-child(5) { transition-delay: 320ms; }
+
+/* ── TAB PAGE ENTRANCE ───────────────────────────────────────────────────── */
 .tab-pane.active {
-  animation: rxTabFadeUp 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: rxVasukiTabEnter 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@keyframes rxTabFadeUp {
+@keyframes rxVasukiTabEnter {
   from {
     opacity: 0;
-    transform: translate3d(0, 6px, 0);
+    transform: translate3d(0, 10px, 0);
   }
   to {
     opacity: 1;
@@ -4257,24 +4275,31 @@ select:focus, .control-select:focus {
   }
 }
 
-/* Professional Card Hover Lift */
+/* ── CARD HOVER LIFT (Vasuki-style subtle depth on hover) ────────────────── */
 .card:hover,
 .kpi-card:hover,
 .live-kpi-card:hover,
 .insight-panel:hover,
 .lot-summary-card:hover {
-  transform: translate3d(0, -3px, 0) !important;
-  box-shadow: 0 10px 24px -2px rgba(0, 0, 0, 0.55), 0 0 16px rgba(56, 189, 248, 0.16) !important;
-  border-color: rgba(56, 189, 248, 0.35) !important;
+  transform: translate3d(0, -3px, 0);
+  box-shadow: 0 10px 32px -4px rgba(0, 0, 0, 0.6),
+              0 0 20px rgba(56, 189, 248, 0.14);
+  border-color: rgba(56, 189, 248, 0.28);
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 220ms ease;
 }
 
-/* Ambient Multi-Depth Background (Non-blocking, GPU composited) */
+/* Ensure hover doesn't fight reveal animation */
+.card.rx-scroll-reveal:not(.rx-revealed):hover,
+.kpi-card.rx-scroll-reveal:not(.rx-revealed):hover {
+  transform: translate3d(0, 30px, 0);
+}
+
+/* ── AMBIENT BACKGROUND DEPTH (Non-blocking, GPU composited) ─────────────── */
 .rx-floating-background {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
   min-height: 100%;
   pointer-events: none;
   overflow: hidden;
@@ -4285,133 +4310,105 @@ select:focus, .control-select:focus {
   position: absolute;
   border-radius: 50%;
   filter: blur(80px);
-  opacity: 0.28;
+  opacity: 0.26;
   pointer-events: none;
 }
 
 .rx-orb-1 {
-  top: 100px;
-  right: 6%;
-  width: 520px;
-  height: 520px;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.16) 0%, rgba(14, 165, 233, 0.04) 50%, transparent 72%);
+  top: 100px; right: 6%;
+  width: 520px; height: 520px;
+  background: radial-gradient(circle, rgba(56,189,248,0.16) 0%, rgba(14,165,233,0.04) 50%, transparent 72%);
 }
 
 .rx-orb-2 {
-  top: 850px;
-  left: 4%;
-  width: 460px;
-  height: 460px;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, rgba(56, 189, 248, 0.03) 50%, transparent 70%);
+  top: 850px; left: 4%;
+  width: 460px; height: 460px;
+  background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, rgba(56,189,248,0.03) 50%, transparent 70%);
 }
 
 .rx-orb-3 {
-  top: 1550px;
-  right: 8%;
-  width: 440px;
-  height: 440px;
-  background: radial-gradient(circle, rgba(52, 211, 153, 0.08) 0%, rgba(56, 189, 248, 0.02) 50%, transparent 70%);
+  top: 1550px; right: 8%;
+  width: 440px; height: 440px;
+  background: radial-gradient(circle, rgba(52,211,153,0.08) 0%, rgba(56,189,248,0.02) 50%, transparent 70%);
 }
 
 .rx-floating-grid-mesh {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: 
-    linear-gradient(rgba(56, 189, 248, 0.014) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(56, 189, 248, 0.014) 1px, transparent 1px);
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background-image:
+    linear-gradient(rgba(56,189,248,0.014) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56,189,248,0.014) 1px, transparent 1px);
   background-size: 54px 54px;
   opacity: 0.55;
   pointer-events: none;
 }
 
-/* Tablet Adaptive Motion (769px–1024px) */
+/* ── TABLET: Lighter motion (769px–1024px) ───────────────────────────────── */
 @media (min-width: 769px) and (max-width: 1024px) {
   .rx-scroll-reveal,
   .rx-floating-card,
   .rx-reveal-item {
-    transform: translate3d(0, 18px, 0);
-    transition: opacity 540ms cubic-bezier(0.16, 1, 0.3, 1),
-                transform 540ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translate3d(0, 22px, 0);
+    transition-duration: 460ms;
   }
+  .rx-reveal-left  { transform: translate3d(-20px, 0, 0); transition-duration: 480ms; }
+  .rx-reveal-right { transform: translate3d( 20px, 0, 0); transition-duration: 480ms; }
+  .rx-reveal-scale { transform: scale3d(0.98, 0.98, 1) translateY(12px); transition-duration: 500ms; }
 
+  /* Compress stagger on tablet */
   .kpi-grid > .rx-scroll-reveal:nth-child(2),
-  .live-kpi-grid > .rx-scroll-reveal:nth-child(2),
-  .chart-metrics-grid > .rx-scroll-reveal:nth-child(2),
-  .lot-summary-grid > .rx-scroll-reveal:nth-child(2),
-  .kpi-grid > .rx-floating-card:nth-child(2),
-  .live-kpi-grid > .rx-floating-card:nth-child(2) {
-    transition-delay: 45ms;
-  }
-
+  .live-kpi-grid > .rx-scroll-reveal:nth-child(2) { transition-delay: 75ms; }
   .kpi-grid > .rx-scroll-reveal:nth-child(3),
-  .live-kpi-grid > .rx-scroll-reveal:nth-child(3),
-  .chart-metrics-grid > .rx-scroll-reveal:nth-child(3),
-  .lot-summary-grid > .rx-scroll-reveal:nth-child(3),
-  .kpi-grid > .rx-floating-card:nth-child(3),
-  .live-kpi-grid > .rx-floating-card:nth-child(3) {
-    transition-delay: 90ms;
-  }
-
+  .live-kpi-grid > .rx-scroll-reveal:nth-child(3) { transition-delay: 150ms; }
   .kpi-grid > .rx-scroll-reveal:nth-child(4),
-  .live-kpi-grid > .rx-scroll-reveal:nth-child(4),
-  .chart-metrics-grid > .rx-scroll-reveal:nth-child(4),
-  .lot-summary-grid > .rx-scroll-reveal:nth-child(4),
-  .kpi-grid > .rx-floating-card:nth-child(4),
-  .live-kpi-grid > .rx-floating-card:nth-child(4) {
-    transition-delay: 135ms;
-  }
+  .live-kpi-grid > .rx-scroll-reveal:nth-child(4) { transition-delay: 225ms; }
 }
 
-/* Mobile-Optimized Lightweight Motion (max-width: 768px) */
-/* Shorter 12px distance, 440ms duration, touch-first responsive physics */
+/* ── MOBILE: Minimal motion ≤768px ──────────────────────────────────────── */
 @media (max-width: 768px) {
   .rx-scroll-reveal,
   .rx-floating-card,
   .rx-reveal-item {
-    transform: translate3d(0, 12px, 0);
-    transition: opacity 440ms cubic-bezier(0.16, 1, 0.3, 1),
-                transform 440ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translate3d(0, 14px, 0);
+    transition: opacity 400ms cubic-bezier(0.16, 1, 0.3, 1),
+                transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  /* Disable X-axis movement on mobile — only Y for clean touch feel */
+  .rx-reveal-left, .rx-reveal-right {
+    transform: translate3d(0, 14px, 0);
+    transition: opacity 400ms cubic-bezier(0.16, 1, 0.3, 1),
+                transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .rx-reveal-scale {
+    transform: scale3d(0.99, 0.99, 1) translateY(10px);
+    transition: opacity 400ms cubic-bezier(0.16, 1, 0.3, 1),
+                transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
+  /* Tighter stagger on mobile — data appears quickly */
   .kpi-grid > .rx-scroll-reveal:nth-child(1),
-  .live-kpi-grid > .rx-scroll-reveal:nth-child(1),
-  .chart-metrics-grid > .rx-scroll-reveal:nth-child(1),
-  .lot-summary-grid > .rx-scroll-reveal:nth-child(1),
-  .kpi-grid > .rx-floating-card:nth-child(1),
-  .live-kpi-grid > .rx-floating-card:nth-child(1) {
-    transition-delay: 0ms;
-  }
-
+  .live-kpi-grid > .rx-scroll-reveal:nth-child(1) { transition-delay: 0ms; }
   .kpi-grid > .rx-scroll-reveal:nth-child(2),
-  .live-kpi-grid > .rx-scroll-reveal:nth-child(2),
-  .chart-metrics-grid > .rx-scroll-reveal:nth-child(2),
-  .lot-summary-grid > .rx-scroll-reveal:nth-child(2),
-  .kpi-grid > .rx-floating-card:nth-child(2),
-  .live-kpi-grid > .rx-floating-card:nth-child(2) {
-    transition-delay: 35ms;
-  }
-
+  .live-kpi-grid > .rx-scroll-reveal:nth-child(2) { transition-delay: 55ms; }
   .kpi-grid > .rx-scroll-reveal:nth-child(3),
-  .live-kpi-grid > .rx-scroll-reveal:nth-child(3),
-  .chart-metrics-grid > .rx-scroll-reveal:nth-child(3),
-  .lot-summary-grid > .rx-scroll-reveal:nth-child(3),
-  .kpi-grid > .rx-floating-card:nth-child(3),
-  .live-kpi-grid > .rx-floating-card:nth-child(3) {
-    transition-delay: 70ms;
-  }
-
+  .live-kpi-grid > .rx-scroll-reveal:nth-child(3) { transition-delay: 110ms; }
   .kpi-grid > .rx-scroll-reveal:nth-child(4),
-  .live-kpi-grid > .rx-scroll-reveal:nth-child(4),
-  .chart-metrics-grid > .rx-scroll-reveal:nth-child(4),
-  .lot-summary-grid > .rx-scroll-reveal:nth-child(4),
-  .kpi-grid > .rx-floating-card:nth-child(4),
-  .live-kpi-grid > .rx-floating-card:nth-child(4) {
-    transition-delay: 105ms;
+  .live-kpi-grid > .rx-scroll-reveal:nth-child(4) { transition-delay: 165ms; }
+  .kpi-grid > .rx-scroll-reveal:nth-child(5),
+  .live-kpi-grid > .rx-scroll-reveal:nth-child(5) { transition-delay: 220ms; }
+
+  /* Disable hover lift on touch — prevents stuck states */
+  .card:hover,
+  .kpi-card:hover,
+  .live-kpi-card:hover,
+  .insight-panel:hover,
+  .lot-summary-card:hover {
+    transform: none;
   }
 }
+
+
 
 /* ==============================================================================
    REDUCED MOTION ACCESSIBILITY (Section 4)
@@ -4461,4 +4458,833 @@ select:focus, .control-select:focus {
 }
 
 
+
+/* ==============================================================================
+   RELIABILITYX MOBILE-FIRST ENHANCEMENT SUITE v2.0
+   Research-backed implementation:
+   - 8pt spacing grid system (multiples of 8px for all spacing)
+   - Slow floating animations (4-7s ease-in-out infinite) per feature
+   - Scroll-reveal entrance with staggered delays (0ms → 400ms)
+   - Clean card separation (no overlap, generous breathing room)
+   - 44px minimum touch targets (WCAG 2.5.5)
+   - Glassmorphism bottom nav & topbar
+   - Safe area inset support (notched phones, dynamic island)
+   ============================================================================== */
+
+/* ── FLOATING ANIMATION KEYFRAMES ─────────────────────────────────────────── */
+
+/* Slow gentle float — used for KPI cards, hero section */
+@keyframes rxFloatGentle {
+  0%   { transform: translateY(0px); }
+  50%  { transform: translateY(-6px); }
+  100% { transform: translateY(0px); }
+}
+
+/* Medium float — used for chart/insight cards */
+@keyframes rxFloatMedium {
+  0%   { transform: translateY(0px) rotate(0deg); }
+  33%  { transform: translateY(-5px) rotate(0.3deg); }
+  66%  { transform: translateY(-3px) rotate(-0.2deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+/* Subtle lift — used for feature summary cards */
+@keyframes rxFloatSubtle {
+  0%   { transform: translateY(0px); box-shadow: 0 4px 14px rgba(0,0,0,0.22); }
+  50%  { transform: translateY(-4px); box-shadow: 0 10px 28px rgba(0,0,0,0.38), 0 0 16px rgba(56,189,248,0.1); }
+  100% { transform: translateY(0px); box-shadow: 0 4px 14px rgba(0,0,0,0.22); }
+}
+
+/* Pulsing glow float — used for live status / alert cards */
+@keyframes rxFloatGlow {
+  0%   { transform: translateY(0px); filter: brightness(1); }
+  50%  { transform: translateY(-5px); filter: brightness(1.04); }
+  100% { transform: translateY(0px); filter: brightness(1); }
+}
+
+/* Slow drift — used for background orbs on mobile */
+@keyframes rxOrbDrift {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(10px, -12px) scale(1.04); }
+  66%  { transform: translate(-8px, 6px) scale(0.97); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+/* Fade-up reveal — used for page section entrances */
+@keyframes rxMobileFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scale-in reveal — used for KPI cards */
+@keyframes rxMobileScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Shimmer loading skeleton */
+@keyframes rxShimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+/* ── FLOATING CARD CLASSES (Feature-level animation assignments) ─────────── */
+
+/* Floating feature: KPI Cards */
+.rx-float-kpi {
+  animation: rxFloatGentle 5.5s ease-in-out infinite;
+  will-change: transform;
+}
+.rx-float-kpi:nth-child(2) { animation-delay: 0.8s; }
+.rx-float-kpi:nth-child(3) { animation-delay: 1.6s; }
+.rx-float-kpi:nth-child(4) { animation-delay: 2.4s; }
+
+/* Floating feature: Insight & Chart Panels */
+.rx-float-chart {
+  animation: rxFloatMedium 6.5s ease-in-out infinite;
+  will-change: transform;
+}
+.rx-float-chart:nth-child(2) { animation-delay: 1.2s; }
+
+/* Floating feature: Summary / Lot Cards */
+.rx-float-card {
+  animation: rxFloatSubtle 5.0s ease-in-out infinite;
+  will-change: transform;
+}
+.rx-float-card:nth-child(2) { animation-delay: 0.6s; }
+.rx-float-card:nth-child(3) { animation-delay: 1.2s; }
+.rx-float-card:nth-child(4) { animation-delay: 1.8s; }
+.rx-float-card:nth-child(5) { animation-delay: 2.4s; }
+
+/* Floating feature: Live Status / Alert Panels */
+.rx-float-live {
+  animation: rxFloatGlow 4.5s ease-in-out infinite;
+  will-change: transform, filter;
+}
+
+/* ── MOBILE SCROLL-REVEAL SYSTEM UPGRADE ────────────────────────────────── */
+/* Enhanced version with more stagger delays and mobile-specific timing */
+
+.rx-mob-reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 500ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 500ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.rx-mob-reveal.rx-revealed {
+  opacity: 1;
+  transform: translateY(0);
+  will-change: auto;
+}
+
+/* Stagger delays for multiple items in same container */
+.rx-mob-reveal:nth-child(1)  { transition-delay: 0ms; }
+.rx-mob-reveal:nth-child(2)  { transition-delay: 60ms; }
+.rx-mob-reveal:nth-child(3)  { transition-delay: 120ms; }
+.rx-mob-reveal:nth-child(4)  { transition-delay: 180ms; }
+.rx-mob-reveal:nth-child(5)  { transition-delay: 240ms; }
+.rx-mob-reveal:nth-child(6)  { transition-delay: 300ms; }
+.rx-mob-reveal:nth-child(7)  { transition-delay: 360ms; }
+.rx-mob-reveal:nth-child(8)  { transition-delay: 400ms; }
+
+/* ── MOBILE-FIRST LAYOUT OVERHAUL (≤ 768px) ─────────────────────────────── */
+
+@media (max-width: 768px) {
+
+  /* === 1. GLOBAL SPACING: 8pt grid system === */
+  :root {
+    --mobile-space-1: 4px;
+    --mobile-space-2: 8px;
+    --mobile-space-3: 12px;
+    --mobile-space-4: 16px;
+    --mobile-space-5: 20px;
+    --mobile-space-6: 24px;
+    --mobile-space-8: 32px;
+    --mobile-radius: 14px;
+    --mobile-radius-sm: 10px;
+    --mobile-card-padding: 16px;
+  }
+
+  /* === 2. TOPBAR: Glassmorphism upgrade === */
+  .app-topbar {
+    background: rgba(9, 15, 31, 0.88) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-bottom: 1px solid rgba(56, 189, 248, 0.15) !important;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.5) !important;
+    padding: max(10px, env(safe-area-inset-top, 10px)) 16px 10px 12px !important;
+    min-height: 56px !important;
+    gap: 8px !important;
+    flex-wrap: nowrap !important;
+    z-index: 200 !important;
+  }
+
+  /* === 3. TOPBAR LEFT: Clean row alignment === */
+  .topbar-left {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 10px !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .topbar-title {
+    font-size: clamp(14px, 4vw, 16px) !important;
+    font-weight: 800 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: clamp(130px, 44vw, 230px) !important;
+    letter-spacing: -0.3px !important;
+  }
+
+  .topbar-breadcrumb {
+    font-size: 8px !important;
+    letter-spacing: 0.6px !important;
+    opacity: 0.75;
+  }
+
+  /* === 4. CONTENT AREA: 8pt grid padding with bottom nav clearance === */
+  .app-content {
+    padding: 16px 16px calc(72px + env(safe-area-inset-bottom, 0px)) 16px !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  /* === 5. HERO HEADER: Clear hierarchy, no overlap === */
+  .hero-header {
+    margin-bottom: 16px !important;
+    padding: 0 !important;
+  }
+
+  .page-main-title {
+    font-size: clamp(18px, 5vw, 22px) !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.4px !important;
+    line-height: 1.2 !important;
+    margin-bottom: 6px !important;
+  }
+
+  .page-main-subtitle {
+    font-size: clamp(12px, 3vw, 13.5px) !important;
+    line-height: 1.5 !important;
+    opacity: 0.82;
+  }
+
+  /* === 6. KPI GRID: 2-column with breathing room === */
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .kpi-card {
+    padding: 14px 12px !important;
+    border-radius: 12px !important;
+    position: relative;
+    overflow: hidden;
+    /* Glass shimmer border-top accent */
+    border-top-width: 2px !important;
+    min-height: 88px !important;
+    /* Subtle inner glow */
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+  }
+
+  /* Micro glow on KPI card active state */
+  .kpi-card:active {
+    transform: scale(0.97) !important;
+    transition: transform 120ms ease !important;
+  }
+
+  .kpi-title {
+    font-size: 9px !important;
+    letter-spacing: 0.5px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    line-height: 1.2 !important;
+    margin-bottom: 6px !important;
+  }
+
+  .kpi-value {
+    font-size: clamp(20px, 5.5vw, 26px) !important;
+    font-weight: 800 !important;
+    line-height: 1.1 !important;
+    margin: 0 0 3px !important;
+    letter-spacing: -0.5px !important;
+  }
+
+  .kpi-sub {
+    font-size: 10px !important;
+    line-height: 1.3 !important;
+    opacity: 0.7;
+  }
+
+  /* === 7. CARDS: Clean visual hierarchy, proper spacing === */
+  .card,
+  .insight-panel,
+  .lot-summary-card {
+    padding: 16px !important;
+    border-radius: 14px !important;
+    margin-bottom: 12px !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.35),
+                inset 0 1px 0 rgba(255,255,255,0.05) !important;
+    border: 1px solid rgba(30, 41, 59, 0.9) !important;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Subtle top-edge glow accent on cards */
+  .card::before,
+  .insight-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(56,189,248,0.25), transparent);
+    pointer-events: none;
+  }
+
+  .card-title {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.1px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .card-header {
+    margin-bottom: 12px !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+
+  /* === 8. SECTION SPACING === */
+  .section-title {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    margin-bottom: 12px !important;
+    margin-top: 20px !important;
+    letter-spacing: -0.2px !important;
+  }
+
+  .section-desc {
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+    margin-bottom: 14px !important;
+    opacity: 0.8;
+  }
+
+  /* === 9. BUTTONS: 44px minimum touch target (WCAG 2.5.5) === */
+  .btn {
+    min-height: 44px !important;
+    min-width: 44px !important;
+    padding: 10px 18px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    border-radius: 10px !important;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn:active {
+    transform: scale(0.96) !important;
+    transition: transform 100ms ease !important;
+  }
+
+  .btn-sm {
+    min-height: 40px !important;
+    padding: 8px 14px !important;
+    font-size: 12px !important;
+    border-radius: 8px !important;
+  }
+
+  /* === 10. BOTTOM NAVIGATION: Premium glassmorphism with clear separation === */
+  .mobile-bottom-nav {
+    background: rgba(7, 13, 30, 0.95) !important;
+    backdrop-filter: blur(24px) saturate(1.8) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.8) !important;
+    border-top: 1px solid rgba(56, 189, 248, 0.18) !important;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.7),
+                inset 0 1px 0 rgba(56, 189, 248, 0.08) !important;
+    height: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    z-index: 300 !important;
+  }
+
+  .mobile-nav-item {
+    min-height: 52px !important;
+    padding: 6px 4px 2px !important;
+    gap: 4px !important;
+    border-radius: 0;
+    -webkit-tap-highlight-color: transparent !important;
+    transition: color 200ms ease, background-color 200ms ease !important;
+  }
+
+  .mobile-nav-item:active {
+    transform: scale(0.88) !important;
+    transition: transform 100ms ease !important;
+  }
+
+  /* Active nav item indicator: smooth pill background */
+  .mobile-nav-item.active {
+    color: #38BDF8 !important;
+  }
+
+  .mobile-nav-item.active .mobile-nav-icon {
+    background: rgba(56, 189, 248, 0.12);
+    border-radius: 10px;
+    padding: 4px;
+    width: 30px;
+    height: 30px;
+  }
+
+  .mobile-nav-label {
+    font-size: 9.5px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.15px !important;
+  }
+
+  .mobile-svg-icon {
+    width: 21px !important;
+    height: 21px !important;
+  }
+
+  /* Active indicator: animated top bar */
+  .mobile-nav-item.active::before {
+    width: 24px !important;
+    height: 2px !important;
+    border-radius: 0 0 2px 2px !important;
+    animation: rxFloatGentle 2.5s ease-in-out infinite;
+  }
+
+  /* === 11. SIDEBAR DRAWER: Smooth, well-padded === */
+  .app-sidebar {
+    width: min(280px, 88vw) !important;
+    box-shadow: 4px 0 40px rgba(0, 0, 0, 0.8),
+                0 0 0 1px rgba(56, 189, 248, 0.1) !important;
+  }
+
+  .app-sidebar .sidebar-item {
+    min-height: 48px !important;
+    padding: 12px 16px !important;
+    border-radius: 10px !important;
+    font-size: 13px !important;
+    margin: 1px 6px !important;
+    letter-spacing: 0.1px !important;
+  }
+
+  .app-sidebar .sidebar-item:active {
+    transform: scale(0.97) !important;
+    transition: transform 100ms ease !important;
+  }
+
+  .app-sidebar .sidebar-item.active {
+    background: rgba(56, 189, 248, 0.14) !important;
+    border-left: 3px solid #38BDF8 !important;
+  }
+
+  .sidebar-nav {
+    padding: 12px 4px !important;
+    gap: 2px !important;
+  }
+
+  .sidebar-group-title {
+    padding: 16px 16px 6px !important;
+    font-size: 9px !important;
+    letter-spacing: 1px !important;
+  }
+
+  /* === 12. TABLES: Proper scroll containment === */
+  .table-container,
+  .table-responsive {
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid rgba(30, 41, 59, 0.8) !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3) !important;
+  }
+
+  .data-table th {
+    padding: 12px 14px !important;
+    font-size: 10.5px !important;
+    white-space: nowrap !important;
+  }
+
+  .data-table td {
+    padding: 12px 14px !important;
+    font-size: 12.5px !important;
+    height: 44px !important;
+  }
+
+  /* === 13. DASHBOARD GRIDS: Clear stacking order === */
+  .dashboard-hero-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .live-kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .live-main-split {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .live-bottom-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .chart-metrics-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  /* === 14. FILTER BAR: Full-width stacked === */
+  .filter-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .filter-bar input,
+  .filter-bar select {
+    width: 100% !important;
+    min-height: 44px !important;
+    font-size: 14px !important;
+    border-radius: 10px !important;
+    padding: 10px 14px !important;
+  }
+
+  /* === 15. MODAL: Bottom-sheet pattern, clean === */
+  .modal-overlay {
+    padding: 0 !important;
+    align-items: flex-end !important;
+  }
+
+  .modal-card {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    max-height: 92dvh !important;
+    border-radius: 18px 18px 0 0 !important;
+    margin: 0 !important;
+    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.7) !important;
+    /* Handle indicator */
+    background-image: radial-gradient(ellipse 40px 4px at 50% 10px, rgba(100,116,139,0.5) 100%, transparent 100%) !important;
+    background-repeat: no-repeat !important;
+    padding-top: 20px !important;
+  }
+
+  .modal-body {
+    padding: 14px 16px calc(28px + env(safe-area-inset-bottom, 0px)) !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .modal-close-btn {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 22px !important;
+    border-radius: 50% !important;
+    background: rgba(255,255,255,0.06) !important;
+  }
+
+  /* === 16. LIVE SCREENING CONTROLS: Stacked cleanly === */
+  .live-controls-bar {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  .live-controls-left,
+  .live-controls-right {
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    gap: 8px !important;
+    justify-content: flex-start !important;
+  }
+
+  /* === 17. SAFETY BANNER: Mobile compact === */
+  .safety-banner {
+    padding: 10px 16px !important;
+    font-size: 11px !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  /* === 18. BENCHMARK NOTICE: Compact === */
+  .benchmark-notice-banner {
+    padding: 10px 14px !important;
+    font-size: 12px !important;
+    border-radius: 10px !important;
+    margin-bottom: 14px !important;
+  }
+
+  /* === 19. DOSSIER TAB STRIP: Smooth horizontal scroll === */
+  .dossier-tab-strip {
+    padding: 8px 12px !important;
+    gap: 6px !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none !important;
+  }
+
+  .dossier-tab-strip::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .dossier-tab-btn {
+    min-height: 40px !important;
+    padding: 7px 16px !important;
+    font-size: 12.5px !important;
+    border-radius: 20px !important;
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  /* === 20. FLOATING BACKGROUND ORBS: Mobile adapted === */
+  .rx-floating-orb {
+    filter: blur(60px) !important;
+    opacity: 0.18 !important;
+  }
+
+  .rx-orb-1 {
+    width: 280px !important;
+    height: 280px !important;
+    top: 40px !important;
+    right: -60px !important;
+    animation: rxOrbDrift 12s ease-in-out infinite;
+  }
+
+  .rx-orb-2 {
+    width: 240px !important;
+    height: 240px !important;
+    top: 500px !important;
+    left: -40px !important;
+    animation: rxOrbDrift 15s ease-in-out infinite;
+    animation-delay: 4s;
+  }
+
+  .rx-orb-3 {
+    width: 200px !important;
+    height: 200px !important;
+    top: 900px !important;
+    right: -20px !important;
+    animation: rxOrbDrift 10s ease-in-out infinite;
+    animation-delay: 8s;
+  }
+
+  /* === 21. BURNIN FLOW: Compact horizontal scroll === */
+  .burnin-flow {
+    gap: 10px !important;
+    padding: 10px !important;
+    border-radius: 12px !important;
+  }
+
+  .stage-circle {
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 12px !important;
+  }
+
+  .stage-label {
+    font-size: 10px !important;
+  }
+
+  /* === 22. HERO LIVE PILL: Clean badge === */
+  .live-topbar-pill {
+    padding: 6px 10px !important;
+    font-size: 10.5px !important;
+    border-radius: 20px !important;
+    min-height: 36px !important;
+    gap: 5px !important;
+  }
+
+  /* === 23. SCROLL MARGIN: Account for bottom nav === */
+  section,
+  .tab-pane,
+  .card,
+  .kpi-card,
+  .insight-panel,
+  .hero-header,
+  [id] {
+    scroll-margin-top: 64px !important;
+    scroll-margin-bottom: 72px !important;
+  }
+
+  /* === 24. INPUT FORMS: Comfortable mobile === */
+  input[type="text"],
+  input[type="number"],
+  select,
+  textarea {
+    min-height: 44px !important;
+    font-size: 14px !important;
+    border-radius: 10px !important;
+    padding: 10px 14px !important;
+  }
+
+  /* === 25. STATUS DETAIL BAR: Stacked on mobile === */
+  .detail-status-bar {
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+    padding: 12px !important;
+    border-radius: 10px !important;
+  }
+
+  /* === 26. LOT SUMMARY GRID: Single column with spacing === */
+  .lot-summary-grid,
+  .lots-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .lot-summary-card {
+    padding: 14px !important;
+    border-radius: 12px !important;
+    gap: 10px !important;
+  }
+
+  /* === 27. WHATIF CARDS: Full width on mobile === */
+  .whatif-result-cards {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  /* === 28. FLOWCHART: Single column stacked === */
+  .flowchart-grid-2,
+  .flowchart-grid-3 {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  /* === 29. LIVE KPI CARD: Consistent with kpi-card === */
+  .live-kpi-card {
+    padding: 14px 12px !important;
+    border-radius: 12px !important;
+    min-height: 80px !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3) !important;
+  }
+
+  /* === 30. TOASTS: Safe area aware === */
+  .toast-notification {
+    margin-bottom: max(8px, env(safe-area-inset-bottom, 8px)) !important;
+    border-radius: 12px !important;
+    font-size: 13px !important;
+  }
+}
+
+/* ── ULTRA-NARROW PHONES (≤ 400px) ──────────────────────────────────────── */
+@media (max-width: 400px) {
+  .kpi-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .live-kpi-grid,
+  .chart-metrics-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .kpi-value {
+    font-size: 22px !important;
+  }
+
+  .app-content {
+    padding: 12px 12px calc(68px + env(safe-area-inset-bottom, 0px)) 12px !important;
+  }
+
+  .mobile-nav-label {
+    font-size: 9px !important;
+  }
+
+  .mobile-svg-icon {
+    width: 19px !important;
+    height: 19px !important;
+  }
+}
+
+/* ── LANDSCAPE PHONE (≤ 900px, landscape) ─────────────────────────────── */
+@media (max-height: 500px) and (orientation: landscape) {
+  .mobile-bottom-nav {
+    height: calc(52px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .app-content {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .live-kpi-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+}
+
+/* ── DISABLE FLOATING ANIMATIONS ON HOVER-CAPABLE DEVICES ───────────────── */
+/* On mobile, floating is always active; on desktop hover-capable, only on hover */
+@media (hover: hover) and (pointer: fine) {
+  .rx-float-kpi,
+  .rx-float-chart,
+  .rx-float-card,
+  .rx-float-live {
+    animation: none !important;
+  }
+
+  /* Re-enable float on hover for desktop */
+  .rx-float-kpi:hover {
+    animation: rxFloatGentle 5.5s ease-in-out infinite !important;
+  }
+
+  .rx-float-chart:hover {
+    animation: rxFloatMedium 6.5s ease-in-out infinite !important;
+  }
+
+  .rx-float-card:hover {
+    animation: rxFloatSubtle 5.0s ease-in-out infinite !important;
+  }
+
+  .rx-float-live:hover {
+    animation: rxFloatGlow 4.5s ease-in-out infinite !important;
+  }
+}
+
+/* ── ACCESSIBILITY: REDUCED MOTION OVERRIDE ─────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .rx-float-kpi,
+  .rx-float-chart,
+  .rx-float-card,
+  .rx-float-live,
+  .rx-orb-1,
+  .rx-orb-2,
+  .rx-orb-3,
+  .rx-mob-reveal {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
 
