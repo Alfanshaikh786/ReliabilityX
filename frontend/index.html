@@ -53,6 +53,10 @@
       preload="auto"
       title="ReliabilityX Introduction Video"
     ></video>
+    <button id="rx-sound-btn" class="rx-sound-btn" style="display: none;" aria-label="Enable sound">
+      <span class="rx-sound-icon">🔊</span>
+      <span class="rx-sound-text">Tap for Sound</span>
+    </button>
   </div>
 
   <!-- React 18 Application Root Mount Target -->
@@ -77,6 +81,7 @@
   (function() {
     var overlay  = document.getElementById("rx-intro-overlay");
     var video    = document.getElementById("rx-intro-video");
+    var soundBtn = document.getElementById("rx-sound-btn");
     var root     = document.getElementById("root");
     var finished = false;
 
@@ -158,6 +163,41 @@
       }, 600);
     }
 
+    function enableSound(e) {
+      if (e) {
+        try { e.stopPropagation(); } catch(err){}
+      }
+      try {
+        if (video) {
+          video.muted = false;
+          video.volume = 1.0;
+          video.play().catch(function(){});
+        }
+      } catch(err){}
+      if (soundBtn) {
+        soundBtn.style.opacity = "0";
+        setTimeout(function() {
+          if (soundBtn && soundBtn.parentNode) {
+            soundBtn.parentNode.removeChild(soundBtn);
+          }
+        }, 200);
+      }
+      document.removeEventListener("touchstart", enableSound);
+      document.removeEventListener("touchend", enableSound);
+      document.removeEventListener("click", enableSound);
+      document.removeEventListener("pointerdown", enableSound);
+    }
+
+    if (soundBtn) {
+      soundBtn.addEventListener("click", enableSound);
+      soundBtn.addEventListener("touchstart", enableSound, { passive: true });
+    }
+
+    // Full screen listeners: touching or clicking anywhere enables audio immediately
+    document.addEventListener("touchstart", enableSound, { passive: true });
+    document.addEventListener("click", enableSound);
+    document.addEventListener("pointerdown", enableSound);
+
     if (video) {
       if (isMobile) {
         video.classList.add("rx-mobile-intro-video");
@@ -198,8 +238,27 @@
               try {
                 video.muted = false;
                 video.volume = 1.0;
+                var unmutedTest = video.play();
+                if (unmutedTest !== undefined) {
+                  unmutedTest
+                    .then(function() {
+                      console.log("[ReliabilityX Intro] Unmuted audio allowed by platform.");
+                      if (soundBtn && soundBtn.parentNode) {
+                        soundBtn.parentNode.removeChild(soundBtn);
+                      }
+                    })
+                    .catch(function() {
+                      // Browser policy blocked unmuted autoplay: re-mute so video plays smoothly
+                      video.muted = true;
+                      video.play().catch(function(){});
+                      if (soundBtn) {
+                        soundBtn.style.display = "inline-flex";
+                      }
+                    });
+                }
               } catch(e) {
                 video.muted = true;
+                if (soundBtn) soundBtn.style.display = "inline-flex";
               }
             }
           })
@@ -210,21 +269,10 @@
               console.error("[ReliabilityX Intro] Video play error:", e);
               finishIntro();
             });
+            if (isMobile && soundBtn) {
+              soundBtn.style.display = "inline-flex";
+            }
           });
-      }
-
-      // FOR MOBILE: Touch to unmute listener
-      if (isMobile) {
-        function unmuteOnTouch() {
-          try {
-            video.muted = false;
-            video.volume = 1.0;
-          } catch(e){}
-          document.removeEventListener("touchstart", unmuteOnTouch);
-          document.removeEventListener("click", unmuteOnTouch);
-        }
-        document.addEventListener("touchstart", unmuteOnTouch, { once: true, passive: true });
-        document.addEventListener("click", unmuteOnTouch, { once: true });
       }
 
       // Start loading video

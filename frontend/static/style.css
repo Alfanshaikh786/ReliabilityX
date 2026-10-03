@@ -3861,6 +3861,52 @@ body:not(:has(#rx-intro-overlay)) .rx-root-container {
   pointer-events: auto !important;
 }
 
+/* Interactive Sound Pill Button during Intro Video */
+.rx-sound-btn {
+  position: absolute !important;
+  bottom: 36px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 2147483647 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  background: rgba(13, 27, 46, 0.90) !important;
+  border: 1.5px solid rgba(56, 189, 248, 0.8) !important;
+  color: #FFFFFF !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.3px !important;
+  padding: 10px 24px !important;
+  border-radius: 9999px !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 24px rgba(56, 189, 248, 0.45) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  pointer-events: auto !important;
+  animation: rx-sound-pulse 1.8s infinite ease-in-out !important;
+  transition: transform 0.2s ease, opacity 0.3s ease !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+.rx-sound-btn:active {
+  transform: translateX(-50%) scale(0.96) !important;
+}
+
+@keyframes rx-sound-pulse {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+    box-shadow: 0 4px 20px rgba(56, 189, 248, 0.35);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.05);
+    box-shadow: 0 4px 28px rgba(56, 189, 248, 0.7);
+  }
+}
+
 /* ==============================================================================
    GLOBAL REUSABLE ANIMATION SYSTEM (Sections 5, 6, 14, 28, 29)
    GPU-friendly transitions (transform & opacity only)
