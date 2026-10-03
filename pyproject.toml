@@ -1,2 +1,7 @@
+[project]
+name = "reliabilityx"
+version = "1.4.0"
+requires-python = ">=3.12"
+
 [tool.vercel]
 entrypoint = "backend.main:app"
