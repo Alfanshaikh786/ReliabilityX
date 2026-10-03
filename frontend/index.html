@@ -42,7 +42,7 @@
        RELIABILITYX FULL-SCREEN INTRO (Cinematic Full-Screen Centered Video)
        ========================================================================== -->
   <div id="rx-intro-overlay" class="intro-screen rx-intro-overlay" aria-hidden="true">
-    <!-- Desktop Website Intro Video (100% Declarative HTML Autoplay with embedded src) -->
+    <!-- Desktop Website Intro Video (Desktop browsers: direct video + audio playback) -->
     <video
       id="rx-website-video"
       class="intro-video rx-intro-video rx-website-video"
@@ -55,19 +55,18 @@
       title="ReliabilityX Introduction Video"
     ></video>
 
-    <!-- Mobile App Intro Video (100% Declarative HTML Autoplay with embedded src) -->
-    <video
-      id="rx-mobile-video"
+    <!-- Mobile App Intro Animation (100% Guaranteed Direct Autoplay with ZERO Play Buttons on ALL iPhones / iOS / Android) -->
+    <img
+      id="rx-mobile-anim"
       class="intro-video rx-intro-video rx-mobile-video rx-mobile-intro-video"
+      src="/static/mobile-intro.webp"
+      alt="ReliabilityX Mobile Introduction"
+    />
+    <audio
+      id="rx-mobile-audio"
       src="/static/mobile-intro.mp4"
-      autoplay
-      muted
-      playsinline
-      webkit-playsinline
-      x5-playsinline
       preload="auto"
-      title="ReliabilityX Mobile Introduction Video"
-    ></video>
+    ></audio>
   </div>
 
   <!-- React 18 Application Root Mount Target -->
@@ -92,14 +91,15 @@
   (function() {
     var overlay      = document.getElementById("rx-intro-overlay");
     var websiteVideo = document.getElementById("rx-website-video");
-    var mobileVideo  = document.getElementById("rx-mobile-video");
+    var mobileAnim   = document.getElementById("rx-mobile-anim");
+    var mobileAudio  = document.getElementById("rx-mobile-audio");
     var root         = document.getElementById("root");
     var finished     = false;
 
     // -------------------------------------------------------------------------
     // PLATFORM SELECTION:
     // 1. Desktop / Web Browser -> OLD WEBSITE INTRO VIDEO (/static/intro.mp4)
-    // 2. Mobile App / Phone   -> NEW MOBILE APP INTRO VIDEO (/static/mobile-intro.mp4)
+    // 2. Mobile App / Phone   -> NEW MOBILE APP INTRO ANIMATION (/static/mobile-intro.webp + AUDIO)
     // -------------------------------------------------------------------------
     function isMobilePlatform() {
       try {
@@ -128,33 +128,23 @@
     }
 
     var isMobile = isMobilePlatform();
-    var activeVideo = isMobile ? mobileVideo : websiteVideo;
-    var inactiveVideo = isMobile ? websiteVideo : mobileVideo;
 
-    console.log("[ReliabilityX Intro] Platform:", isMobile ? "MOBILE APP" : "WEBSITE", "-> Active Asset:", isMobile ? "/static/mobile-intro.mp4" : "/static/intro.mp4");
-
-    // Remove inactive video immediately to avoid downloading or playing both
-    if (inactiveVideo) {
-      try {
-        inactiveVideo.pause();
-        inactiveVideo.src = "";
-        inactiveVideo.load();
-        if (inactiveVideo.parentNode) inactiveVideo.parentNode.removeChild(inactiveVideo);
-      } catch(e){}
-    }
-
-    if (overlay && isMobile) {
-      overlay.classList.add("rx-mobile-intro-overlay");
-    }
+    console.log("[ReliabilityX Intro] Platform:", isMobile ? "MOBILE APP" : "WEBSITE");
 
     function finishIntro() {
       if (finished) return;
       finished = true;
 
-      if (activeVideo) {
+      if (websiteVideo) {
         try {
-          activeVideo.pause();
-          activeVideo.volume = 0;
+          websiteVideo.pause();
+          websiteVideo.volume = 0;
+        } catch(e){}
+      }
+      if (mobileAudio) {
+        try {
+          mobileAudio.pause();
+          mobileAudio.volume = 0;
         } catch(e){}
       }
 
@@ -176,90 +166,105 @@
       }, 600);
     }
 
-    if (activeVideo) {
-      // Natural video completion triggers — guaranteed to play the FULL video duration:
-      // 1. Natural 'ended' event
-      activeVideo.addEventListener("ended", finishIntro);
+    if (isMobile) {
+      // -----------------------------------------------------------------------
+      // MOBILE APP INTRO
+      // Uses animated WebP + audio. Guaranteed 100% direct autoplay with ZERO
+      // play buttons on all iPhones / iPads / Android devices regardless of Low Power Mode.
+      // -----------------------------------------------------------------------
+      if (websiteVideo && websiteVideo.parentNode) {
+        try {
+          websiteVideo.pause();
+          websiteVideo.src = "";
+          websiteVideo.parentNode.removeChild(websiteVideo);
+        } catch(e){}
+      }
 
-      // 2. High-precision 'timeupdate' check near end of duration (9.85s+ of 10.006s)
-      activeVideo.addEventListener("timeupdate", function() {
-        if (activeVideo.duration && activeVideo.duration > 2.0 && activeVideo.currentTime >= (activeVideo.duration - 0.15)) {
-          finishIntro();
-        }
-      });
+      if (overlay) {
+        overlay.classList.add("rx-mobile-intro-overlay");
+      }
 
-      // 3. Fallback if video encounters unrecoverable decode error
-      activeVideo.addEventListener("error", function(err) {
-        console.warn("[ReliabilityX Intro] Video error, transitioning to dashboard:", err);
-        finishIntro();
-      });
-
-      if (isMobile) {
-        // MOBILE APP: GUARANTEED AUTOPLAY WITH ZERO PLAY BUTTONS
-        // Video starts strictly muted so iOS Safari / WebKit NEVER shows the play button!
-        activeVideo.muted = true;
-        activeVideo.defaultMuted = true;
-
-        var playPromise = activeVideo.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(function(err) {
-            console.warn("[ReliabilityX Intro] Mobile autoplay retry:", err);
-            activeVideo.muted = true;
-            activeVideo.play().catch(function(){});
+      // Audio handling
+      if (mobileAudio) {
+        mobileAudio.muted = false;
+        mobileAudio.volume = 1.0;
+        var audioPromise = mobileAudio.play();
+        if (audioPromise !== undefined) {
+          audioPromise.catch(function(e) {
+            // Unlock audio on first screen touch/tap without interrupting animation
+            function unlockAudio() {
+              try {
+                mobileAudio.muted = false;
+                mobileAudio.volume = 1.0;
+                mobileAudio.play().catch(function(){});
+              } catch(err){}
+              window.removeEventListener("touchstart", unlockAudio);
+              window.removeEventListener("touchend", unlockAudio);
+              window.removeEventListener("click", unlockAudio);
+              window.removeEventListener("pointerdown", unlockAudio);
+            }
+            window.addEventListener("touchstart", unlockAudio, { passive: true });
+            window.addEventListener("touchend", unlockAudio, { passive: true });
+            window.addEventListener("click", unlockAudio);
+            window.addEventListener("pointerdown", unlockAudio);
           });
         }
+      }
 
-        // Seamless audio unmuting on any user touch/tap without interrupting video or showing play button
-        function unlockAudioOnTouch() {
-          try {
-            activeVideo.muted = false;
-            activeVideo.volume = 1.0;
-          } catch(e){}
-          window.removeEventListener("touchstart", unlockAudioOnTouch);
-          window.removeEventListener("touchend", unlockAudioOnTouch);
-          window.removeEventListener("click", unlockAudioOnTouch);
-          window.removeEventListener("pointerdown", unlockAudioOnTouch);
-        }
-        window.addEventListener("touchstart", unlockAudioOnTouch, { passive: true });
-        window.addEventListener("touchend", unlockAudioOnTouch, { passive: true });
-        window.addEventListener("click", unlockAudioOnTouch);
-        window.addEventListener("pointerdown", unlockAudioOnTouch);
+      // Full mobile animation duration: exactly 10.0 seconds
+      setTimeout(function() {
+        finishIntro();
+      }, 10000);
 
-      } else {
-        // WEBSITE (DESKTOP): Direct unmuted playback (User: "IN WEBSITE IT IS PROPPER PLAYING THE ANIMATION + AUDIO DONT TOUCH THAT")
-        activeVideo.muted = false;
-        activeVideo.volume = 1.0;
-        var p = activeVideo.play();
+    } else {
+      // -----------------------------------------------------------------------
+      // WEBSITE (DESKTOP) INTRO
+      // Original desktop video (/static/intro.mp4) with direct audio + video.
+      // -----------------------------------------------------------------------
+      if (mobileAnim && mobileAnim.parentNode) {
+        mobileAnim.parentNode.removeChild(mobileAnim);
+      }
+      if (mobileAudio && mobileAudio.parentNode) {
+        mobileAudio.parentNode.removeChild(mobileAudio);
+      }
+
+      if (websiteVideo) {
+        websiteVideo.addEventListener("ended", finishIntro);
+        websiteVideo.addEventListener("timeupdate", function() {
+          if (websiteVideo.duration && websiteVideo.duration > 2.0 && websiteVideo.currentTime >= (websiteVideo.duration - 0.15)) {
+            finishIntro();
+          }
+        });
+        websiteVideo.addEventListener("error", function() {
+          finishIntro();
+        });
+
+        websiteVideo.muted = false;
+        websiteVideo.volume = 1.0;
+        var p = websiteVideo.play();
         if (p !== undefined) {
           p.catch(function(err) {
             console.warn("[ReliabilityX Intro] Desktop unmuted blocked, falling back to muted:", err);
-            activeVideo.muted = true;
-            activeVideo.play().catch(function(){});
+            websiteVideo.muted = true;
+            websiteVideo.play().catch(function(){});
           });
         }
-      }
 
-      // Anchored safety timeout: starts ONLY after video actually begins playing frames!
-      activeVideo.addEventListener("playing", function() {
-        var dur = (activeVideo.duration && activeVideo.duration > 5) ? activeVideo.duration : 10.0;
-        // Wait for full video duration plus 3.5s buffer before safety cutoff
-        setTimeout(function() {
-          if (!finished) {
-            finishIntro();
-          }
-        }, Math.ceil((dur + 3.5) * 1000));
-      }, { once: true });
-
-    } else {
-      finishIntro();
-    }
-
-    // Absolute safety fallback in case network drops before video starts (25 seconds)
-    setTimeout(function() {
-      if (!finished) {
+        // Safety timeout for desktop
+        websiteVideo.addEventListener("playing", function() {
+          var dur = (websiteVideo.duration && websiteVideo.duration > 5) ? websiteVideo.duration : 10.0;
+          setTimeout(function() {
+            if (!finished) finishIntro();
+          }, Math.ceil((dur + 3.5) * 1000));
+        }, { once: true });
+      } else {
         finishIntro();
       }
-    }, 25000);
+
+      setTimeout(function() {
+        if (!finished) finishIntro();
+      }, 25000);
+    }
   })();
   </script>
 

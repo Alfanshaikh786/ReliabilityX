@@ -3738,6 +3738,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .intro-screen video,
+.intro-screen img,
 .intro-video,
 .rx-intro-video {
   position: absolute !important;
@@ -3831,6 +3832,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .intro-screen video.rx-mobile-intro-video,
+.intro-screen img.rx-mobile-intro-video,
 .intro-video.rx-mobile-intro-video,
 .rx-intro-video.rx-mobile-intro-video {
   position: absolute !important;
