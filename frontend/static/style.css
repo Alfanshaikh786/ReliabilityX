@@ -3876,9 +3876,116 @@ video::-webkit-media-controls-overlay-play-button,
     object-fit: contain !important;
   }
 }
+/* ==============================================================================
+   RELIABILITYX MOBILE AUDIO PIPELINE (Comfortable Sound Capsule & Equalizer)
+   ============================================================================== */
+.rx-sound-capsule {
+  position: fixed;
+  top: max(env(safe-area-inset-top, 20px), 20px);
+  right: max(env(safe-area-inset-right, 20px), 20px);
+  z-index: 2147483647;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 15px 9px 12px;
+  border-radius: 9999px;
+  background: rgba(13, 27, 46, 0.82);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45), 0 0 16px rgba(56, 189, 248, 0.22);
+  color: #F8FAFC;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0;
+  transform: translateY(-8px) scale(0.95);
+  pointer-events: auto;
+}
 
+.rx-sound-capsule.rx-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  animation: rxPulseGlow 2.2s infinite ease-in-out;
+}
 
+.rx-sound-capsule.rx-audio-active {
+  border-color: rgba(52, 211, 153, 0.5);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45), 0 0 16px rgba(52, 211, 153, 0.3);
+  color: #34D399;
+  animation: none;
+}
 
+.rx-sound-capsule.rx-fading-out {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.92);
+  pointer-events: none;
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.rx-sound-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  position: relative;
+}
+
+.rx-sound-svg {
+  width: 18px;
+  height: 18px;
+  color: #38BDF8;
+  display: block;
+}
+
+.rx-sound-equalizer {
+  display: none;
+  align-items: flex-end;
+  gap: 2.5px;
+  height: 14px;
+  width: 14px;
+}
+
+.rx-sound-capsule.rx-audio-active .rx-sound-svg {
+  display: none;
+}
+
+.rx-sound-capsule.rx-audio-active .rx-sound-equalizer {
+  display: flex;
+}
+
+.rx-eq-bar {
+  width: 3px;
+  background: #34D399;
+  border-radius: 2px;
+  animation: rxEqBounce 0.75s ease-in-out infinite alternate;
+}
+
+.rx-eq-1 { height: 6px; animation-delay: 0.1s; }
+.rx-eq-2 { height: 14px; animation-delay: 0.3s; }
+.rx-eq-3 { height: 9px; animation-delay: 0.2s; }
+
+@keyframes rxEqBounce {
+  0% { height: 4px; }
+  50% { height: 14px; }
+  100% { height: 6px; }
+}
+
+@keyframes rxPulseGlow {
+  0%, 100% {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45), 0 0 14px rgba(56, 189, 248, 0.2);
+  }
+  50% {
+    box-shadow: 0 4px 22px rgba(0, 0, 0, 0.5), 0 0 22px rgba(56, 189, 248, 0.5);
+  }
+}
 /* Main root container — Strictly hidden until intro video animation completes */
 .rx-root-container {
   display: none !important;

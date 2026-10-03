@@ -56,6 +56,115 @@
       width: 0 !important;
       height: 0 !important;
     }
+
+    /* Floating Modern Sound Capsule (Audio Pipeline Affordance) */
+    .rx-sound-capsule {
+      position: fixed;
+      top: max(env(safe-area-inset-top, 20px), 20px);
+      right: max(env(safe-area-inset-right, 20px), 20px);
+      z-index: 2147483647;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 15px 9px 12px;
+      border-radius: 9999px;
+      background: rgba(13, 27, 46, 0.82);
+      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45), 0 0 16px rgba(56, 189, 248, 0.22);
+      color: #F8FAFC;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      opacity: 0;
+      transform: translateY(-8px) scale(0.95);
+      pointer-events: auto;
+    }
+
+    .rx-sound-capsule.rx-visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      animation: rxPulseGlow 2.2s infinite ease-in-out;
+    }
+
+    .rx-sound-capsule.rx-audio-active {
+      border-color: rgba(52, 211, 153, 0.5);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45), 0 0 16px rgba(52, 211, 153, 0.3);
+      color: #34D399;
+      animation: none;
+    }
+
+    .rx-sound-capsule.rx-fading-out {
+      opacity: 0;
+      transform: translateY(-6px) scale(0.92);
+      pointer-events: none;
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    .rx-sound-icon-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      position: relative;
+    }
+
+    .rx-sound-svg {
+      width: 18px;
+      height: 18px;
+      color: #38BDF8;
+      display: block;
+    }
+
+    .rx-sound-equalizer {
+      display: none;
+      align-items: flex-end;
+      gap: 2.5px;
+      height: 14px;
+      width: 14px;
+    }
+
+    .rx-sound-capsule.rx-audio-active .rx-sound-svg {
+      display: none;
+    }
+
+    .rx-sound-capsule.rx-audio-active .rx-sound-equalizer {
+      display: flex;
+    }
+
+    .rx-eq-bar {
+      width: 3px;
+      background: #34D399;
+      border-radius: 2px;
+      animation: rxEqBounce 0.75s ease-in-out infinite alternate;
+    }
+
+    .rx-eq-1 { height: 6px; animation-delay: 0.1s; }
+    .rx-eq-2 { height: 14px; animation-delay: 0.3s; }
+    .rx-eq-3 { height: 9px; animation-delay: 0.2s; }
+
+    @keyframes rxEqBounce {
+      0% { height: 4px; }
+      50% { height: 14px; }
+      100% { height: 6px; }
+    }
+
+    @keyframes rxPulseGlow {
+      0%, 100% {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45), 0 0 14px rgba(56, 189, 248, 0.2);
+      }
+      50% {
+        box-shadow: 0 4px 22px rgba(0, 0, 0, 0.5), 0 0 22px rgba(56, 189, 248, 0.5);
+      }
+    }
   </style>
 </head>
 <body>
@@ -77,6 +186,23 @@
       <source src="/static/mobile-intro.mp4" type="video/mp4" media="(max-width: 768px), (orientation: portrait)">
       <source src="/static/intro.mp4" type="video/mp4">
     </video>
+
+    <!-- Modern Audio Pipeline Affordance: Floating Glass Sound Capsule -->
+    <div id="rx-sound-capsule" class="rx-sound-capsule" role="button" aria-label="Toggle Sound" tabindex="0">
+      <div class="rx-sound-icon-box">
+        <svg class="rx-sound-svg rx-sound-muted-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <line x1="23" y1="9" x2="17" y2="15"></line>
+          <line x1="17" y1="9" x2="23" y2="15"></line>
+        </svg>
+        <div class="rx-sound-equalizer">
+          <span class="rx-eq-bar rx-eq-1"></span>
+          <span class="rx-eq-bar rx-eq-2"></span>
+          <span class="rx-eq-bar rx-eq-3"></span>
+        </div>
+      </div>
+      <span id="rx-sound-text" class="rx-sound-label">Tap for Sound</span>
+    </div>
   </div>
 
   <!-- React 18 Application Root Mount Target -->
@@ -101,6 +227,8 @@
   (function() {
     var overlay  = document.getElementById("rx-intro-overlay");
     var video    = document.getElementById("rx-intro-video");
+    var capsule  = document.getElementById("rx-sound-capsule");
+    var soundTxt = document.getElementById("rx-sound-text");
     var root     = document.getElementById("root");
     var finished = false;
 
@@ -210,41 +338,105 @@
         finishIntro();
       });
 
+      // -----------------------------------------------------------------------
+      // UNIFIED AUDIO PIPELINE (Hardware Audio + Web Audio API Unlocking)
+      // -----------------------------------------------------------------------
+      var audioCtx = null;
+      var audioUnlocked = false;
+
+      function unlockAudio() {
+        if (audioUnlocked) return;
+        audioUnlocked = true;
+
+        // 1. Hardware-level unmuting of HTML5 video element
+        try {
+          if (video) {
+            video.muted = false;
+            video.defaultMuted = false;
+            video.removeAttribute("muted");
+            video.volume = 1.0;
+          }
+        } catch(e){}
+
+        // 2. Initialize / Resume Web Audio Context
+        try {
+          var AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtxClass) {
+            if (!audioCtx) audioCtx = new AudioCtxClass();
+            if (audioCtx.state === "suspended") {
+              audioCtx.resume();
+            }
+          }
+        } catch(e){}
+
+        // 3. Update Audio Capsule to Active State & smoothly fade out
+        if (capsule) {
+          capsule.classList.remove("rx-visible");
+          capsule.classList.add("rx-audio-active");
+          if (soundTxt) soundTxt.textContent = "Sound On";
+          setTimeout(function() {
+            if (capsule) capsule.classList.add("rx-fading-out");
+          }, 1800);
+        }
+
+        try {
+          localStorage.setItem("rx_sound_enabled", "true");
+        } catch(e){}
+      }
+
+      // Capture-phase global interaction unlock: any tap/touch on screen immediately unmutes
+      ['touchstart', 'touchend', 'click', 'pointerdown', 'keydown'].forEach(function(ev) {
+        window.addEventListener(ev, unlockAudio, { passive: true, capture: true });
+        document.addEventListener(ev, unlockAudio, { passive: true, capture: true });
+      });
+
+      if (capsule) {
+        capsule.addEventListener("click", function(e) {
+          e.stopPropagation();
+          unlockAudio();
+        });
+        capsule.addEventListener("touchstart", function(e) {
+          e.stopPropagation();
+          unlockAudio();
+        }, { passive: true });
+      }
+
       if (isMobile) {
         // MOBILE PLAYBACK ENGINE:
-        // Start strictly muted to guarantee immediate 60fps playback with ZERO play buttons
+        // Ensure video is playing smoothly
         video.muted = true;
         video.defaultMuted = true;
 
         var playPromise = video.play();
         if (playPromise !== undefined) {
           playPromise.catch(function(e) {
-            console.warn("[ReliabilityX Intro] Playback initializing:", e);
+            console.warn("[ReliabilityX Intro] Mobile playback initializing:", e);
             video.muted = true;
             video.play().catch(function(){});
           });
         }
 
-        // Seamless audio unmuting on ANY user touch/tap anywhere on the phone:
-        // Instantly activates the embedded audio at full 100% volume in perfect sync!
-        var audioUnlocked = false;
-        function unmuteAudioGesture() {
-          if (audioUnlocked || !video) return;
-          audioUnlocked = true;
-          try {
-            video.muted = false;
-            video.volume = 1.0;
-          } catch(e){}
-          ['touchstart', 'touchend', 'click', 'pointerdown', 'keydown'].forEach(function(ev) {
-            window.removeEventListener(ev, unmuteAudioGesture, { capture: true });
-            document.removeEventListener(ev, unmuteAudioGesture, { capture: true });
-          });
+        // Test if browser autoplay policy allows unmuted audio immediately (Chrome MEI / PWA)
+        try {
+          var testAudio = document.createElement("audio");
+          testAudio.volume = 0.05;
+          testAudio.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+          var tp = testAudio.play();
+          if (tp !== undefined) {
+            tp.then(function() {
+              try { testAudio.pause(); } catch(e){}
+              console.log("[ReliabilityX Audio] Browser policy allows unmuted playback!");
+              unlockAudio();
+            }).catch(function() {
+              // Policy requires user gesture; display comfortable sound capsule
+              if (capsule) capsule.classList.add("rx-visible");
+            });
+          } else {
+            if (capsule) capsule.classList.add("rx-visible");
+          }
+        } catch(e) {
+          if (capsule) capsule.classList.add("rx-visible");
         }
-
-        ['touchstart', 'touchend', 'click', 'pointerdown', 'keydown'].forEach(function(ev) {
-          window.addEventListener(ev, unmuteAudioGesture, { passive: true, capture: true });
-          document.addEventListener(ev, unmuteAudioGesture, { passive: true, capture: true });
-        });
 
       } else {
         // WEBSITE (DESKTOP) PLAYBACK:
@@ -253,10 +445,13 @@
         video.volume = 1.0;
         var p = video.play();
         if (p !== undefined) {
-          p.catch(function(err) {
+          p.then(function() {
+            unlockAudio();
+          }).catch(function(err) {
             console.warn("[ReliabilityX Intro] Desktop unmuted blocked, falling back to muted:", err);
             video.muted = true;
             video.play().catch(function(){});
+            if (capsule) capsule.classList.add("rx-visible");
           });
         }
       }
