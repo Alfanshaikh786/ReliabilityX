@@ -1,4 +1,4 @@
-// ReliabilityX Bundled Application (2026-10-03T08:54:56.999Z)
+// ReliabilityX Bundled Application (2026-10-03T09:15:09.670Z)
 (function() {
   if (typeof window !== 'undefined') {
     if (window.React && !window.React.default) window.React.default = window.React;
@@ -95,8 +95,11 @@ const getApiBase = () => {
     if (window.__RELIABILITYX_API_URL__) {
       return window.__RELIABILITYX_API_URL__;
     }
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+      return "http://127.0.0.1:8000/api";
+    }
   } catch {}
-  return "/api";
+  return "https://reliabilityx.onrender.com/api";
 };
 const API_BASE = getApiBase();
 function ReliabilityXApp() {
@@ -385,8 +388,13 @@ function ReliabilityXApp() {
     }).catch(() => {});
     const connectWs = () => {
       if (!isMounted) return;
-      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const wsUrl = `${protocol}//${window.location.host}/ws/live`;
+      let wsUrl = "";
+      if (API_BASE.startsWith("http")) {
+        wsUrl = API_BASE.replace(/^http/, "ws").replace(/\/api$/, "") + "/ws/live";
+      } else {
+        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        wsUrl = `${protocol}//${window.location.host}/ws/live`;
+      }
       ws = new WebSocket(wsUrl);
       ws.onopen = () => {
         if (!isMounted) return;
