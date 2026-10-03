@@ -52,15 +52,22 @@ def ensure_db_ready(db_path: str = None):
             needs_seed = True
 
     if needs_seed:
-        # Check for bundled seed_benchmark.db
-        seed_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "seed_benchmark.db")
-        if os.path.exists(seed_path) and os.path.getsize(seed_path) > 0 and os.path.abspath(seed_path) != os.path.abspath(target_path):
-            try:
-                shutil.copyfile(seed_path, target_path)
-                logger.info(f"Initialized database from seed benchmark: {target_path}")
-                return
-            except Exception as e:
-                logger.warning(f"Could not copy seed database: {e}")
+        # Check for bundled seed_benchmark.db in multiple potential runtime locations
+        candidate_seeds = [
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "seed_benchmark.db"),
+            os.path.join(os.getcwd(), "backend", "data", "seed_benchmark.db"),
+            os.path.join(os.path.abspath("."), "backend", "data", "seed_benchmark.db"),
+            "/var/task/backend/data/seed_benchmark.db",
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "seed_benchmark.db")
+        ]
+        for sp in candidate_seeds:
+            if os.path.exists(sp) and os.path.getsize(sp) > 0 and os.path.abspath(sp) != os.path.abspath(target_path):
+                try:
+                    shutil.copyfile(sp, target_path)
+                    logger.info(f"Initialized database from seed benchmark ({sp}) -> {target_path}")
+                    return
+                except Exception as e:
+                    logger.warning(f"Could not copy seed database from {sp}: {e}")
 
         # Fallback: initialize schema and run generator
         init_db(target_path)

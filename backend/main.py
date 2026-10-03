@@ -184,14 +184,6 @@ except Exception as e:
     logger.error(f"[ReliabilityX Startup Exception] {startup_error}")
 
 
-@app.on_event("startup")
-def startup_event():
-    """Initializes the database and auto-loads demo dataset if empty."""
-    try:
-        ensure_db_ready(CONFIG.db_path)
-    except Exception as e:
-        logger.error(f"[Startup Event Notice] {e}")
-
 
 # ==============================================================================
 # SYSTEM & CONFIGURATION ENDPOINTS
