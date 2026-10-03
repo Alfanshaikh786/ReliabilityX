@@ -28,10 +28,8 @@ from fastapi.staticfiles import StaticFiles
 
 from backend.core.config import CONFIG, DEFAULT_PARAMETER_SPECS, ParameterSpec
 from backend.core.db import get_db_connection, init_db, log_audit, ensure_db_ready
-from backend.core.orchestrator import PipelineOrchestrator
 from backend.data.generator import generate_burnin_dataset
 from backend.explainability.counterfactual import CounterfactualEngine
-from backend.ingestion.manager import IngestionManager
 
 logger = logging.getLogger("ReliabilityX")
 logging.basicConfig(level=logging.INFO)
@@ -175,13 +173,27 @@ startup_error = None
 
 try:
     ensure_db_ready(CONFIG.db_path)
-    orchestrator = PipelineOrchestrator()
     counterfactual = CounterfactualEngine()
-    ingestion_manager = IngestionManager()
 except Exception as e:
     import traceback
     startup_error = traceback.format_exc()
     logger.error(f"[ReliabilityX Startup Exception] {startup_error}")
+
+
+def get_orchestrator():
+    global orchestrator
+    if orchestrator is None:
+        from backend.core.orchestrator import PipelineOrchestrator
+        orchestrator = PipelineOrchestrator()
+    return orchestrator
+
+
+def get_ingestion_manager():
+    global ingestion_manager
+    if ingestion_manager is None:
+        from backend.ingestion.manager import IngestionManager
+        ingestion_manager = IngestionManager()
+    return ingestion_manager
 
 
 
@@ -290,7 +302,7 @@ def load_demo_dataset():
     df_demo, meta_demo = generate_burnin_dataset(num_lots=5, components_per_lot=25, seed=42)
     dataset_id = f"demo-{uuid.uuid4().hex[:8]}"
     
-    result = orchestrator.run_pipeline(
+    result = get_orchestrator().run_pipeline(
         raw_df=df_demo,
         dataset_id=dataset_id,
         dataset_name="Physics-Informed Arrhenius Burn-In Benchmark (Demo)",
@@ -352,7 +364,7 @@ async def upload_dataset(file: UploadFile = File(...)):
 
     dataset_id = f"user-{uuid.uuid4().hex[:8]}"
     try:
-        result = orchestrator.run_pipeline(
+        result = get_orchestrator().run_pipeline(
             raw_df=df,
             dataset_id=dataset_id,
             dataset_name=f"User Dataset: {safe_filename}",
@@ -398,7 +410,8 @@ async def websocket_live_endpoint(websocket: WebSocket):
     windowed ML forecasts, and immediate alerts without page refresh.
     """
     await websocket.accept()
-    await ingestion_manager.register_websocket(websocket)
+    mgr = get_ingestion_manager()
+    await mgr.register_websocket(websocket)
     try:
         while True:
             msg_text = await websocket.receive_text()
@@ -406,21 +419,21 @@ async def websocket_live_endpoint(websocket: WebSocket):
                 data = json.loads(msg_text)
                 action = data.get("action")
                 if action == "configure":
-                    ingestion_manager.configure_source(data.get("config", {}))
+                    mgr.configure_source(data.get("config", {}))
                 elif action == "start":
-                    await ingestion_manager.start_stream(data.get("source_type", "simulator"), data.get("config"))
+                    await mgr.start_stream(data.get("source_type", "simulator"), data.get("config"))
                 elif action == "pause":
-                    await ingestion_manager.pause_stream()
+                    await mgr.pause_stream()
                 elif action == "resume":
-                    await ingestion_manager.resume_stream()
+                    await mgr.resume_stream()
                 elif action == "stop":
-                    await ingestion_manager.stop_stream()
+                    await mgr.stop_stream()
             except Exception:
                 pass
     except WebSocketDisconnect:
-        ingestion_manager.unregister_websocket(websocket)
+        mgr.unregister_websocket(websocket)
     except Exception:
-        ingestion_manager.unregister_websocket(websocket)
+        mgr.unregister_websocket(websocket)
 
 
 @app.post("/api/stream/start")
@@ -429,38 +442,38 @@ async def start_telemetry_stream(payload: Optional[Dict[str, Any]] = None):
     payload = payload or {}
     source_type = payload.get("source_type", "simulator")
     config = payload.get("config", payload)
-    status = await ingestion_manager.start_stream(source_type=source_type, config=config)
+    status = await get_ingestion_manager().start_stream(source_type=source_type, config=config)
     return status
 
 
 @app.post("/api/stream/pause")
 async def pause_telemetry_stream():
     """Pauses active streaming."""
-    return await ingestion_manager.pause_stream()
+    return await get_ingestion_manager().pause_stream()
 
 
 @app.post("/api/stream/resume")
 async def resume_telemetry_stream():
     """Resumes active streaming."""
-    return await ingestion_manager.resume_stream()
+    return await get_ingestion_manager().resume_stream()
 
 
 @app.post("/api/stream/stop")
 async def stop_telemetry_stream():
     """Halts active telemetry stream."""
-    return await ingestion_manager.stop_stream()
+    return await get_ingestion_manager().stop_stream()
 
 
 @app.get("/api/stream/status")
 def get_stream_status():
     """Returns current live streaming status, health, and throughput metrics."""
-    return ingestion_manager.get_status()
+    return get_ingestion_manager().get_status()
 
 
 @app.post("/api/stream/config")
 def update_stream_config(config: Dict[str, Any]):
     """Dynamically updates active simulator/adapter parameters."""
-    return ingestion_manager.configure_source(config)
+    return get_ingestion_manager().configure_source(config)
 
 
 @app.get("/api/stream/raw-history")
