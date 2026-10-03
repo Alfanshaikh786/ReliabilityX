@@ -4,20 +4,24 @@
 import os
 import sys
 
-# Ensure project root is available in PYTHONPATH
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
-if parent_dir not in sys.path:
-    sys.path.insert(0, parent_dir)
-
-# Ensure database is pre-seeded before serving any serverless request
-from backend.core.config import CONFIG
-from backend.core.db import ensure_db_ready
+for p in [parent_dir, current_dir]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
 try:
-    ensure_db_ready(CONFIG.db_path)
+    from backend.main import app
 except Exception as e:
-    import logging
-    logging.getLogger("ReliabilityX").warning(f"Error ensuring DB ready in api/index.py: {e}")
+    import traceback
+    tb = traceback.format_exc()
+    from fastapi import FastAPI
+    from fastapi.responses import JSONResponse
+    app = FastAPI()
 
-from backend.main import app
+    @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+    async def fallback(path: str):
+        return JSONResponse(
+            status_code=500,
+            content={"status": "IMPORT_ERROR", "error": str(e), "traceback": tb}
+        )

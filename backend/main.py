@@ -4,6 +4,7 @@ Predictive Component Reliability Intelligence Backend
 """
 import io
 import os
+import sys
 import json
 import uuid
 import pandas as pd
@@ -13,6 +14,13 @@ import logging
 import time
 from collections import defaultdict
 from contextlib import asynccontextmanager
+
+# Robust path handling: ensure project root and backend dir are in sys.path
+backend_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(backend_dir)
+for p in [project_root, backend_dir]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse, FileResponse, HTMLResponse
@@ -160,15 +168,29 @@ def serve_index():
         return FileResponse(index_path)
     return JSONResponse({"status": "ONLINE", "message": "ReliabilityX Backend API is operational"})
 
-orchestrator = PipelineOrchestrator()
-counterfactual = CounterfactualEngine()
-ingestion_manager = IngestionManager()
+orchestrator = None
+counterfactual = None
+ingestion_manager = None
+startup_error = None
+
+try:
+    ensure_db_ready(CONFIG.db_path)
+    orchestrator = PipelineOrchestrator()
+    counterfactual = CounterfactualEngine()
+    ingestion_manager = IngestionManager()
+except Exception as e:
+    import traceback
+    startup_error = traceback.format_exc()
+    logger.error(f"[ReliabilityX Startup Exception] {startup_error}")
 
 
 @app.on_event("startup")
 def startup_event():
     """Initializes the database and auto-loads demo dataset if empty."""
-    ensure_db_ready(CONFIG.db_path)
+    try:
+        ensure_db_ready(CONFIG.db_path)
+    except Exception as e:
+        logger.error(f"[Startup Event Notice] {e}")
 
 
 # ==============================================================================
@@ -177,6 +199,15 @@ def startup_event():
 
 @app.get("/api/health")
 def get_health():
+    if startup_error:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "ERROR",
+                "message": "Startup initialization error",
+                "error": startup_error
+            }
+        )
     conn = get_db_connection()
     c = conn.cursor()
     c.execute("SELECT * FROM datasets WHERE is_active = 1 LIMIT 1")
