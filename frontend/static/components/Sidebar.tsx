@@ -1,0 +1,192 @@
+// ==============================================================================
+// ReliabilityX — Left Navigation Sidebar
+// Aerospace Enterprise Dark Sidebar with Thin Crisp SVG Icons
+// ==============================================================================
+import React from "react";
+import { TabType } from "../types";
+import {
+  IconDashboard,
+  IconLivePulse,
+  IconPipeline,
+  IconComponents,
+  IconLots,
+  IconPredictions,
+  IconInspection,
+  IconReports,
+  IconEngineering,
+  IconAudit,
+  IconCollapse,
+  IconExpand
+} from "./Icons";
+
+interface SidebarProps {
+  activeTab: TabType;
+  onSelectTab: (tab: TabType) => void;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
+}
+
+export function Sidebar({ activeTab, onSelectTab, collapsed, onToggleCollapse, mobileOpen, onCloseMobile }: SidebarProps) {
+  const handleItemClick = (tab: TabType) => {
+    onSelectTab(tab);
+    if (onCloseMobile) onCloseMobile();
+  };
+
+  return (
+    <>
+      {mobileOpen && (
+        <div
+          className="mobile-sidebar-backdrop"
+          onClick={onCloseMobile}
+          aria-label="Close navigation"
+        />
+      )}
+      <aside className={`app-sidebar ${collapsed ? "collapsed" : ""} ${mobileOpen ? "mobile-open" : ""}`}>
+        {/* 1. Sidebar Header & Brand Logo */}
+        <div className={`sidebar-header ${collapsed ? "sidebar-header-collapsed" : "sidebar-header-expanded"}`}>
+          {collapsed ? (
+            /* Collapsed: proper square shield-X icon, centred */
+            <img
+              src="/static/emblem.png"
+              alt="ReliabilityX"
+              className="sidebar-icon-collapsed"
+            />
+          ) : (
+            /* Expanded: full-bleed banner logo */
+            <img
+              src="/static/logo.png"
+              alt="ReliabilityX"
+              className="sidebar-logo-img"
+            />
+          )}
+        </div>
+
+        {/* 2. Simplified Nav Groups (4 Groups) */}
+        <div className="sidebar-nav">
+          {/* GROUP 1: OVERVIEW */}
+          <div className="sidebar-nav-group">
+            <div className="sidebar-group-title">
+              {!collapsed ? "OVERVIEW" : "•••"}
+            </div>
+            <button
+              className={`sidebar-item ${activeTab === "dashboard" ? "active" : ""}`}
+              onClick={() => handleItemClick("dashboard")}
+              title="Dashboard"
+            >
+              <IconDashboard />
+              <span className="sidebar-item-label">Dashboard</span>
+            </button>
+            <button
+              className={`sidebar-item live-sidebar-item ${activeTab === "live_telemetry" ? "active" : ""}`}
+              onClick={() => handleItemClick("live_telemetry")}
+              title="Live Screening & Simulator"
+            >
+            <IconLivePulse />
+            <span className="sidebar-item-label">Live Screening</span>
+            {!collapsed && <span className="live-sidebar-pill">LIVE</span>}
+          </button>
+        </div>
+
+        {/* GROUP 2: SCREENING */}
+        <div className="sidebar-nav-group">
+          <div className="sidebar-group-title">
+            {!collapsed ? "SCREENING" : "•••"}
+          </div>
+          <button
+            className={`sidebar-item ${activeTab === "screening" ? "active" : ""}`}
+            onClick={() => handleItemClick("screening")}
+            title="Screening Pipeline"
+          >
+            <IconPipeline />
+            <span className="sidebar-item-label">Screening Pipeline</span>
+          </button>
+          <button
+            className={`sidebar-item ${activeTab === "components" ? "active" : ""}`}
+            onClick={() => handleItemClick("components")}
+            title="Components"
+          >
+            <IconComponents />
+            <span className="sidebar-item-label">Components</span>
+          </button>
+          <button
+            className={`sidebar-item ${activeTab === "lots" ? "active" : ""}`}
+            onClick={() => handleItemClick("lots")}
+            title="Lots"
+          >
+            <IconLots />
+            <span className="sidebar-item-label">Lots</span>
+          </button>
+          <button
+            className={`sidebar-item ${activeTab === "predictions" ? "active" : ""}`}
+            onClick={() => handleItemClick("predictions")}
+            title="Predictions"
+          >
+            <IconPredictions />
+            <span className="sidebar-item-label">Predictions</span>
+          </button>
+        </div>
+
+        {/* GROUP 3: ACTION */}
+        <div className="sidebar-nav-group">
+          <div className="sidebar-group-title">
+            {!collapsed ? "ACTION" : "•••"}
+          </div>
+          <button
+            className={`sidebar-item ${activeTab === "inspection" ? "active" : ""}`}
+            onClick={() => handleItemClick("inspection")}
+            title="Inspection Priority"
+          >
+            <IconInspection />
+            <span className="sidebar-item-label">Inspection Priority</span>
+          </button>
+          <button
+            className={`sidebar-item ${activeTab === "reports" ? "active" : ""}`}
+            onClick={() => handleItemClick("reports")}
+            title="Reports"
+          >
+            <IconReports />
+            <span className="sidebar-item-label">Reports</span>
+          </button>
+        </div>
+
+        {/* GROUP 4: ENGINEERING */}
+        <div className="sidebar-nav-group">
+          <div className="sidebar-group-title">
+            {!collapsed ? "ENGINEERING" : "•••"}
+          </div>
+          <button
+            className={`sidebar-item ${activeTab === "engineering" ? "active" : ""}`}
+            onClick={() => handleItemClick("engineering")}
+            title="Engineering"
+          >
+            <IconEngineering />
+            <span className="sidebar-item-label">Engineering</span>
+          </button>
+          <button
+            className={`sidebar-item ${activeTab === "audit" ? "active" : ""}`}
+            onClick={() => handleItemClick("audit")}
+            title="Audit & Traceability"
+          >
+            <IconAudit />
+            <span className="sidebar-item-label">Audit / Traceability</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 3. Sidebar Footer */}
+      <div className="sidebar-footer">
+        <div className="sidebar-status-pill">
+          <span className="status-pulse"></span>
+          {!collapsed && <span>Screening Engine Ready</span>}
+        </div>
+
+        <button className="sidebar-collapse-btn" onClick={onToggleCollapse}>
+          {collapsed ? <IconExpand /> : <><IconCollapse /> <span>Collapse Sidebar</span></>}
+        </button>
+      </div>
+    </aside>
+  </>
+  );
+}
