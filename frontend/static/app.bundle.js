@@ -1,4 +1,4 @@
-// ReliabilityX Bundled Application (2026-10-03T13:06:37.641Z)
+// ReliabilityX Bundled Application (2026-10-03T15:27:40.799Z)
 (function() {
   if (typeof window !== 'undefined') {
     if (window.React && !window.React.default) window.React.default = window.React;
@@ -938,31 +938,27 @@ function ArchitectureFlowchart() {
     title: "Click to inspect ML telemetry ingestion"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-node-header"
-  }, /*#__PURE__*/_react.default.createElement("span", null, "\uD83C\uDFED BURN-IN / ESS TEST SOURCES"), /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "flowchart-node-title"
+  }, "\uD83C\uDFED BURN-IN / ESS TEST SOURCES"), /*#__PURE__*/_react.default.createElement("span", {
     className: "card-badge",
     style: {
       background: "#2563EB",
       color: "#FFFFFF"
     }
   }, "INGESTION")), /*#__PURE__*/_react.default.createElement("div", {
-    className: "flowchart-node-body"
+    className: "flowchart-node-body flowchart-stage1-body"
   }, /*#__PURE__*/_react.default.createElement("ul", {
     className: "flowchart-bullets"
   }, /*#__PURE__*/_react.default.createElement("li", null, "Automated Test Equipment (ATE)"), /*#__PURE__*/_react.default.createElement("li", null, "Burn-In Test Systems (Thermal Chambers)"), /*#__PURE__*/_react.default.createElement("li", null, "Environmental Stress Testing (ESS)"), /*#__PURE__*/_react.default.createElement("li", null, "Electrical Parametric Measurement Systems"), /*#__PURE__*/_react.default.createElement("li", null, "Historical QA / Test Records")), /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      textAlign: "right"
-    }
+    className: "flowchart-node-status"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "badge badge-pass",
     style: {
       fontSize: "11px"
     }
   }, "Active Stream"), /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      fontSize: "11px",
-      color: "var(--text-muted)",
-      marginTop: "4px"
-    }
+    className: "flowchart-hint-text"
   }, "Click to view code")))), /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-connector-v"
   }, /*#__PURE__*/_react.default.createElement("div", {
@@ -975,20 +971,18 @@ function ArchitectureFlowchart() {
     title: "Click to view temporal test gates"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-node-header"
-  }, /*#__PURE__*/_react.default.createElement("span", null, "\uD83D\uDCBE COMPONENT TEST DATA"), /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "flowchart-node-title"
+  }, "\uD83D\uDCBE COMPONENT TEST DATA"), /*#__PURE__*/_react.default.createElement("span", {
     className: "card-badge",
     style: {
       background: "#06B6D4",
       color: "#FFFFFF"
     }
   }, "4 GATES")), /*#__PURE__*/_react.default.createElement("div", {
-    className: "flowchart-node-body"
+    className: "flowchart-node-body flowchart-testdata-body"
   }, /*#__PURE__*/_react.default.createElement("span", {
-    style: {
-      fontSize: "12.5px",
-      color: "#334155",
-      fontWeight: 600
-    }
+    className: "flowchart-subheading"
   }, "Multi-channel parametric burn-in telemetry:"), /*#__PURE__*/_react.default.createElement("div", {
     className: "timeline-pills"
   }, /*#__PURE__*/_react.default.createElement("span", {
@@ -1011,7 +1005,9 @@ function ArchitectureFlowchart() {
     title: "Click to view sensor validation"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-node-header"
-  }, /*#__PURE__*/_react.default.createElement("span", null, "\u2699\uFE0F DATA QUALITY ENGINE"), /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "flowchart-node-title"
+  }, "\u2699\uFE0F DATA QUALITY ENGINE"), /*#__PURE__*/_react.default.createElement("span", {
     className: "card-badge",
     style: {
       background: "#7C3AED",
@@ -1020,42 +1016,19 @@ function ArchitectureFlowchart() {
   }, "VALIDATED")), /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-node-body"
   }, /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr 1fr",
-      gap: "10px",
-      width: "100%"
-    }
+    className: "flowchart-quality-grid"
   }, /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      fontSize: "12px",
-      color: "#334155"
-    }
+    className: "quality-item"
   }, "\u2022 Missing Data Check (0 missing)"), /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      fontSize: "12px",
-      color: "#334155"
-    }
+    className: "quality-item"
   }, "\u2022 5x IQR Noise Filter"), /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      fontSize: "12px",
-      color: "#334155"
-    }
+    className: "quality-item"
   }, "\u2022 Scale & Normalization"), /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      fontSize: "12px",
-      color: "#334155"
-    }
+    className: "quality-item"
   }, "\u2022 Continuity Validation"), /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      fontSize: "12px",
-      color: "#334155"
-    }
+    className: "quality-item"
   }, "\u2022 Sensor Stuck Detection"), /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      fontSize: "12px",
-      color: "#334155"
-    }
+    className: "quality-item"
   }, "\u2022 Outlier Pre-Screening")))), /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-connector-v"
   }, /*#__PURE__*/_react.default.createElement("div", {
@@ -1070,7 +1043,9 @@ function ArchitectureFlowchart() {
     title: "Click to inspect 4 Anomaly ML models"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-node-header"
-  }, /*#__PURE__*/_react.default.createElement("span", null, "\uD83D\uDCCA LOT-RELATIVE ANOMALY ENGINE"), /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "flowchart-node-title"
+  }, "\uD83D\uDCCA LOT-RELATIVE ANOMALY ENGINE"), /*#__PURE__*/_react.default.createElement("span", {
     className: "card-badge",
     style: {
       background: "#059669",
@@ -1081,12 +1056,20 @@ function ArchitectureFlowchart() {
   }, /*#__PURE__*/_react.default.createElement("ul", {
     className: "flowchart-bullets"
   }, /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "Z-Score / DPAT"), " (AEC-Q001 Standard)"), /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "Isolation Forest"), " (Scikit-Learn, 100 Trees)"), /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "LOF / Mahalanobis"), " (MinCovDet)"), /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "Multivariate Ensemble"), " (Calibrated [0, 1])")))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "flowchart-connector-v flowchart-mobile-connector"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "flowchart-line-v"
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    className: "flowchart-arrow-down"
+  })), /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-node theme-rose",
     onClick: () => setSelectedNode("behaviour_engine"),
     title: "Click to inspect temporal acceleration engine"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-node-header"
-  }, /*#__PURE__*/_react.default.createElement("span", null, "\uD83D\uDCC8 TIME-SERIES BEHAVIOUR ENGINE"), /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "flowchart-node-title"
+  }, "\uD83D\uDCC8 TIME-SERIES BEHAVIOUR ENGINE"), /*#__PURE__*/_react.default.createElement("span", {
     className: "card-badge",
     style: {
       background: "#E11D48",
@@ -1108,7 +1091,9 @@ function ArchitectureFlowchart() {
     title: "Click to inspect fingerprint classification"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-node-header"
-  }, /*#__PURE__*/_react.default.createElement("span", null, "\uD83E\uDDEC COMPONENT BEHAVIOUR FINGERPRINT"), /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "flowchart-node-title"
+  }, "\uD83E\uDDEC COMPONENT BEHAVIOUR FINGERPRINT"), /*#__PURE__*/_react.default.createElement("span", {
     className: "card-badge",
     style: {
       background: "#D97706",
@@ -1117,14 +1102,7 @@ function ArchitectureFlowchart() {
   }, "PHYSICAL STATE")), /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-node-body"
   }, /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: "10px",
-      flexWrap: "wrap",
-      width: "100%",
-      justifyContent: "space-around"
-    }
+    className: "flowchart-fingerprint-flow"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "badge badge-state-normal",
     style: {
@@ -1132,10 +1110,7 @@ function ArchitectureFlowchart() {
       fontSize: "12px"
     }
   }, "NORMAL (PASS)"), /*#__PURE__*/_react.default.createElement("span", {
-    style: {
-      color: "#94A3B8",
-      fontWeight: "bold"
-    }
+    className: "flowchart-flow-arrow"
   }, "\u2192"), /*#__PURE__*/_react.default.createElement("span", {
     className: "badge badge-state-drifting",
     style: {
@@ -1143,10 +1118,7 @@ function ArchitectureFlowchart() {
       fontSize: "12px"
     }
   }, "DRIFTING (WATCH)"), /*#__PURE__*/_react.default.createElement("span", {
-    style: {
-      color: "#94A3B8",
-      fontWeight: "bold"
-    }
+    className: "flowchart-flow-arrow"
   }, "\u2192"), /*#__PURE__*/_react.default.createElement("span", {
     className: "badge badge-state-accel",
     style: {
@@ -1154,10 +1126,7 @@ function ArchitectureFlowchart() {
       fontSize: "12px"
     }
   }, "ACCELERATING (REVIEW)"), /*#__PURE__*/_react.default.createElement("span", {
-    style: {
-      color: "#94A3B8",
-      fontWeight: "bold"
-    }
+    className: "flowchart-flow-arrow"
   }, "\u2192"), /*#__PURE__*/_react.default.createElement("span", {
     className: "badge badge-state-unstable",
     style: {
@@ -1176,32 +1145,24 @@ function ArchitectureFlowchart() {
     title: "Click to inspect 4 Predictive ML models"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-node-header"
-  }, /*#__PURE__*/_react.default.createElement("span", null, "\uD83E\uDD16 FUTURE DRIFT AI (168h FORECAST)"), /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "flowchart-node-title"
+  }, "\uD83E\uDD16 FUTURE DRIFT AI (168h FORECAST)"), /*#__PURE__*/_react.default.createElement("span", {
     className: "card-badge",
     style: {
       background: "#1D4ED8",
       color: "#FFFFFF"
     }
   }, "MODEL LADDER")), /*#__PURE__*/_react.default.createElement("div", {
-    className: "flowchart-node-body"
+    className: "flowchart-node-body flowchart-future-drift-body"
   }, /*#__PURE__*/_react.default.createElement("ul", {
     className: "flowchart-bullets"
   }, /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "Early Readings:"), " Ingests 0h, 24h, 96h telemetry"), /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "168h Prediction:"), " HistGradientBoosting + Random Forest + Ridge"), /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "Physics Baseline:"), " Arrhenius Log-Time Wearout Model"), /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "Uncertainty Quantification:"), " Estimated Prediction Interval (\xB11.96\u03C3) & P90 Estimated Upper Bound")), /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      textAlign: "right",
-      minWidth: "140px"
-    }
+    className: "flowchart-horizon-box"
   }, /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      fontSize: "20px",
-      fontWeight: "800",
-      color: "#1D4ED8"
-    }
+    className: "flowchart-horizon-val"
   }, "168h"), /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      fontSize: "11px",
-      color: "var(--text-muted)"
-    }
+    className: "flowchart-horizon-lbl"
   }, "Prognostic Horizon")))), /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-connector-v"
   }, /*#__PURE__*/_react.default.createElement("div", {
@@ -1216,7 +1177,9 @@ function ArchitectureFlowchart() {
     title: "Click to inspect trajectory curves"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-node-header"
-  }, /*#__PURE__*/_react.default.createElement("span", null, "\uD83D\uDCC8 RELIABILITY TRAJECTORY"), /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "flowchart-node-title"
+  }, "\uD83D\uDCC8 RELIABILITY TRAJECTORY"), /*#__PURE__*/_react.default.createElement("span", {
     className: "card-badge",
     style: {
       background: "#6D28D9",
@@ -1227,12 +1190,20 @@ function ArchitectureFlowchart() {
   }, /*#__PURE__*/_react.default.createElement("ul", {
     className: "flowchart-bullets"
   }, /*#__PURE__*/_react.default.createElement("li", null, "Health Trend (0h\u201396h Actuals)"), /*#__PURE__*/_react.default.createElement("li", null, "Future Prognostic Trend (96h\u2013168h)"), /*#__PURE__*/_react.default.createElement("li", null, "Non-Linear Degradation Curvature"), /*#__PURE__*/_react.default.createElement("li", null, "Datasheet Spec Limit Threshold")))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "flowchart-connector-v flowchart-mobile-connector"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "flowchart-line-v"
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    className: "flowchart-arrow-down"
+  })), /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-node theme-green",
     onClick: () => setSelectedNode("explainable_ai"),
     title: "Click to inspect counterfactual simulator"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-node-header"
-  }, /*#__PURE__*/_react.default.createElement("span", null, "\uD83D\uDCA1 EXPLAINABLE AI (XAI)"), /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "flowchart-node-title"
+  }, "\uD83D\uDCA1 EXPLAINABLE AI (XAI)"), /*#__PURE__*/_react.default.createElement("span", {
     className: "card-badge",
     style: {
       background: "#047857",
@@ -1254,28 +1225,20 @@ function ArchitectureFlowchart() {
     title: "Click to inspect risk fusion & safety boundary"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-node-header"
-  }, /*#__PURE__*/_react.default.createElement("span", null, "\uD83D\uDEE1\uFE0F RISK ENGINE & SAFETY ENFORCEMENT"), /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "flowchart-node-title"
+  }, "\uD83D\uDEE1\uFE0F RISK ENGINE & SAFETY ENFORCEMENT"), /*#__PURE__*/_react.default.createElement("span", {
     className: "card-badge",
     style: {
       background: "#C2410C",
       color: "#FFFFFF"
     }
   }, "SAFETY BOUNDARY")), /*#__PURE__*/_react.default.createElement("div", {
-    className: "flowchart-node-body"
-  }, /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      width: "100%"
-    }
+    className: "flowchart-node-body flowchart-risk-body"
   }, /*#__PURE__*/_react.default.createElement("ul", {
     className: "flowchart-bullets"
   }, /*#__PURE__*/_react.default.createElement("li", null, "Anomaly Score + Drift Acceleration + 168h Prediction + Confidence Bounds"), /*#__PURE__*/_react.default.createElement("li", null, "Multi-Detector Evidence Calibration & Component Behaviour State"), /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "Safety Boundary Rule:"), " Limit breach unconditionally locks status to ", /*#__PURE__*/_react.default.createElement("strong", null, "HIGH RISK"))), /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      display: "flex",
-      gap: "6px"
-    }
+    className: "flowchart-risk-badges"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "badge badge-pass"
   }, "PASS"), /*#__PURE__*/_react.default.createElement("span", {
@@ -1284,7 +1247,7 @@ function ArchitectureFlowchart() {
     className: "badge badge-review"
   }, "REVIEW"), /*#__PURE__*/_react.default.createElement("span", {
     className: "badge badge-risk"
-  }, "HIGH RISK"))))), /*#__PURE__*/_react.default.createElement("div", {
+  }, "HIGH RISK")))), /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-connector-v"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-line-v"
@@ -1297,58 +1260,49 @@ function ArchitectureFlowchart() {
     onClick: () => setSelectedNode("outputs"),
     title: "Click to inspect Component Health"
   }, /*#__PURE__*/_react.default.createElement("div", {
-    className: "flowchart-node-header",
-    style: {
-      fontSize: "12px"
-    }
-  }, /*#__PURE__*/_react.default.createElement("span", null, "\uD83D\uDD0D COMPONENT HEALTH")), /*#__PURE__*/_react.default.createElement("div", {
-    className: "flowchart-node-body",
-    style: {
-      padding: "10px 14px"
-    }
+    className: "flowchart-node-header flowchart-output-header"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "flowchart-node-title"
+  }, "\uD83D\uDD0D COMPONENT HEALTH")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "flowchart-node-body flowchart-output-body"
   }, /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      fontSize: "11.5px",
-      color: "var(--text-sub)"
-    }
+    className: "flowchart-output-desc"
   }, "Individual flight-unit telemetry, multi-parameter degradation, and pass/fail diagnostics."))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "flowchart-connector-v flowchart-mobile-connector"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "flowchart-line-v"
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    className: "flowchart-arrow-down"
+  })), /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-node theme-rose",
     onClick: () => setSelectedNode("outputs"),
     title: "Click to inspect Lot Health"
   }, /*#__PURE__*/_react.default.createElement("div", {
-    className: "flowchart-node-header",
-    style: {
-      fontSize: "12px"
-    }
-  }, /*#__PURE__*/_react.default.createElement("span", null, "\uD83D\uDCE6 LOT HEALTH")), /*#__PURE__*/_react.default.createElement("div", {
-    className: "flowchart-node-body",
-    style: {
-      padding: "10px 14px"
-    }
+    className: "flowchart-node-header flowchart-output-header"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "flowchart-node-title"
+  }, "\uD83D\uDCE6 LOT HEALTH")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "flowchart-node-body flowchart-output-body"
   }, /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      fontSize: "11.5px",
-      color: "var(--text-sub)"
-    }
+    className: "flowchart-output-desc"
   }, "Wafer-level clustering to isolate batch manufacturing flaws from individual unit wearout."))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "flowchart-connector-v flowchart-mobile-connector"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "flowchart-line-v"
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    className: "flowchart-arrow-down"
+  })), /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-node theme-green",
     onClick: () => setSelectedNode("outputs"),
     title: "Click to inspect Inspection Priority"
   }, /*#__PURE__*/_react.default.createElement("div", {
-    className: "flowchart-node-header",
-    style: {
-      fontSize: "12px"
-    }
-  }, /*#__PURE__*/_react.default.createElement("span", null, "\uD83D\uDCCB INSPECTION PRIORITY")), /*#__PURE__*/_react.default.createElement("div", {
-    className: "flowchart-node-body",
-    style: {
-      padding: "10px 14px"
-    }
+    className: "flowchart-node-header flowchart-output-header"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "flowchart-node-title"
+  }, "\uD83D\uDCCB INSPECTION PRIORITY")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "flowchart-node-body flowchart-output-body"
   }, /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      fontSize: "11.5px",
-      color: "var(--text-sub)"
-    }
+    className: "flowchart-output-desc"
   }, "Triage queue ranked #1 to #N prioritizing high-risk components for physical engineer FA.")))), /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-connector-v"
   }, /*#__PURE__*/_react.default.createElement("div", {
@@ -1361,43 +1315,29 @@ function ArchitectureFlowchart() {
     title: "Click to inspect QA Dashboard"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-node-header"
-  }, /*#__PURE__*/_react.default.createElement("span", null, "\uD83D\uDCBB QA ENGINEERING DECISION DASHBOARD"), /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "flowchart-node-title"
+  }, "\uD83D\uDCBB QA ENGINEERING DECISION DASHBOARD"), /*#__PURE__*/_react.default.createElement("span", {
     className: "card-badge",
     style: {
       background: "#0F172A",
       color: "#FFFFFF"
     }
   }, "AUTHORITATIVE CONSOLE")), /*#__PURE__*/_react.default.createElement("div", {
-    className: "flowchart-node-body"
+    className: "flowchart-node-body flowchart-dashboard-body"
   }, /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: "14px",
-      width: "100%"
-    }
-  }, /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("strong", {
-    style: {
-      fontSize: "12.5px"
-    }
+    className: "flowchart-dashboard-left"
+  }, /*#__PURE__*/_react.default.createElement("strong", {
+    className: "flowchart-dashboard-heading"
   }, "Comprehensive Flight Intelligence:"), /*#__PURE__*/_react.default.createElement("ul", {
     className: "flowchart-bullets",
     style: {
-      marginTop: "4px"
+      marginTop: "6px"
     }
   }, /*#__PURE__*/_react.default.createElement("li", null, "Reliability Profile & Historical Trajectory"), /*#__PURE__*/_react.default.createElement("li", null, "168h Trend & Physics Prognostic Forecast"), /*#__PURE__*/_react.default.createElement("li", null, "Explainable AI Evidence Attribution"), /*#__PURE__*/_react.default.createElement("li", null, "Lot Health & Batch Wafer Analysis"), /*#__PURE__*/_react.default.createElement("li", null, "Inspection Priority Queue & QA Signoff"))), /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "center",
-      alignItems: "flex-end"
-    }
+    className: "flowchart-dashboard-right"
   }, /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      display: "flex",
-      gap: "6px",
-      marginBottom: "8px"
-    }
+    className: "flowchart-dashboard-badges"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "badge badge-pass"
   }, "NORMAL"), /*#__PURE__*/_react.default.createElement("span", {
@@ -1407,11 +1347,8 @@ function ArchitectureFlowchart() {
   }, "REVIEW"), /*#__PURE__*/_react.default.createElement("span", {
     className: "badge badge-risk"
   }, "HIGH RISK")), /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      fontSize: "11px",
-      color: "var(--text-muted)"
-    }
-  }, "SHA-256 Tamper-Evident Ledger Verified")))))), activeDetail && /*#__PURE__*/_react.default.createElement("div", {
+    className: "flowchart-ledger-tag"
+  }, "SHA-256 Tamper-Evident Ledger Verified"))))), activeDetail && /*#__PURE__*/_react.default.createElement("div", {
     className: "code-drawer-modal",
     onClick: () => setSelectedNode(null)
   }, /*#__PURE__*/_react.default.createElement("div", {
@@ -3693,13 +3630,13 @@ function IconPause({
     y: "4",
     width: "4",
     height: "16",
-    rx: "1"
+    rx: "1.5"
   }), /*#__PURE__*/_react.default.createElement("rect", {
     x: "14",
     y: "4",
     width: "4",
     height: "16",
-    rx: "1"
+    rx: "1.5"
   }));
 }
 function IconStop({
@@ -3724,7 +3661,7 @@ function IconStop({
     y: "4",
     width: "16",
     height: "16",
-    rx: "2"
+    rx: "3"
   }));
 }
 function IconRadioWave({
@@ -4293,45 +4230,39 @@ function LiveScreeningTab({
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "stream-action-buttons"
   }, !isLive ? /*#__PURE__*/_react.default.createElement("button", {
-    className: "btn btn-emerald",
+    className: "btn stream-btn stream-btn-start",
     onClick: handleStart,
     title: "Start Telemetry Stream"
   }, /*#__PURE__*/_react.default.createElement(_Icons.IconPlay, {
-    size: 16
-  }), " ", /*#__PURE__*/_react.default.createElement("span", null, "Start", /*#__PURE__*/_react.default.createElement("span", {
-    className: "d-desktop-only"
-  }, " Stream"))) : isPaused ? /*#__PURE__*/_react.default.createElement("button", {
-    className: "btn btn-warning",
+    className: "stream-btn-icon",
+    size: 22
+  }), /*#__PURE__*/_react.default.createElement("span", null, "Start Telemetry Stream")) : isPaused ? /*#__PURE__*/_react.default.createElement("button", {
+    className: "btn stream-btn stream-btn-resume",
     onClick: onResumeStream,
     title: "Resume Stream"
   }, /*#__PURE__*/_react.default.createElement(_Icons.IconPlay, {
-    size: 16
-  }), " ", /*#__PURE__*/_react.default.createElement("span", null, "Resume", /*#__PURE__*/_react.default.createElement("span", {
-    className: "d-desktop-only"
-  }, " Stream"))) : /*#__PURE__*/_react.default.createElement("button", {
-    className: "btn btn-warning",
+    className: "stream-btn-icon",
+    size: 22
+  }), /*#__PURE__*/_react.default.createElement("span", null, "Resume Stream")) : /*#__PURE__*/_react.default.createElement("button", {
+    className: "btn stream-btn stream-btn-pause",
     onClick: onPauseStream,
     title: "Pause Stream"
   }, /*#__PURE__*/_react.default.createElement(_Icons.IconPause, {
-    size: 16
-  }), " ", /*#__PURE__*/_react.default.createElement("span", null, "Pause", /*#__PURE__*/_react.default.createElement("span", {
-    className: "d-desktop-only"
-  }, " Stream"))), /*#__PURE__*/_react.default.createElement("button", {
-    className: "btn btn-danger",
+    className: "stream-btn-icon",
+    size: 20
+  }), /*#__PURE__*/_react.default.createElement("span", null, "Pause Stream")), /*#__PURE__*/_react.default.createElement("button", {
+    className: "btn stream-btn stream-btn-stop",
     onClick: onStopStream,
     disabled: !isLive && !isPaused,
     title: "Stop Stream"
   }, /*#__PURE__*/_react.default.createElement(_Icons.IconStop, {
-    size: 16
-  }), " ", /*#__PURE__*/_react.default.createElement("span", null, "Stop", /*#__PURE__*/_react.default.createElement("span", {
-    className: "d-desktop-only"
-  }, " Stream"))), /*#__PURE__*/_react.default.createElement("button", {
-    className: "btn btn-secondary btn-sm",
+    className: "stream-btn-icon",
+    size: 20
+  }), /*#__PURE__*/_react.default.createElement("span", null, "Stop Stream")), /*#__PURE__*/_react.default.createElement("button", {
+    className: "btn stream-btn stream-btn-clear",
     onClick: onClearPoints,
     title: "Clear Chart"
-  }, /*#__PURE__*/_react.default.createElement("span", null, "Clear", /*#__PURE__*/_react.default.createElement("span", {
-    className: "d-desktop-only"
-  }, " Chart")))), /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react.default.createElement("span", null, "Clear Chart"))), /*#__PURE__*/_react.default.createElement("div", {
     className: "stream-raw-toggle"
   }, /*#__PURE__*/_react.default.createElement("button", {
     className: `btn btn-outline btn-sm ${rawDrawerOpen ? "active" : ""}`,

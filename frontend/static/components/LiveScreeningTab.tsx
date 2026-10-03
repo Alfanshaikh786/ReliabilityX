@@ -256,30 +256,50 @@ export function LiveScreeningTab({
         <div className="controls-row-bottom">
           <div className="stream-action-buttons">
             {!isLive ? (
-              <button className="btn btn-emerald" onClick={handleStart} title="Start Telemetry Stream">
-                <IconPlay size={16} /> <span>Start<span className="d-desktop-only"> Stream</span></span>
+              <button 
+                className="btn stream-btn stream-btn-start" 
+                onClick={handleStart} 
+                title="Start Telemetry Stream"
+              >
+                <IconPlay className="stream-btn-icon" size={22} />
+                <span>Start Telemetry Stream</span>
               </button>
             ) : isPaused ? (
-              <button className="btn btn-warning" onClick={onResumeStream} title="Resume Stream">
-                <IconPlay size={16} /> <span>Resume<span className="d-desktop-only"> Stream</span></span>
+              <button 
+                className="btn stream-btn stream-btn-resume" 
+                onClick={onResumeStream} 
+                title="Resume Stream"
+              >
+                <IconPlay className="stream-btn-icon" size={22} />
+                <span>Resume Stream</span>
               </button>
             ) : (
-              <button className="btn btn-warning" onClick={onPauseStream} title="Pause Stream">
-                <IconPause size={16} /> <span>Pause<span className="d-desktop-only"> Stream</span></span>
+              <button 
+                className="btn stream-btn stream-btn-pause" 
+                onClick={onPauseStream} 
+                title="Pause Stream"
+              >
+                <IconPause className="stream-btn-icon" size={20} />
+                <span>Pause Stream</span>
               </button>
             )}
 
             <button 
-              className="btn btn-danger" 
+              className="btn stream-btn stream-btn-stop" 
               onClick={onStopStream}
               disabled={!isLive && !isPaused}
               title="Stop Stream"
             >
-              <IconStop size={16} /> <span>Stop<span className="d-desktop-only"> Stream</span></span>
+              <IconStop className="stream-btn-icon" size={20} />
+              <span>Stop Stream</span>
             </button>
 
-            <button className="btn btn-secondary btn-sm" onClick={onClearPoints} title="Clear Chart">
-              <span>Clear<span className="d-desktop-only"> Chart</span></span>
+            <button 
+              className="btn stream-btn stream-btn-clear" 
+              onClick={onClearPoints} 
+              title="Clear Chart"
+            >
+              <span>Clear Chart</span>
             </button>
           </div>
 

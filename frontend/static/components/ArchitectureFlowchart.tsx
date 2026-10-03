@@ -177,10 +177,10 @@ export function ArchitectureFlowchart() {
           title="Click to inspect ML telemetry ingestion"
         >
           <div className="flowchart-node-header">
-            <span>🏭 BURN-IN / ESS TEST SOURCES</span>
+            <span className="flowchart-node-title">🏭 BURN-IN / ESS TEST SOURCES</span>
             <span className="card-badge" style={{ background: "#2563EB", color: "#FFFFFF" }}>INGESTION</span>
           </div>
-          <div className="flowchart-node-body">
+          <div className="flowchart-node-body flowchart-stage1-body">
             <ul className="flowchart-bullets">
               <li>Automated Test Equipment (ATE)</li>
               <li>Burn-In Test Systems (Thermal Chambers)</li>
@@ -188,9 +188,9 @@ export function ArchitectureFlowchart() {
               <li>Electrical Parametric Measurement Systems</li>
               <li>Historical QA / Test Records</li>
             </ul>
-            <div style={{ textAlign: "right" }}>
+            <div className="flowchart-node-status">
               <span className="badge badge-pass" style={{ fontSize: "11px" }}>Active Stream</span>
-              <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>Click to view code</div>
+              <div className="flowchart-hint-text">Click to view code</div>
             </div>
           </div>
         </div>
@@ -208,11 +208,11 @@ export function ArchitectureFlowchart() {
           title="Click to view temporal test gates"
         >
           <div className="flowchart-node-header">
-            <span>💾 COMPONENT TEST DATA</span>
+            <span className="flowchart-node-title">💾 COMPONENT TEST DATA</span>
             <span className="card-badge" style={{ background: "#06B6D4", color: "#FFFFFF" }}>4 GATES</span>
           </div>
-          <div className="flowchart-node-body">
-            <span style={{ fontSize: "12.5px", color: "#334155", fontWeight: 600 }}>
+          <div className="flowchart-node-body flowchart-testdata-body">
+            <span className="flowchart-subheading">
               Multi-channel parametric burn-in telemetry:
             </span>
             <div className="timeline-pills">
@@ -237,17 +237,17 @@ export function ArchitectureFlowchart() {
           title="Click to view sensor validation"
         >
           <div className="flowchart-node-header">
-            <span>⚙️ DATA QUALITY ENGINE</span>
+            <span className="flowchart-node-title">⚙️ DATA QUALITY ENGINE</span>
             <span className="card-badge" style={{ background: "#7C3AED", color: "#FFFFFF" }}>VALIDATED</span>
           </div>
           <div className="flowchart-node-body">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", width: "100%" }}>
-              <div style={{ fontSize: "12px", color: "#334155" }}>• Missing Data Check (0 missing)</div>
-              <div style={{ fontSize: "12px", color: "#334155" }}>• 5x IQR Noise Filter</div>
-              <div style={{ fontSize: "12px", color: "#334155" }}>• Scale & Normalization</div>
-              <div style={{ fontSize: "12px", color: "#334155" }}>• Continuity Validation</div>
-              <div style={{ fontSize: "12px", color: "#334155" }}>• Sensor Stuck Detection</div>
-              <div style={{ fontSize: "12px", color: "#334155" }}>• Outlier Pre-Screening</div>
+            <div className="flowchart-quality-grid">
+              <div className="quality-item">• Missing Data Check (0 missing)</div>
+              <div className="quality-item">• 5x IQR Noise Filter</div>
+              <div className="quality-item">• Scale & Normalization</div>
+              <div className="quality-item">• Continuity Validation</div>
+              <div className="quality-item">• Sensor Stuck Detection</div>
+              <div className="quality-item">• Outlier Pre-Screening</div>
             </div>
           </div>
         </div>
@@ -267,7 +267,7 @@ export function ArchitectureFlowchart() {
             title="Click to inspect 4 Anomaly ML models"
           >
             <div className="flowchart-node-header">
-              <span>📊 LOT-RELATIVE ANOMALY ENGINE</span>
+              <span className="flowchart-node-title">📊 LOT-RELATIVE ANOMALY ENGINE</span>
               <span className="card-badge" style={{ background: "#059669", color: "#FFFFFF" }}>4 ML DETECTORS</span>
             </div>
             <div className="flowchart-node-body">
@@ -280,6 +280,12 @@ export function ArchitectureFlowchart() {
             </div>
           </div>
 
+          {/* Mobile-only connector between stacked dual cards */}
+          <div className="flowchart-connector-v flowchart-mobile-connector">
+            <div className="flowchart-line-v"></div>
+            <div className="flowchart-arrow-down"></div>
+          </div>
+
           {/* Right: TIME-SERIES BEHAVIOUR ENGINE */}
           <div
             className="flowchart-node theme-rose"
@@ -287,7 +293,7 @@ export function ArchitectureFlowchart() {
             title="Click to inspect temporal acceleration engine"
           >
             <div className="flowchart-node-header">
-              <span>📈 TIME-SERIES BEHAVIOUR ENGINE</span>
+              <span className="flowchart-node-title">📈 TIME-SERIES BEHAVIOUR ENGINE</span>
               <span className="card-badge" style={{ background: "#E11D48", color: "#FFFFFF" }}>TEMPORAL</span>
             </div>
             <div className="flowchart-node-body">
@@ -314,17 +320,17 @@ export function ArchitectureFlowchart() {
           title="Click to inspect fingerprint classification"
         >
           <div className="flowchart-node-header">
-            <span>🧬 COMPONENT BEHAVIOUR FINGERPRINT</span>
+            <span className="flowchart-node-title">🧬 COMPONENT BEHAVIOUR FINGERPRINT</span>
             <span className="card-badge" style={{ background: "#D97706", color: "#FFFFFF" }}>PHYSICAL STATE</span>
           </div>
           <div className="flowchart-node-body">
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", width: "100%", justifyContent: "space-around" }}>
+            <div className="flowchart-fingerprint-flow">
               <span className="badge badge-state-normal" style={{ padding: "6px 14px", fontSize: "12px" }}>NORMAL (PASS)</span>
-              <span style={{ color: "#94A3B8", fontWeight: "bold" }}>→</span>
+              <span className="flowchart-flow-arrow">→</span>
               <span className="badge badge-state-drifting" style={{ padding: "6px 14px", fontSize: "12px" }}>DRIFTING (WATCH)</span>
-              <span style={{ color: "#94A3B8", fontWeight: "bold" }}>→</span>
+              <span className="flowchart-flow-arrow">→</span>
               <span className="badge badge-state-accel" style={{ padding: "6px 14px", fontSize: "12px" }}>ACCELERATING (REVIEW)</span>
-              <span style={{ color: "#94A3B8", fontWeight: "bold" }}>→</span>
+              <span className="flowchart-flow-arrow">→</span>
               <span className="badge badge-state-unstable" style={{ padding: "6px 14px", fontSize: "12px" }}>UNSTABLE (HIGH RISK)</span>
             </div>
           </div>
@@ -343,19 +349,19 @@ export function ArchitectureFlowchart() {
           title="Click to inspect 4 Predictive ML models"
         >
           <div className="flowchart-node-header">
-            <span>🤖 FUTURE DRIFT AI (168h FORECAST)</span>
+            <span className="flowchart-node-title">🤖 FUTURE DRIFT AI (168h FORECAST)</span>
             <span className="card-badge" style={{ background: "#1D4ED8", color: "#FFFFFF" }}>MODEL LADDER</span>
           </div>
-          <div className="flowchart-node-body">
+          <div className="flowchart-node-body flowchart-future-drift-body">
             <ul className="flowchart-bullets">
               <li><strong>Early Readings:</strong> Ingests 0h, 24h, 96h telemetry</li>
               <li><strong>168h Prediction:</strong> HistGradientBoosting + Random Forest + Ridge</li>
               <li><strong>Physics Baseline:</strong> Arrhenius Log-Time Wearout Model</li>
               <li><strong>Uncertainty Quantification:</strong> Estimated Prediction Interval (±1.96σ) & P90 Estimated Upper Bound</li>
             </ul>
-            <div style={{ textAlign: "right", minWidth: "140px" }}>
-              <div style={{ fontSize: "20px", fontWeight: "800", color: "#1D4ED8" }}>168h</div>
-              <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>Prognostic Horizon</div>
+            <div className="flowchart-horizon-box">
+              <div className="flowchart-horizon-val">168h</div>
+              <div className="flowchart-horizon-lbl">Prognostic Horizon</div>
             </div>
           </div>
         </div>
@@ -375,7 +381,7 @@ export function ArchitectureFlowchart() {
             title="Click to inspect trajectory curves"
           >
             <div className="flowchart-node-header">
-              <span>📈 RELIABILITY TRAJECTORY</span>
+              <span className="flowchart-node-title">📈 RELIABILITY TRAJECTORY</span>
               <span className="card-badge" style={{ background: "#6D28D9", color: "#FFFFFF" }}>PROGNOSTICS</span>
             </div>
             <div className="flowchart-node-body">
@@ -388,6 +394,12 @@ export function ArchitectureFlowchart() {
             </div>
           </div>
 
+          {/* Mobile-only connector between stacked dual cards */}
+          <div className="flowchart-connector-v flowchart-mobile-connector">
+            <div className="flowchart-line-v"></div>
+            <div className="flowchart-arrow-down"></div>
+          </div>
+
           {/* Right: EXPLAINABLE AI */}
           <div
             className="flowchart-node theme-green"
@@ -395,7 +407,7 @@ export function ArchitectureFlowchart() {
             title="Click to inspect counterfactual simulator"
           >
             <div className="flowchart-node-header">
-              <span>💡 EXPLAINABLE AI (XAI)</span>
+              <span className="flowchart-node-title">💡 EXPLAINABLE AI (XAI)</span>
               <span className="card-badge" style={{ background: "#047857", color: "#FFFFFF" }}>ATTRIBUTION</span>
             </div>
             <div className="flowchart-node-body">
@@ -422,22 +434,20 @@ export function ArchitectureFlowchart() {
           title="Click to inspect risk fusion & safety boundary"
         >
           <div className="flowchart-node-header">
-            <span>🛡️ RISK ENGINE & SAFETY ENFORCEMENT</span>
+            <span className="flowchart-node-title">🛡️ RISK ENGINE & SAFETY ENFORCEMENT</span>
             <span className="card-badge" style={{ background: "#C2410C", color: "#FFFFFF" }}>SAFETY BOUNDARY</span>
           </div>
-          <div className="flowchart-node-body">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
-              <ul className="flowchart-bullets">
-                <li>Anomaly Score + Drift Acceleration + 168h Prediction + Confidence Bounds</li>
-                <li>Multi-Detector Evidence Calibration & Component Behaviour State</li>
-                <li><strong>Safety Boundary Rule:</strong> Limit breach unconditionally locks status to <strong>HIGH RISK</strong></li>
-              </ul>
-              <div style={{ display: "flex", gap: "6px" }}>
-                <span className="badge badge-pass">PASS</span>
-                <span className="badge badge-watch">WATCH</span>
-                <span className="badge badge-review">REVIEW</span>
-                <span className="badge badge-risk">HIGH RISK</span>
-              </div>
+          <div className="flowchart-node-body flowchart-risk-body">
+            <ul className="flowchart-bullets">
+              <li>Anomaly Score + Drift Acceleration + 168h Prediction + Confidence Bounds</li>
+              <li>Multi-Detector Evidence Calibration & Component Behaviour State</li>
+              <li><strong>Safety Boundary Rule:</strong> Limit breach unconditionally locks status to <strong>HIGH RISK</strong></li>
+            </ul>
+            <div className="flowchart-risk-badges">
+              <span className="badge badge-pass">PASS</span>
+              <span className="badge badge-watch">WATCH</span>
+              <span className="badge badge-review">REVIEW</span>
+              <span className="badge badge-risk">HIGH RISK</span>
             </div>
           </div>
         </div>
@@ -455,14 +465,20 @@ export function ArchitectureFlowchart() {
             onClick={() => setSelectedNode("outputs")}
             title="Click to inspect Component Health"
           >
-            <div className="flowchart-node-header" style={{ fontSize: "12px" }}>
-              <span>🔍 COMPONENT HEALTH</span>
+            <div className="flowchart-node-header flowchart-output-header">
+              <span className="flowchart-node-title">🔍 COMPONENT HEALTH</span>
             </div>
-            <div className="flowchart-node-body" style={{ padding: "10px 14px" }}>
-              <div style={{ fontSize: "11.5px", color: "var(--text-sub)" }}>
+            <div className="flowchart-node-body flowchart-output-body">
+              <div className="flowchart-output-desc">
                 Individual flight-unit telemetry, multi-parameter degradation, and pass/fail diagnostics.
               </div>
             </div>
+          </div>
+
+          {/* Mobile-only connector between stacked triple cards */}
+          <div className="flowchart-connector-v flowchart-mobile-connector">
+            <div className="flowchart-line-v"></div>
+            <div className="flowchart-arrow-down"></div>
           </div>
 
           <div
@@ -470,14 +486,20 @@ export function ArchitectureFlowchart() {
             onClick={() => setSelectedNode("outputs")}
             title="Click to inspect Lot Health"
           >
-            <div className="flowchart-node-header" style={{ fontSize: "12px" }}>
-              <span>📦 LOT HEALTH</span>
+            <div className="flowchart-node-header flowchart-output-header">
+              <span className="flowchart-node-title">📦 LOT HEALTH</span>
             </div>
-            <div className="flowchart-node-body" style={{ padding: "10px 14px" }}>
-              <div style={{ fontSize: "11.5px", color: "var(--text-sub)" }}>
+            <div className="flowchart-node-body flowchart-output-body">
+              <div className="flowchart-output-desc">
                 Wafer-level clustering to isolate batch manufacturing flaws from individual unit wearout.
               </div>
             </div>
+          </div>
+
+          {/* Mobile-only connector between stacked triple cards */}
+          <div className="flowchart-connector-v flowchart-mobile-connector">
+            <div className="flowchart-line-v"></div>
+            <div className="flowchart-arrow-down"></div>
           </div>
 
           <div
@@ -485,11 +507,11 @@ export function ArchitectureFlowchart() {
             onClick={() => setSelectedNode("outputs")}
             title="Click to inspect Inspection Priority"
           >
-            <div className="flowchart-node-header" style={{ fontSize: "12px" }}>
-              <span>📋 INSPECTION PRIORITY</span>
+            <div className="flowchart-node-header flowchart-output-header">
+              <span className="flowchart-node-title">📋 INSPECTION PRIORITY</span>
             </div>
-            <div className="flowchart-node-body" style={{ padding: "10px 14px" }}>
-              <div style={{ fontSize: "11.5px", color: "var(--text-sub)" }}>
+            <div className="flowchart-node-body flowchart-output-body">
+              <div className="flowchart-output-desc">
                 Triage queue ranked #1 to #N prioritizing high-risk components for physical engineer FA.
               </div>
             </div>
@@ -509,32 +531,30 @@ export function ArchitectureFlowchart() {
           title="Click to inspect QA Dashboard"
         >
           <div className="flowchart-node-header">
-            <span>💻 QA ENGINEERING DECISION DASHBOARD</span>
+            <span className="flowchart-node-title">💻 QA ENGINEERING DECISION DASHBOARD</span>
             <span className="card-badge" style={{ background: "#0F172A", color: "#FFFFFF" }}>AUTHORITATIVE CONSOLE</span>
           </div>
-          <div className="flowchart-node-body">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", width: "100%" }}>
-              <div>
-                <strong style={{ fontSize: "12.5px" }}>Comprehensive Flight Intelligence:</strong>
-                <ul className="flowchart-bullets" style={{ marginTop: "4px" }}>
-                  <li>Reliability Profile & Historical Trajectory</li>
-                  <li>168h Trend & Physics Prognostic Forecast</li>
-                  <li>Explainable AI Evidence Attribution</li>
-                  <li>Lot Health & Batch Wafer Analysis</li>
-                  <li>Inspection Priority Queue & QA Signoff</li>
-                </ul>
-              </div>
+          <div className="flowchart-node-body flowchart-dashboard-body">
+            <div className="flowchart-dashboard-left">
+              <strong className="flowchart-dashboard-heading">Comprehensive Flight Intelligence:</strong>
+              <ul className="flowchart-bullets" style={{ marginTop: "6px" }}>
+                <li>Reliability Profile & Historical Trajectory</li>
+                <li>168h Trend & Physics Prognostic Forecast</li>
+                <li>Explainable AI Evidence Attribution</li>
+                <li>Lot Health & Batch Wafer Analysis</li>
+                <li>Inspection Priority Queue & QA Signoff</li>
+              </ul>
+            </div>
 
-              <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-end" }}>
-                <div style={{ display: "flex", gap: "6px", marginBottom: "8px" }}>
-                  <span className="badge badge-pass">NORMAL</span>
-                  <span className="badge badge-watch">WATCH</span>
-                  <span className="badge badge-review">REVIEW</span>
-                  <span className="badge badge-risk">HIGH RISK</span>
-                </div>
-                <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
-                  SHA-256 Tamper-Evident Ledger Verified
-                </div>
+            <div className="flowchart-dashboard-right">
+              <div className="flowchart-dashboard-badges">
+                <span className="badge badge-pass">NORMAL</span>
+                <span className="badge badge-watch">WATCH</span>
+                <span className="badge badge-review">REVIEW</span>
+                <span className="badge badge-risk">HIGH RISK</span>
+              </div>
+              <div className="flowchart-ledger-tag">
+                SHA-256 Tamper-Evident Ledger Verified
               </div>
             </div>
           </div>

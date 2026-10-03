@@ -155,8 +155,8 @@ export function IconPlay({ className = "w-4 h-4", size = 16 }: { className?: str
 export function IconPause({ className = "w-4 h-4", size = 16 }: { className?: string; size?: number }) {
   return (
     <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="currentColor" style={{ width: size, height: size, minWidth: size, minHeight: size, flexShrink: 0 }}>
-      <rect x="6" y="4" width="4" height="16" rx="1" />
-      <rect x="14" y="4" width="4" height="16" rx="1" />
+      <rect x="6" y="4" width="4" height="16" rx="1.5" />
+      <rect x="14" y="4" width="4" height="16" rx="1.5" />
     </svg>
   );
 }
@@ -164,7 +164,7 @@ export function IconPause({ className = "w-4 h-4", size = 16 }: { className?: st
 export function IconStop({ className = "w-4 h-4", size = 16 }: { className?: string; size?: number }) {
   return (
     <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="currentColor" style={{ width: size, height: size, minWidth: size, minHeight: size, flexShrink: 0 }}>
-      <rect x="4" y="4" width="16" height="16" rx="2" />
+      <rect x="4" y="4" width="16" height="16" rx="3" />
     </svg>
   );
 }
