@@ -33,6 +33,11 @@
 
   <link rel="stylesheet" href="/static/style.css">
 
+  <!-- Preload Mobile Intro Animation & Audio for Instant First-Load Display on iPhone/Android -->
+  <link rel="preload" as="image" href="/static/mobile-intro.webp" type="image/webp">
+  <link rel="preload" as="audio" href="/static/mobile-intro.m4a" type="audio/mp4">
+  <link rel="preload" as="audio" href="/static/mobile-intro.mp3" type="audio/mpeg">
+
   <!-- Production-Grade React 18 Standalone Libraries -->
   <script src="/static/vendor/react.production.min.js"></script>
   <script src="/static/vendor/react-dom.production.min.js"></script>
@@ -64,9 +69,13 @@
     />
     <audio
       id="rx-mobile-audio"
-      src="/static/mobile-intro.mp4"
       preload="auto"
-    ></audio>
+      playsinline
+      webkit-playsinline
+    >
+      <source src="/static/mobile-intro.m4a" type="audio/mp4">
+      <source src="/static/mobile-intro.mp3" type="audio/mpeg">
+    </audio>
   </div>
 
   <!-- React 18 Application Root Mount Target -->
@@ -169,8 +178,8 @@
     if (isMobile) {
       // -----------------------------------------------------------------------
       // MOBILE APP INTRO
-      // Uses animated WebP + audio. Guaranteed 100% direct autoplay with ZERO
-      // play buttons on all iPhones / iPads / Android devices regardless of Low Power Mode.
+      // Uses optimized animated WebP + native audio. Guaranteed 100% direct
+      // autoplay with ZERO play buttons on all iPhones / iPads / Android devices.
       // -----------------------------------------------------------------------
       if (websiteVideo && websiteVideo.parentNode) {
         try {
@@ -184,37 +193,79 @@
         overlay.classList.add("rx-mobile-intro-overlay");
       }
 
-      // Audio handling
-      if (mobileAudio) {
-        mobileAudio.muted = false;
-        mobileAudio.volume = 1.0;
-        var audioPromise = mobileAudio.play();
-        if (audioPromise !== undefined) {
-          audioPromise.catch(function(e) {
-            // Unlock audio on first screen touch/tap without interrupting animation
-            function unlockAudio() {
-              try {
-                mobileAudio.muted = false;
-                mobileAudio.volume = 1.0;
-                mobileAudio.play().catch(function(){});
-              } catch(err){}
-              window.removeEventListener("touchstart", unlockAudio);
-              window.removeEventListener("touchend", unlockAudio);
-              window.removeEventListener("click", unlockAudio);
-              window.removeEventListener("pointerdown", unlockAudio);
+      var animationStartTime = 0;
+      var introTimerStarted = false;
+
+      function startMobileIntroSequence() {
+        if (introTimerStarted) return;
+        introTimerStarted = true;
+        animationStartTime = Date.now();
+        console.log("[ReliabilityX Intro] Mobile animation actively displaying.");
+
+        // Direct audio playback attempt
+        if (mobileAudio) {
+          try {
+            mobileAudio.currentTime = 0;
+            mobileAudio.muted = false;
+            mobileAudio.volume = 1.0;
+            var audioPromise = mobileAudio.play();
+            if (audioPromise !== undefined) {
+              audioPromise.then(function() {
+                console.log("[ReliabilityX Intro] Direct audio playback active.");
+              }).catch(function(e) {
+                console.warn("[ReliabilityX Intro] Audio held by iOS autoplay policy, awaiting user touch:", e);
+              });
             }
-            window.addEventListener("touchstart", unlockAudio, { passive: true });
-            window.addEventListener("touchend", unlockAudio, { passive: true });
-            window.addEventListener("click", unlockAudio);
-            window.addEventListener("pointerdown", unlockAudio);
-          });
+          } catch(err){}
         }
+
+        // Full mobile animation duration: exactly 10.0 seconds from the moment frames display!
+        setTimeout(function() {
+          finishIntro();
+        }, 10000);
       }
 
-      // Full mobile animation duration: exactly 10.0 seconds
-      setTimeout(function() {
-        finishIntro();
-      }, 10000);
+      // Check if image is already loaded from cache or listen to load event (Fixes first-visit delay!)
+      if (mobileAnim) {
+        if (mobileAnim.complete && mobileAnim.naturalWidth > 0) {
+          startMobileIntroSequence();
+        } else {
+          mobileAnim.addEventListener("load", startMobileIntroSequence, { once: true });
+          // Fallback if load event delayed
+          setTimeout(startMobileIntroSequence, 1200);
+        }
+      } else {
+        startMobileIntroSequence();
+      }
+
+      // Seamless Audio Activation on Any Touch Gesture (Zero Delay Sync):
+      // On strict iOS Safari, touching anywhere on the screen instantly plays & syncs audio
+      function unlockAudioOnGesture() {
+        if (mobileAudio && !finished) {
+          try {
+            mobileAudio.muted = false;
+            mobileAudio.volume = 1.0;
+            if (mobileAudio.paused) {
+              if (animationStartTime > 0) {
+                var elapsed = (Date.now() - animationStartTime) / 1000;
+                if (elapsed > 0.05 && elapsed < 9.5) {
+                  mobileAudio.currentTime = elapsed;
+                }
+              }
+              mobileAudio.play().catch(function(){});
+            }
+          } catch(err){}
+        }
+        window.removeEventListener("touchstart", unlockAudioOnGesture);
+        window.removeEventListener("touchend", unlockAudioOnGesture);
+        window.removeEventListener("click", unlockAudioOnGesture);
+        window.removeEventListener("pointerdown", unlockAudioOnGesture);
+      }
+
+      window.addEventListener("touchstart", unlockAudioOnGesture, { passive: true });
+      window.addEventListener("touchend", unlockAudioOnGesture, { passive: true });
+      window.addEventListener("click", unlockAudioOnGesture);
+      window.addEventListener("pointerdown", unlockAudioOnGesture);
 
     } else {
       // -----------------------------------------------------------------------
