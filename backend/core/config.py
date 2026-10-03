@@ -2,6 +2,7 @@
 ReliabilityX Configuration & Engineering Specifications
 Authoritative engineering limits, threshold configurations, and default parameter specs.
 """
+import os
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 
@@ -92,8 +93,8 @@ class SystemConfig(BaseModel):
     # Model Ladder selection
     default_prediction_model: str = "gradient_boosting"
 
-    # Database
-    db_path: str = "reliabilityx.db"
+    # Database (supports Vercel serverless ephemeral /tmp path)
+    db_path: str = os.environ.get("RELIABILITYX_DB_PATH", "/tmp/reliabilityx.db" if os.environ.get("VERCEL") else "reliabilityx.db")
 
     # Versioning
     model_version: str = "v1.4.0-physics-ensemble"
