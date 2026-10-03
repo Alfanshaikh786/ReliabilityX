@@ -79,15 +79,6 @@
     var root     = document.getElementById("root");
     var finished = false;
 
-    // Respect prefers-reduced-motion
-    var motionQuery = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (motionQuery && motionQuery.matches) {
-      if (overlay) overlay.style.display = "none";
-      if (root) root.classList.add("rx-root-revealed");
-      try { window.dispatchEvent(new CustomEvent("rx-intro-complete")); } catch(e){}
-      return;
-    }
-
     // -------------------------------------------------------------------------
     // PLATFORM SELECTION:
     // 1. Desktop / Web Browser -> OLD WEBSITE INTRO VIDEO (/static/intro.mp4)
@@ -171,12 +162,7 @@
       // Set target video source
       video.src = videoFile;
 
-      // Unmuted by default at 100% volume
-      video.muted = false;
-      video.defaultMuted = false;
-      video.volume = 1.0;
-
-      // Completion triggers
+      // Completion triggers — ONLY finish when video animation naturally completes
       video.addEventListener("ended", finishIntro);
       video.addEventListener("timeupdate", function() {
         if (video.duration && video.duration > 1.0 && video.currentTime >= video.duration - 0.25) {
@@ -184,44 +170,34 @@
         }
       });
 
-      // Handle video error without blocking app
-      video.addEventListener("error", function(e) {
-        console.warn("[ReliabilityX Intro] Video element error:", e);
-        finishIntro();
-      });
-
       // DIRECT AUDIO + VIDEO PLAYBACK
       function startDirectPlayback() {
-        video.muted = false;
-        video.volume = 1.0;
+        // Start playback to guarantee video decoder surface allocation on mobile screen
+        video.muted = true;
         var p = video.play();
         if (p !== undefined) {
           p.then(function() {
-            console.log("[ReliabilityX Intro] Direct video + audio playback active.");
-          }).catch(function(err) {
-            console.warn("[ReliabilityX Intro] Autoplay unmuted held by browser policy, unlocking via muted play then unmuting:", err);
-            // Immediately start playing video so animation runs smoothly
-            video.muted = true;
-            video.play().then(function() {
-              // Immediately un-mute once stream is active
+            console.log("[ReliabilityX Intro] Visual frames rendering actively.");
+            // Immediately activate unmuted audio
+            setTimeout(function() {
               try {
                 video.muted = false;
                 video.volume = 1.0;
               } catch(e){}
-            }).catch(function(e) {
-              console.error("[ReliabilityX Intro] Playback error:", e);
-              finishIntro();
-            });
+            }, 60);
+          }).catch(function(err) {
+            console.warn("[ReliabilityX Intro] Playback initializing:", err);
+            video.muted = true;
+            video.play().catch(function(){});
           });
         }
       }
 
-      // Background touch / pointer / click listener to ensure unmuted audio in strict mobile browsers without any button
+      // Background touch / pointer / click listener to ensure unmuted audio on mobile
       function unmuteDirectly() {
         try {
           video.muted = false;
           video.volume = 1.0;
-          video.play().catch(function(){});
         } catch(e){}
         window.removeEventListener("touchstart", unmuteDirectly);
         window.removeEventListener("touchend", unmuteDirectly);

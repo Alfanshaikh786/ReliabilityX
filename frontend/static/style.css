@@ -3828,6 +3828,9 @@ input:focus, select:focus, textarea:focus {
   object-fit: cover !important;
   object-position: center center !important;
   display: block !important;
+  z-index: 2147483647 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
   margin: 0 !important;
   padding: 0 !important;
   border: none !important;
@@ -3846,19 +3849,20 @@ input:focus, select:focus, textarea:focus {
 
 
 
-/* Main root container — Startup state and graceful reveal transition */
+/* Main root container — Strictly hidden until intro video animation completes */
 .rx-root-container {
-  opacity: 0;
-  pointer-events: none;
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
   width: 100%;
   min-height: 100vh;
-  transition: opacity 600ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.rx-root-container.rx-root-revealed,
-body:not(:has(#rx-intro-overlay)) .rx-root-container {
+.rx-root-container.rx-root-revealed {
+  display: block !important;
   opacity: 1 !important;
   pointer-events: auto !important;
+  transition: opacity 600ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ==============================================================================
@@ -4312,17 +4316,6 @@ select:focus, .control-select:focus {
 
   .rx-floating-background {
     display: none !important;
-  }
-
-  .intro-screen,
-  .rx-intro-overlay {
-    display: none !important;
-  }
-
-  .rx-root-container {
-    opacity: 1 !important;
-    transform: none !important;
-    transition: none !important;
   }
 
   .dot-connected, .dot-live, .dot-reconnecting, .dot-connecting {
