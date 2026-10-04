@@ -210,7 +210,7 @@ export function AboutSection() {
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     const targets = rootEl.querySelectorAll<HTMLElement>(
-      ".rx-about-fade, .rx-about-heading, .rx-about-card, .team-card, .about-hero-intro"
+      ".rx-about-fade, .rx-about-heading, .rx-about-card, .team-card, .about-hero-intro, .rx-mv-mission, .rx-mv-vision"
     );
 
     if (prefersReduced || !("IntersectionObserver" in window)) {
@@ -219,6 +219,8 @@ export function AboutSection() {
       });
       return;
     }
+
+    const vp = document.querySelector(".app-main-viewport");
 
     // High-performance IntersectionObserver with once-only reveal
     const observer = new IntersectionObserver(
@@ -231,13 +233,22 @@ export function AboutSection() {
         });
       },
       {
-        root: null,
+        root: vp || null,
         rootMargin: "0px 0px -30px 0px",
         threshold: 0.08
       }
     );
 
-    targets.forEach((el) => observer.observe(el));
+    const vpBottom = vp ? vp.getBoundingClientRect().bottom : window.innerHeight;
+
+    targets.forEach((el) => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < vpBottom - 40 && rect.bottom > 10) {
+        el.classList.add("rx-settled-in");
+      } else {
+        observer.observe(el);
+      }
+    });
 
     return () => {
       observer.disconnect();
@@ -251,8 +262,13 @@ export function AboutSection() {
       className="about-section-container mb-4"
       aria-labelledby="about-main-heading"
     >
-      {/* 1. Hero-Style Introduction (Centered Title, Decorative Line, Tagline) */}
+      {/* 1. Hero-Style Introduction (Eyebrow -> Heading -> Divider -> Tagline sequential reveal) */}
       <div className="card about-hero-intro mb-4 rx-about-fade">
+        <div className="about-hero-eyebrow">
+          <span className="about-hero-eyebrow-dot" />
+          ABOUT RELIABILITYX
+        </div>
+
         <h1 id="about-main-heading" className="about-hero-title">
           About Reliability<span style={{ color: "var(--accent-blue)" }}>X</span>
         </h1>
@@ -268,7 +284,7 @@ export function AboutSection() {
         </p>
       </div>
 
-      {/* 2. Our Impact Areas (6 Professional Cards) */}
+      {/* 2. Our Impact Areas (6 Professional Cards with Staggered Upward Ingress) */}
       <div className="card mb-4 rx-about-fade">
         <div className="card-header about-section-inner-header">
           <div className="about-section-header-left">
@@ -281,8 +297,12 @@ export function AboutSection() {
         </div>
 
         <div className="about-impact-grid">
-          {IMPACT_AREAS.map((item) => (
-            <div key={item.id} className="about-impact-item rx-about-card">
+          {IMPACT_AREAS.map((item, idx) => (
+            <div
+              key={item.id}
+              className="about-impact-item rx-about-card rx-stagger-item"
+              style={{ "--stagger-index": idx } as any}
+            >
               <div className="about-impact-icon-badge">
                 {item.icon}
               </div>
@@ -293,10 +313,10 @@ export function AboutSection() {
         </div>
       </div>
 
-      {/* 3. Our Mission & 4. Our Vision (Side-by-Side Responsive Grid) */}
+      {/* 3. Our Mission & 4. Our Vision (Side-by-Side Responsive Grid with Opposing Sliding Entrance) */}
       <div className="about-two-col-grid mb-4">
-        {/* OUR MISSION */}
-        <div className="card about-mv-card rx-about-card">
+        {/* OUR MISSION: Left -> Center ingress */}
+        <div className="card about-mv-card rx-mv-mission">
           <div className="about-card-top-icon-row">
             <div className="about-icon-box icon-mission">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -313,8 +333,8 @@ export function AboutSection() {
           </p>
         </div>
 
-        {/* OUR VISION */}
-        <div className="card about-mv-card rx-about-card">
+        {/* OUR VISION: Right -> Center ingress */}
+        <div className="card about-mv-card rx-mv-vision">
           <div className="about-card-top-icon-row">
             <div className="about-icon-box icon-vision">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -331,7 +351,7 @@ export function AboutSection() {
         </div>
       </div>
 
-      {/* 5. Our Values (5 Values Grid) */}
+      {/* 5. Our Values (5 Values Grid with 60ms Staggered Upward Entrance) */}
       <div className="card mb-4 rx-about-fade">
         <div className="card-header about-section-inner-header">
           <div className="about-section-header-left">
@@ -344,8 +364,12 @@ export function AboutSection() {
         </div>
 
         <div className="about-values-grid">
-          {VALUES.map((val) => (
-            <div key={val.num} className="about-value-item rx-about-card">
+          {VALUES.map((val, idx) => (
+            <div
+              key={val.num}
+              className="about-value-item rx-about-card rx-stagger-item"
+              style={{ "--stagger-index": idx } as any}
+            >
               <div className="about-value-header">
                 <div className="about-value-num">{val.num}</div>
                 <div className="about-value-icon-box">{val.icon}</div>
@@ -357,7 +381,7 @@ export function AboutSection() {
         </div>
       </div>
 
-      {/* 6. TEAM BRIGEBYTES SECTION */}
+      {/* 6. TEAM BRIGEBYTES SECTION (6 Cards with Upward Staggered Entrance) */}
       <div id="section-team-brigebytes" className="card about-team-card-wrapper mb-4 rx-about-fade">
         <div className="about-team-header-block text-center">
           <div className="team-identifier-tag">
@@ -376,7 +400,7 @@ export function AboutSection() {
               <div
                 key={member.id}
                 role="listitem"
-                className={`team-card ${isLeader ? "is-leader" : "is-member"}`}
+                className={`team-card ${isLeader ? "is-leader" : "is-member"} rx-stagger-item`}
                 style={{ "--stagger-index": idx } as any}
               >
                 {/* Top identifier */}
@@ -425,3 +449,4 @@ export function AboutSection() {
     </section>
   );
 }
+

@@ -1,4 +1,4 @@
-// ReliabilityX Bundled Application (2026-10-03T18:15:55.248Z)
+// ReliabilityX Bundled Application (2026-10-04T01:14:10.952Z)
 (function() {
   if (typeof window !== 'undefined') {
     if (window.React && !window.React.default) window.React.default = window.React;
@@ -165,6 +165,8 @@ function ReliabilityXApp() {
       if (href && href.startsWith("#") && href.length > 1) {
         const targetId = href.substring(1);
         const validTabs = ["dashboard", "screening", "live_telemetry", "components", "lots", "predictions", "inspection", "reports", "engineering", "audit", "about"];
+
+        // 1. Direct Tab Navigation
         if (validTabs.includes(targetId)) {
           e.preventDefault();
           setActiveTab(targetId);
@@ -173,6 +175,28 @@ function ReliabilityXApp() {
         if (targetId.startsWith("inspect=")) {
           return;
         }
+
+        // 2. Cross-tab section routing & smooth gliding
+        if (targetId === "section-team-brigebytes" || targetId === "section-about") {
+          e.preventDefault();
+          setActiveTabState("about");
+          try {
+            window.location.hash = "about";
+          } catch {}
+          setTimeout(() => smoothScrollToElement(targetId), 140);
+          return;
+        }
+        if (targetId.startsWith("section-overview") || targetId === "section-kpi-summary" || targetId === "section-trajectory-simulation") {
+          e.preventDefault();
+          setActiveTabState("dashboard");
+          try {
+            window.location.hash = "dashboard";
+          } catch {}
+          setTimeout(() => smoothScrollToElement(targetId), 140);
+          return;
+        }
+
+        // 3. Current page in-view element gliding
         const el = document.getElementById(targetId);
         if (el) {
           e.preventDefault();
@@ -297,30 +321,30 @@ function ReliabilityXApp() {
     const assignRevealDirections = () => {
       const isMobile = window.innerWidth <= 768;
 
-      // Hero titles → left slide
-      document.querySelectorAll(".hero-header, .page-header").forEach(el => {
+      // 1. Hero text, page headers & introductory explanatory panels → Left to Right slide
+      document.querySelectorAll(".hero-header, .page-header, .about-section-header-left").forEach(el => {
         if (!el.classList.contains("rx-reveal-left") && !el.classList.contains("rx-revealed")) {
           el.classList.add("rx-reveal-left");
         }
       });
 
-      // Right-column insight panels → right slide (desktop only)
+      // 2. Right-column insight panels & supporting cards → Right to Left slide (desktop only)
       if (!isMobile) {
-        document.querySelectorAll(".dashboard-hero-grid > :nth-child(2), .live-main-split > :nth-child(2)").forEach(el => {
+        document.querySelectorAll(".dashboard-hero-grid > :nth-child(2), .live-main-split > :nth-child(2), .insight-panel").forEach(el => {
           if (!el.classList.contains("rx-reveal-right") && !el.classList.contains("rx-revealed")) {
             el.classList.add("rx-reveal-right");
           }
         });
       }
 
-      // Large insight panels → scale + fade
-      document.querySelectorAll(".insight-panel").forEach(el => {
+      // 3. Central charts & blueprint flowchart panels → Scale + Fade
+      document.querySelectorAll(".chart-wrapper, .flowchart-container").forEach(el => {
         if (!el.classList.contains("rx-reveal-scale") && !el.classList.contains("rx-revealed")) {
           el.classList.add("rx-reveal-scale");
         }
       });
 
-      // Mobile floating classes
+      // 4. Mobile responsive touch classes
       if (isMobile) {
         document.querySelectorAll(".kpi-grid > .kpi-card, .live-kpi-grid > .live-kpi-card").forEach(el => {
           if (!el.classList.contains("rx-float-kpi")) el.classList.add("rx-float-kpi");
@@ -1134,13 +1158,14 @@ function AboutSection() {
     const rootEl = sectionRef.current;
     if (!rootEl) return;
     const prefersReduced = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const targets = rootEl.querySelectorAll(".rx-about-fade, .rx-about-heading, .rx-about-card, .team-card, .about-hero-intro");
+    const targets = rootEl.querySelectorAll(".rx-about-fade, .rx-about-heading, .rx-about-card, .team-card, .about-hero-intro, .rx-mv-mission, .rx-mv-vision");
     if (prefersReduced || !("IntersectionObserver" in window)) {
       targets.forEach(el => {
         el.classList.add("rx-settled-in");
       });
       return;
     }
+    const vp = document.querySelector(".app-main-viewport");
 
     // High-performance IntersectionObserver with once-only reveal
     const observer = new IntersectionObserver(entries => {
@@ -1151,11 +1176,19 @@ function AboutSection() {
         }
       });
     }, {
-      root: null,
+      root: vp || null,
       rootMargin: "0px 0px -30px 0px",
       threshold: 0.08
     });
-    targets.forEach(el => observer.observe(el));
+    const vpBottom = vp ? vp.getBoundingClientRect().bottom : window.innerHeight;
+    targets.forEach(el => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < vpBottom - 40 && rect.bottom > 10) {
+        el.classList.add("rx-settled-in");
+      } else {
+        observer.observe(el);
+      }
+    });
     return () => {
       observer.disconnect();
     };
@@ -1167,7 +1200,11 @@ function AboutSection() {
     "aria-labelledby": "about-main-heading"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "card about-hero-intro mb-4 rx-about-fade"
-  }, /*#__PURE__*/_react.default.createElement("h1", {
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "about-hero-eyebrow"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "about-hero-eyebrow-dot"
+  }), "ABOUT RELIABILITYX"), /*#__PURE__*/_react.default.createElement("h1", {
     id: "about-main-heading",
     className: "about-hero-title"
   }, "About Reliability", /*#__PURE__*/_react.default.createElement("span", {
@@ -1199,9 +1236,12 @@ function AboutSection() {
     className: "card-badge d-desktop-only"
   }, "6 OPERATIONAL DOMAINS")), /*#__PURE__*/_react.default.createElement("div", {
     className: "about-impact-grid"
-  }, IMPACT_AREAS.map(item => /*#__PURE__*/_react.default.createElement("div", {
+  }, IMPACT_AREAS.map((item, idx) => /*#__PURE__*/_react.default.createElement("div", {
     key: item.id,
-    className: "about-impact-item rx-about-card"
+    className: "about-impact-item rx-about-card rx-stagger-item",
+    style: {
+      "--stagger-index": idx
+    }
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "about-impact-icon-badge"
   }, item.icon), /*#__PURE__*/_react.default.createElement("h4", {
@@ -1211,7 +1251,7 @@ function AboutSection() {
   }, item.description))))), /*#__PURE__*/_react.default.createElement("div", {
     className: "about-two-col-grid mb-4"
   }, /*#__PURE__*/_react.default.createElement("div", {
-    className: "card about-mv-card rx-about-card"
+    className: "card about-mv-card rx-mv-mission"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "about-card-top-icon-row"
   }, /*#__PURE__*/_react.default.createElement("div", {
@@ -1244,7 +1284,7 @@ function AboutSection() {
   }, "Our Mission"), /*#__PURE__*/_react.default.createElement("p", {
     className: "about-card-body-text"
   }, "To make high-reliability component screening more intelligent, predictive, and explainable by transforming Burn-In and ESS measurements into actionable reliability insights for engineering teams.")), /*#__PURE__*/_react.default.createElement("div", {
-    className: "card about-mv-card rx-about-card"
+    className: "card about-mv-card rx-mv-vision"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "about-card-top-icon-row"
   }, /*#__PURE__*/_react.default.createElement("div", {
@@ -1284,9 +1324,12 @@ function AboutSection() {
     className: "card-badge d-desktop-only"
   }, "5 PILLARS")), /*#__PURE__*/_react.default.createElement("div", {
     className: "about-values-grid"
-  }, VALUES.map(val => /*#__PURE__*/_react.default.createElement("div", {
+  }, VALUES.map((val, idx) => /*#__PURE__*/_react.default.createElement("div", {
     key: val.num,
-    className: "about-value-item rx-about-card"
+    className: "about-value-item rx-about-card rx-stagger-item",
+    style: {
+      "--stagger-index": idx
+    }
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "about-value-header"
   }, /*#__PURE__*/_react.default.createElement("div", {
@@ -1316,7 +1359,7 @@ function AboutSection() {
     return /*#__PURE__*/_react.default.createElement("div", {
       key: member.id,
       role: "listitem",
-      className: `team-card ${isLeader ? "is-leader" : "is-member"}`,
+      className: `team-card ${isLeader ? "is-leader" : "is-member"} rx-stagger-item`,
       style: {
         "--stagger-index": idx
       }
@@ -5875,6 +5918,27 @@ function ReportsTab({
   onInspectComp
 }) {
   const [isExpanded, setIsExpanded] = (0, _react.useState)(false);
+  const [reportHtml, setReportHtml] = (0, _react.useState)("");
+  const [isLoading, setIsLoading] = (0, _react.useState)(true);
+  const [hasError, setHasError] = (0, _react.useState)(false);
+  const fetchReport = () => {
+    setIsLoading(true);
+    setHasError(false);
+    fetch(`${_types.API_BASE}/reports/certificate-html`).then(res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.text();
+    }).then(html => {
+      setReportHtml(html);
+      setIsLoading(false);
+    }).catch(err => {
+      console.warn("Direct report certificate fetch notice:", err);
+      setHasError(true);
+      setIsLoading(false);
+    });
+  };
+  (0, _react.useEffect)(() => {
+    fetchReport();
+  }, []);
   return /*#__PURE__*/_react.default.createElement("div", {
     className: "tab-pane active"
   }, /*#__PURE__*/_react.default.createElement("div", {
@@ -5945,17 +6009,104 @@ function ReportsTab({
   }, isExpanded ? "Collapse View" : "Expand Height"), /*#__PURE__*/_react.default.createElement("button", {
     type: "button",
     className: "btn btn-secondary btn-sm",
+    onClick: fetchReport,
+    title: "Reload report certificate"
+  }, "Refresh"), /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "btn btn-secondary btn-sm",
     onClick: () => window.open(`${_types.API_BASE}/reports/certificate-html`, "_blank")
   }, "View Standalone Report"), /*#__PURE__*/_react.default.createElement("button", {
     type: "button",
     className: "btn btn-primary btn-sm",
     onClick: () => window.location.href = `${_types.API_BASE}/reports/export-csv`
   }, "Export Telemetry CSV"))), /*#__PURE__*/_react.default.createElement("div", {
-    className: `report-iframe-container ${isExpanded ? "is-expanded" : ""}`
-  }, /*#__PURE__*/_react.default.createElement("iframe", {
+    className: `report-iframe-container ${isExpanded ? "is-expanded" : ""}`,
+    style: {
+      position: "relative"
+    }
+  }, isLoading && !reportHtml && /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      position: "absolute",
+      inset: 0,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: "12px",
+      background: "rgba(10, 15, 29, 0.75)",
+      color: "#94A3B8",
+      zIndex: 2
+    }
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      width: "28px",
+      height: "28px",
+      borderRadius: "50%",
+      border: "3px solid rgba(56, 189, 248, 0.2)",
+      borderTopColor: "#38BDF8",
+      animation: "spin 1s linear infinite"
+    }
+  }), /*#__PURE__*/_react.default.createElement("span", {
+    style: {
+      fontSize: "13px",
+      letterSpacing: "0.04em"
+    }
+  }, "Rendering official AEC-Q001 screening certificate...")), hasError && !reportHtml && /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      position: "absolute",
+      inset: 0,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: "16px",
+      background: "#0F172A",
+      color: "#E2E8F0",
+      padding: "32px",
+      textAlign: "center",
+      zIndex: 3
+    }
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      fontSize: "36px"
+    }
+  }, "\uD83D\uDCC4"), /*#__PURE__*/_react.default.createElement("h3", {
+    style: {
+      margin: 0,
+      fontSize: "18px",
+      color: "#F8FAFC"
+    }
+  }, "Screening Report Ready"), /*#__PURE__*/_react.default.createElement("p", {
+    style: {
+      margin: 0,
+      maxWidth: "480px",
+      color: "#94A3B8",
+      fontSize: "14px"
+    }
+  }, "The official report has been compiled and is ready for review. If your browser restricts inline framing, open it directly in a dedicated tab."), /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      display: "flex",
+      gap: "12px",
+      marginTop: "8px"
+    }
+  }, /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "btn btn-primary",
+    onClick: () => window.open(`${_types.API_BASE}/reports/certificate-html`, "_blank")
+  }, "Open Report in New Tab"), /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "btn btn-secondary",
+    onClick: fetchReport
+  }, "Retry Inline View"))), /*#__PURE__*/_react.default.createElement("iframe", {
     src: `${_types.API_BASE}/reports/certificate-html`,
+    srcDoc: reportHtml || undefined,
     title: "Screening Analysis Report",
-    loading: "lazy"
+    loading: "lazy",
+    style: {
+      width: "100%",
+      height: "100%",
+      border: "none"
+    }
   }))));
 }
   });
@@ -6431,10 +6582,11 @@ function Sidebar({
     onSelectTab(tab);
     if (onCloseMobile) onCloseMobile();
   };
-  return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, mobileOpen && /*#__PURE__*/_react.default.createElement("div", {
-    className: "mobile-sidebar-backdrop",
+  return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("div", {
+    className: `mobile-sidebar-backdrop ${mobileOpen ? "is-active" : ""}`,
     onClick: onCloseMobile,
-    "aria-label": "Close navigation"
+    "aria-label": "Close navigation",
+    "aria-hidden": !mobileOpen
   }), /*#__PURE__*/_react.default.createElement("aside", {
     className: `app-sidebar ${collapsed ? "collapsed" : ""} ${mobileOpen ? "mobile-open" : ""}`
   }, /*#__PURE__*/_react.default.createElement("div", {
@@ -6453,7 +6605,32 @@ function Sidebar({
     src: "/static/logo.png",
     alt: "ReliabilityX",
     className: "sidebar-logo-img"
-  })), /*#__PURE__*/_react.default.createElement("div", {
+  }), /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "sidebar-mobile-close-btn d-mobile-only",
+    onClick: onCloseMobile,
+    "aria-label": "Close navigation drawer",
+    title: "Close navigation"
+  }, /*#__PURE__*/_react.default.createElement("svg", {
+    width: "18",
+    height: "18",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2.2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/_react.default.createElement("line", {
+    x1: "18",
+    y1: "6",
+    x2: "6",
+    y2: "18"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "6",
+    y1: "6",
+    x2: "18",
+    y2: "18"
+  })))), /*#__PURE__*/_react.default.createElement("div", {
     className: "sidebar-nav"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "sidebar-nav-group"
@@ -7014,8 +7191,11 @@ const getApiBase = () => {
       if (window.__RELIABILITYX_API_URL__) {
         return window.__RELIABILITYX_API_URL__;
       }
+      if (window.location.port === "8000") {
+        return `${window.location.origin}/api`;
+      }
       if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-        return "http://127.0.0.1:8000/api";
+        return `${window.location.protocol}//${window.location.hostname}:8000/api`;
       }
       if (window.location.hostname.includes("vercel.app")) {
         return "https://reliabilityx.onrender.com/api";

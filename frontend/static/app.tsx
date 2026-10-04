@@ -137,14 +137,36 @@ export function ReliabilityXApp() {
           "audit",
           "about"
         ];
+
+        // 1. Direct Tab Navigation
         if (validTabs.includes(targetId as TabType)) {
           e.preventDefault();
           setActiveTab(targetId as TabType);
           return;
         }
+
         if (targetId.startsWith("inspect=")) {
           return;
         }
+
+        // 2. Cross-tab section routing & smooth gliding
+        if (targetId === "section-team-brigebytes" || targetId === "section-about") {
+          e.preventDefault();
+          setActiveTabState("about");
+          try { window.location.hash = "about"; } catch {}
+          setTimeout(() => smoothScrollToElement(targetId), 140);
+          return;
+        }
+
+        if (targetId.startsWith("section-overview") || targetId === "section-kpi-summary" || targetId === "section-trajectory-simulation") {
+          e.preventDefault();
+          setActiveTabState("dashboard");
+          try { window.location.hash = "dashboard"; } catch {}
+          setTimeout(() => smoothScrollToElement(targetId), 140);
+          return;
+        }
+
+        // 3. Current page in-view element gliding
         const el = document.getElementById(targetId);
         if (el) {
           e.preventDefault();
@@ -297,30 +319,30 @@ export function ReliabilityXApp() {
     const assignRevealDirections = () => {
       const isMobile = window.innerWidth <= 768;
 
-      // Hero titles → left slide
-      document.querySelectorAll(".hero-header, .page-header").forEach((el) => {
+      // 1. Hero text, page headers & introductory explanatory panels → Left to Right slide
+      document.querySelectorAll(".hero-header, .page-header, .about-section-header-left").forEach((el) => {
         if (!el.classList.contains("rx-reveal-left") && !el.classList.contains("rx-revealed")) {
           el.classList.add("rx-reveal-left");
         }
       });
 
-      // Right-column insight panels → right slide (desktop only)
+      // 2. Right-column insight panels & supporting cards → Right to Left slide (desktop only)
       if (!isMobile) {
-        document.querySelectorAll(".dashboard-hero-grid > :nth-child(2), .live-main-split > :nth-child(2)").forEach((el) => {
+        document.querySelectorAll(".dashboard-hero-grid > :nth-child(2), .live-main-split > :nth-child(2), .insight-panel").forEach((el) => {
           if (!el.classList.contains("rx-reveal-right") && !el.classList.contains("rx-revealed")) {
             el.classList.add("rx-reveal-right");
           }
         });
       }
 
-      // Large insight panels → scale + fade
-      document.querySelectorAll(".insight-panel").forEach((el) => {
+      // 3. Central charts & blueprint flowchart panels → Scale + Fade
+      document.querySelectorAll(".chart-wrapper, .flowchart-container").forEach((el) => {
         if (!el.classList.contains("rx-reveal-scale") && !el.classList.contains("rx-revealed")) {
           el.classList.add("rx-reveal-scale");
         }
       });
 
-      // Mobile floating classes
+      // 4. Mobile responsive touch classes
       if (isMobile) {
         document.querySelectorAll(".kpi-grid > .kpi-card, .live-kpi-grid > .live-kpi-card").forEach((el) => {
           if (!el.classList.contains("rx-float-kpi")) el.classList.add("rx-float-kpi");

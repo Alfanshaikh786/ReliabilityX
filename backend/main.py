@@ -111,23 +111,34 @@ async def security_and_headers_middleware(request: Request, call_next):
     
     # Standard Industrial Security Headers
     response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
     
-    # Non-breaking Content-Security-Policy supporting app bundle, video, and web socket
-    if "Content-Security-Policy" not in response.headers:
+    # For embedded report certificates, allow framing by ReliabilityX UI (localhost, 127.0.0.1, Vercel, and desktop/mobile frames)
+    if "certificate" in request.url.path or "report" in request.url.path:
+        if "x-frame-options" in response.headers:
+            del response.headers["x-frame-options"]
         response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; "
+            "default-src 'self' 'unsafe-inline'; "
             "script-src 'self' 'unsafe-inline'; "
             "style-src 'self' 'unsafe-inline'; "
             "img-src 'self' data: blob:; "
-            "media-src 'self' data: blob:; "
-            "connect-src 'self' ws: wss: http: https:; "
-            "font-src 'self' data:; "
-            "object-src 'none'; "
-            "frame-ancestors 'self';"
+            "frame-ancestors 'self' http://localhost:* http://127.0.0.1:* https://*.vercel.app *;"
         )
+    else:
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        if "Content-Security-Policy" not in response.headers:
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline'; "
+                "style-src 'self' 'unsafe-inline'; "
+                "img-src 'self' data: blob:; "
+                "media-src 'self' data: blob:; "
+                "connect-src 'self' ws: wss: http: https:; "
+                "font-src 'self' data:; "
+                "object-src 'none'; "
+                "frame-ancestors 'self' http://localhost:* http://127.0.0.1:* https://*.vercel.app;"
+            )
     return response
 
 # Global Unhandled Exception Handler (Section 23 - prevents leaking stack traces)

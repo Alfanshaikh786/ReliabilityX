@@ -747,10 +747,22 @@ section,
     display: block !important;
     position: fixed !important;
     inset: 0 !important;
-    background: rgba(5, 10, 24, 0.85) !important;
-    backdrop-filter: blur(6px) !important;
-    -webkit-backdrop-filter: blur(6px) !important;
+    background: rgba(5, 10, 24, 0.82) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
     z-index: 998 !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transition: opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+                visibility 0.32s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    will-change: opacity;
+  }
+
+  .mobile-sidebar-backdrop.is-active {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
   }
 
   .app-topbar {
@@ -824,17 +836,20 @@ section,
     height: 100vh !important;
     height: 100dvh !important;
     z-index: 1000 !important;
-    transform: translateX(-100%) !important;
-    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    transform: translate3d(-100%, 0, 0) !important;
+    transition: transform 0.34s cubic-bezier(0.16, 1, 0.3, 1) !important;
     box-shadow: 0 0 45px rgba(0, 0, 0, 0.9) !important;
     border-right: 1px solid rgba(56, 189, 248, 0.22) !important;
     padding-top: env(safe-area-inset-top, 0px) !important;
     padding-bottom: env(safe-area-inset-bottom, 0px) !important;
     padding-left: env(safe-area-inset-left, 0px) !important;
+    pointer-events: none !important;
+    will-change: transform;
   }
 
   .app-sidebar.mobile-open {
-    transform: translateX(0) !important;
+    transform: translate3d(0, 0, 0) !important;
+    pointer-events: auto !important;
   }
 
   .app-sidebar.collapsed {
@@ -4695,57 +4710,62 @@ select:focus, .control-select:focus {
 }
 
 /* ==============================================================================
-   RELIABILITYX VASUKI-QUALITY SCROLL REVEAL SYSTEM v3.0
-   Research-matched to vasukicabs.com interaction quality:
-   ─ Native scroll preserved (no hijacking)
-   ─ fade + translateY(30px→0) primary motion, translateX for side panels
-   ─ 500ms cubic-bezier(0.16,1,0.3,1) — smooth deceleration (ease-out feel)
-   ─ 100ms card stagger between siblings
-   ─ Once-only trigger — elements stay visible after first reveal
-   ─ GPU-only: transform + opacity, never top/left/margin/height
-   ─ Desktop: 30px • Tablet: 22px • Mobile: 14px entrance distance
-   ─ Reduced-motion: instant reveal, no movement
+   RELIABILITYX PREMIUM SLIDING / MOTION SYSTEM (VASUKI-CALIBRATED)
+   Behavioral Reference: Vasuki Cabs sliding and motion mechanics
+   Design Integrity: 100% ReliabilityX Aerospace / Engineering UI preserved
+   Features:
+   ─ GPU-accelerated (translate3d + opacity only; zero layout reflows)
+   ─ Left → Right horizontal entrance (Hero text, explanatory panels: -30px → 0)
+   ─ Right → Left horizontal entrance (Supporting widgets, insights: 30px → 0)
+   ─ Bottom → Top vertical entrance (Cards, grids, pipeline: 30px → 0)
+   ─ Staggered card unfolds (60ms intervals between sequential items)
+   ─ Micro-elevation lift on desktop hover (Cards -4px, Buttons -2px)
+   ─ Action link arrow/chevron micro-slide (+4px on hover)
+   ─ Fluid native scroll gliding to sections/anchors
+   ─ Mobile-scaled entrance (12px vertical, zero horizontal overflow)
+   ─ Once-only intersection triggers (ENTER → SLIDE → SETTLE → STAY)
+   ─ Strict prefers-reduced-motion accessibility compliance
    ============================================================================== */
 
-/* ── BASE: Slide-up from below (primary — sections, cards, KPI, tables) ─── */
+/* ── BASE: Upward Slide Entrance (Primary — cards, grids, metrics, tables) ─ */
 .rx-scroll-reveal,
 .rx-floating-card,
 .rx-reveal-item {
   opacity: 0;
   transform: translate3d(0, 30px, 0);
-  transition: opacity 500ms cubic-bezier(0.16, 1, 0.3, 1),
-              transform 500ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 560ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 560ms cubic-bezier(0.16, 1, 0.3, 1);
   will-change: opacity, transform;
 }
 
-/* ── SLIDE FROM LEFT (section title lines, left-aligned panels) ─────────── */
+/* ── LEFT → RIGHT DIRECTIONAL SLIDE (Hero titles, main intro headings) ──── */
 .rx-reveal-left {
   opacity: 0;
-  transform: translate3d(-28px, 0, 0);
-  transition: opacity 520ms cubic-bezier(0.16, 1, 0.3, 1),
-              transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, transform;
-}
-
-/* ── SLIDE FROM RIGHT (right-aligned panels, insight side columns) ───────── */
-.rx-reveal-right {
-  opacity: 0;
-  transform: translate3d(28px, 0, 0);
-  transition: opacity 520ms cubic-bezier(0.16, 1, 0.3, 1),
-              transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, transform;
-}
-
-/* ── SCALE + FADE (hero blocks, large visual panels, chart containers) ───── */
-.rx-reveal-scale {
-  opacity: 0;
-  transform: scale3d(0.97, 0.97, 1) translateY(16px);
+  transform: translate3d(-30px, 0, 0);
   transition: opacity 580ms cubic-bezier(0.16, 1, 0.3, 1),
               transform 580ms cubic-bezier(0.16, 1, 0.3, 1);
   will-change: opacity, transform;
 }
 
-/* ── REVEALED STATE: All variants settle here ────────────────────────────── */
+/* ── RIGHT → LEFT DIRECTIONAL SLIDE (Supporting panels, insight sidebars) ── */
+.rx-reveal-right {
+  opacity: 0;
+  transform: translate3d(30px, 0, 0);
+  transition: opacity 580ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 580ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+/* ── SCALE + FADE (Large visual panels, central charts) ─────────────────── */
+.rx-reveal-scale {
+  opacity: 0;
+  transform: scale3d(0.97, 0.97, 1) translate3d(0, 16px, 0);
+  transition: opacity 600ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+/* ── REVEALED SETTLED STATE: Elements arrive, settle smoothly, and stay ──── */
 .rx-scroll-reveal.rx-revealed,
 .rx-floating-card.rx-settled,
 .rx-reveal-item.rx-revealed,
@@ -4757,8 +4777,8 @@ select:focus, .control-select:focus {
   will-change: auto;
 }
 
-/* ── CARD STAGGER: 100ms per sibling (matches Vasuki card timing) ─────────── */
-/* KPI Grid */
+/* ── CARD STAGGER: 60ms per sibling (Smooth, natural unfolding) ─────────── */
+/* KPI & Live KPI Grids */
 .kpi-grid > .rx-scroll-reveal:nth-child(1),
 .kpi-grid > .rx-floating-card:nth-child(1),
 .live-kpi-grid > .rx-scroll-reveal:nth-child(1),
@@ -4773,36 +4793,45 @@ select:focus, .control-select:focus {
 .live-kpi-grid > .rx-floating-card:nth-child(2),
 .chart-metrics-grid > .rx-scroll-reveal:nth-child(2),
 .lot-summary-grid > .rx-scroll-reveal:nth-child(2),
-.dashboard-hero-grid > .rx-scroll-reveal:nth-child(2) { transition-delay: 100ms; }
+.dashboard-hero-grid > .rx-scroll-reveal:nth-child(2) { transition-delay: 60ms; }
 
 .kpi-grid > .rx-scroll-reveal:nth-child(3),
 .kpi-grid > .rx-floating-card:nth-child(3),
 .live-kpi-grid > .rx-scroll-reveal:nth-child(3),
 .live-kpi-grid > .rx-floating-card:nth-child(3),
 .chart-metrics-grid > .rx-scroll-reveal:nth-child(3),
-.lot-summary-grid > .rx-scroll-reveal:nth-child(3) { transition-delay: 200ms; }
+.lot-summary-grid > .rx-scroll-reveal:nth-child(3) { transition-delay: 120ms; }
 
 .kpi-grid > .rx-scroll-reveal:nth-child(4),
 .kpi-grid > .rx-floating-card:nth-child(4),
 .live-kpi-grid > .rx-scroll-reveal:nth-child(4),
 .live-kpi-grid > .rx-floating-card:nth-child(4),
 .chart-metrics-grid > .rx-scroll-reveal:nth-child(4),
-.lot-summary-grid > .rx-scroll-reveal:nth-child(4) { transition-delay: 300ms; }
+.lot-summary-grid > .rx-scroll-reveal:nth-child(4) { transition-delay: 180ms; }
 
 .kpi-grid > .rx-scroll-reveal:nth-child(5),
 .live-kpi-grid > .rx-scroll-reveal:nth-child(5),
-.lot-summary-grid > .rx-scroll-reveal:nth-child(5) { transition-delay: 400ms; }
+.lot-summary-grid > .rx-scroll-reveal:nth-child(5) { transition-delay: 240ms; }
 
-/* Lot cards — larger stagger spread for multi-column grids */
+.kpi-grid > .rx-scroll-reveal:nth-child(6),
+.live-kpi-grid > .rx-scroll-reveal:nth-child(6) { transition-delay: 300ms; }
+
+/* Multi-Column Lots & Pipeline Grids Stagger */
 .lots-grid > .rx-scroll-reveal:nth-child(1) { transition-delay: 0ms; }
-.lots-grid > .rx-scroll-reveal:nth-child(2) { transition-delay: 80ms; }
-.lots-grid > .rx-scroll-reveal:nth-child(3) { transition-delay: 160ms; }
-.lots-grid > .rx-scroll-reveal:nth-child(4) { transition-delay: 240ms; }
-.lots-grid > .rx-scroll-reveal:nth-child(5) { transition-delay: 320ms; }
+.lots-grid > .rx-scroll-reveal:nth-child(2) { transition-delay: 60ms; }
+.lots-grid > .rx-scroll-reveal:nth-child(3) { transition-delay: 120ms; }
+.lots-grid > .rx-scroll-reveal:nth-child(4) { transition-delay: 180ms; }
+.lots-grid > .rx-scroll-reveal:nth-child(5) { transition-delay: 240ms; }
+.lots-grid > .rx-scroll-reveal:nth-child(6) { transition-delay: 300ms; }
 
-/* ── TAB PAGE ENTRANCE ───────────────────────────────────────────────────── */
+/* Universal Inline Stagger Variable Support */
+[style*="--stagger-index"] {
+  transition-delay: calc(var(--stagger-index, 0) * 60ms) !important;
+}
+
+/* ── TAB PAGE ENTRANCE GLIDE ─────────────────────────────────────────────── */
 .tab-pane.active {
-  animation: rxVasukiTabEnter 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: rxVasukiTabEnter 400ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes rxVasukiTabEnter {
@@ -4816,22 +4845,70 @@ select:focus, .control-select:focus {
   }
 }
 
-/* ── CARD HOVER LIFT (Vasuki-style subtle depth on hover) ────────────────── */
-.card:hover,
-.kpi-card:hover,
-.live-kpi-card:hover,
-.insight-panel:hover,
-.lot-summary-card:hover {
-  transform: translate3d(0, -3px, 0);
-  box-shadow: 0 10px 32px -4px rgba(0, 0, 0, 0.6),
-              0 0 20px rgba(56, 189, 248, 0.14);
-  border-color: rgba(56, 189, 248, 0.28);
-  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 220ms ease;
+/* ── MICRO-ELEVATION HOVER EFFECTS (Desktop Only) ───────────────────────── */
+@media (hover: hover) and (pointer: fine) {
+  /* Interactive Cards Lift */
+  .card:hover,
+  .kpi-card:hover,
+  .live-kpi-card:hover,
+  .insight-panel:hover,
+  .lot-summary-card:hover,
+  .alert-stream-card:hover {
+    transform: translate3d(0, -4px, 0);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.52),
+                0 0 16px rgba(56, 189, 248, 0.16);
+    border-color: rgba(56, 189, 248, 0.35);
+    transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 220ms ease;
+  }
+
+  /* Interactive Buttons Subtle Lift */
+  .btn:hover,
+  .btn-sm:hover,
+  .btn-primary:hover,
+  .btn-secondary:hover,
+  .btn-emerald:hover,
+  .btn-warning:hover,
+  .btn-outline:hover,
+  .dossier-tab-btn:hover {
+    transform: translate3d(0, -2px, 0);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35),
+                0 0 12px rgba(56, 189, 248, 0.22);
+    transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
+                background 180ms ease,
+                border-color 180ms ease;
+  }
+
+  .btn:active,
+  .btn-sm:active {
+    transform: translate3d(0, 0, 0);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Link Arrow / Chevron Micro-Slide (+4px) */
+  .btn-arrow,
+  .arrow-icon,
+  .btn svg.arrow-icon,
+  a:hover .btn-arrow,
+  .arrow-slide {
+    display: inline-block;
+    transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform;
+  }
+
+  .btn:hover .btn-arrow,
+  .btn:hover .arrow-icon,
+  .btn:hover svg.arrow-icon,
+  .card:hover .btn-arrow,
+  a:hover .arrow-icon,
+  .btn:hover .arrow-slide {
+    transform: translate3d(4px, 0, 0);
+  }
 }
 
-/* Ensure hover doesn't fight reveal animation */
+/* Ensure hover doesn't fight pending scroll-reveal animation */
 .card.rx-scroll-reveal:not(.rx-revealed):hover,
 .kpi-card.rx-scroll-reveal:not(.rx-revealed):hover {
   transform: translate3d(0, 30px, 0);
@@ -4885,69 +4962,75 @@ select:focus, .control-select:focus {
   pointer-events: none;
 }
 
-/* ── TABLET: Lighter motion (769px–1024px) ───────────────────────────────── */
+/* ── TABLET: Scaled motion (769px–1024px) ────────────────────────────────── */
 @media (min-width: 769px) and (max-width: 1024px) {
   .rx-scroll-reveal,
   .rx-floating-card,
   .rx-reveal-item {
-    transform: translate3d(0, 22px, 0);
-    transition-duration: 460ms;
+    transform: translate3d(0, 20px, 0);
+    transition-duration: 480ms;
   }
-  .rx-reveal-left  { transform: translate3d(-20px, 0, 0); transition-duration: 480ms; }
-  .rx-reveal-right { transform: translate3d( 20px, 0, 0); transition-duration: 480ms; }
-  .rx-reveal-scale { transform: scale3d(0.98, 0.98, 1) translateY(12px); transition-duration: 500ms; }
+  .rx-reveal-left  { transform: translate3d(-20px, 0, 0); transition-duration: 500ms; }
+  .rx-reveal-right { transform: translate3d( 20px, 0, 0); transition-duration: 500ms; }
+  .rx-reveal-scale { transform: scale3d(0.98, 0.98, 1) translate3d(0, 12px, 0); transition-duration: 520ms; }
 
-  /* Compress stagger on tablet */
+  /* Slightly tighter stagger on tablet */
   .kpi-grid > .rx-scroll-reveal:nth-child(2),
-  .live-kpi-grid > .rx-scroll-reveal:nth-child(2) { transition-delay: 75ms; }
+  .live-kpi-grid > .rx-scroll-reveal:nth-child(2) { transition-delay: 50ms; }
   .kpi-grid > .rx-scroll-reveal:nth-child(3),
-  .live-kpi-grid > .rx-scroll-reveal:nth-child(3) { transition-delay: 150ms; }
+  .live-kpi-grid > .rx-scroll-reveal:nth-child(3) { transition-delay: 100ms; }
   .kpi-grid > .rx-scroll-reveal:nth-child(4),
-  .live-kpi-grid > .rx-scroll-reveal:nth-child(4) { transition-delay: 225ms; }
+  .live-kpi-grid > .rx-scroll-reveal:nth-child(4) { transition-delay: 150ms; }
 }
 
-/* ── MOBILE: Minimal motion ≤768px ──────────────────────────────────────── */
+/* ── MOBILE: Minimal motion ≤768px (Subtle 12px vertical, zero X-overflow) ── */
 @media (max-width: 768px) {
   .rx-scroll-reveal,
   .rx-floating-card,
   .rx-reveal-item {
-    transform: translate3d(0, 14px, 0);
-    transition: opacity 400ms cubic-bezier(0.16, 1, 0.3, 1),
-                transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  /* Disable X-axis movement on mobile — only Y for clean touch feel */
-  .rx-reveal-left, .rx-reveal-right {
-    transform: translate3d(0, 14px, 0);
-    transition: opacity 400ms cubic-bezier(0.16, 1, 0.3, 1),
-                transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .rx-reveal-scale {
-    transform: scale3d(0.99, 0.99, 1) translateY(10px);
-    transition: opacity 400ms cubic-bezier(0.16, 1, 0.3, 1),
-                transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translate3d(0, 12px, 0);
+    transition: opacity 420ms cubic-bezier(0.16, 1, 0.3, 1),
+                transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  /* Tighter stagger on mobile — data appears quickly */
+  /* Safe subtle upward movement on mobile to guarantee zero horizontal overflow */
+  .rx-reveal-left,
+  .rx-reveal-right {
+    transform: translate3d(0, 12px, 0);
+    transition: opacity 420ms cubic-bezier(0.16, 1, 0.3, 1),
+                transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .rx-reveal-scale {
+    transform: scale3d(0.99, 0.99, 1) translate3d(0, 10px, 0);
+    transition: opacity 420ms cubic-bezier(0.16, 1, 0.3, 1),
+                transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Tight, fast-loading stagger on mobile */
   .kpi-grid > .rx-scroll-reveal:nth-child(1),
   .live-kpi-grid > .rx-scroll-reveal:nth-child(1) { transition-delay: 0ms; }
   .kpi-grid > .rx-scroll-reveal:nth-child(2),
-  .live-kpi-grid > .rx-scroll-reveal:nth-child(2) { transition-delay: 55ms; }
+  .live-kpi-grid > .rx-scroll-reveal:nth-child(2) { transition-delay: 45ms; }
   .kpi-grid > .rx-scroll-reveal:nth-child(3),
-  .live-kpi-grid > .rx-scroll-reveal:nth-child(3) { transition-delay: 110ms; }
+  .live-kpi-grid > .rx-scroll-reveal:nth-child(3) { transition-delay: 90ms; }
   .kpi-grid > .rx-scroll-reveal:nth-child(4),
-  .live-kpi-grid > .rx-scroll-reveal:nth-child(4) { transition-delay: 165ms; }
+  .live-kpi-grid > .rx-scroll-reveal:nth-child(4) { transition-delay: 135ms; }
   .kpi-grid > .rx-scroll-reveal:nth-child(5),
-  .live-kpi-grid > .rx-scroll-reveal:nth-child(5) { transition-delay: 220ms; }
+  .live-kpi-grid > .rx-scroll-reveal:nth-child(5) { transition-delay: 180ms; }
 
-  /* Disable hover lift on touch — prevents stuck states */
+  /* Disable hover lift on touch to prevent sticky hover states */
   .card:hover,
   .kpi-card:hover,
   .live-kpi-card:hover,
   .insight-panel:hover,
-  .lot-summary-card:hover {
-    transform: none;
+  .lot-summary-card:hover,
+  .btn:hover,
+  .btn-sm:hover {
+    transform: none !important;
   }
 }
+
 
 
 
@@ -7129,57 +7212,99 @@ button.d-desktop-only {
 }
 
 /* ==============================================================================
-   SCROLL & FLOATING ENTRANCE ANIMATIONS (Section 5 Specifications)
-   Desktop: 15–30px initial vertical move (22px), 500–900ms duration (680ms)
-   Mobile: 8–18px initial vertical move (12px), 500–900ms duration (620ms)
-   Stagger: 50–80ms between cards (60ms)
+   ABOUT SECTION DIRECTIONAL SLIDING & STAGGER SYSTEM (VASUKI-CALIBRATED)
+   - Sequential Hero Reveal (Eyebrow → Title → Divider → Tagline)
+   - Opposing Horizontal Ingress (Mission Left → Center, Vision Right → Center)
+   - Upward Staggered Ingress (6 Impact Cards, 5 Value Cards, 6 Team Cards at 60ms)
+   - Micro-Elevation Hover on Cards (-4px with Cyan Glow)
    ============================================================================== */
 
 .rx-about-fade {
   opacity: 0;
-  transform: translate3d(0, 22px, 0);
-  transition: opacity 680ms cubic-bezier(0.16, 1, 0.3, 1),
-              transform 680ms cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translate3d(0, 24px, 0);
+  transition: opacity 640ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 640ms cubic-bezier(0.16, 1, 0.3, 1);
   will-change: opacity, transform;
 }
 
 .rx-about-heading {
   opacity: 0;
   transform: translate3d(0, 18px, 0);
-  transition: opacity 640ms cubic-bezier(0.16, 1, 0.3, 1),
-              transform 640ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 600ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
   will-change: opacity, transform;
 }
 
+/* Base Bottom → Top Vertical Entrance for Cards */
 .rx-about-card {
   opacity: 0;
-  transform: translate3d(0, 22px, 0);
-  transition: opacity 680ms cubic-bezier(0.16, 1, 0.3, 1),
-              transform 680ms cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translate3d(0, 30px, 0);
+  transition: opacity 620ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 620ms cubic-bezier(0.16, 1, 0.3, 1);
   will-change: opacity, transform;
 }
 
+/* Mission: Opposing Slide from Left → Center */
+.rx-mv-mission {
+  opacity: 0;
+  transform: translate3d(-30px, 0, 0);
+  transition: opacity 660ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 660ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 240ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 240ms ease;
+  will-change: opacity, transform;
+}
+
+/* Vision: Opposing Slide from Right → Center */
+.rx-mv-vision {
+  opacity: 0;
+  transform: translate3d(30px, 0, 0);
+  transition: opacity 660ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 660ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 240ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 240ms ease;
+  will-change: opacity, transform;
+}
+
+/* Team Card: Bottom → Top Vertical Entrance */
 .team-card {
   opacity: 0;
-  transform: translate3d(0, 24px, 0);
-  transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
-              transform 700ms cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 260ms cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 260ms ease;
+  transform: translate3d(0, 30px, 0);
+  transition: opacity 660ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 660ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 240ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 240ms ease;
   will-change: opacity, transform;
 }
 
-/* Revealed Settled State */
+/* Revealed Settled State: Elements Arrive and Stay */
 .rx-about-fade.rx-settled-in,
 .rx-about-heading.rx-settled-in,
 .rx-about-card.rx-settled-in,
+.rx-mv-mission.rx-settled-in,
+.rx-mv-vision.rx-settled-in,
 .team-card.rx-settled-in {
   opacity: 1;
   transform: translate3d(0, 0, 0);
   will-change: auto;
 }
 
-/* Team Card Stagger (60ms between cards) */
+/* ── STAGGER: OUR IMPACT AREAS (6 Cards, 60ms increments) ──────────────── */
+.about-impact-item:nth-child(1) { transition-delay: 0ms; }
+.about-impact-item:nth-child(2) { transition-delay: 60ms; }
+.about-impact-item:nth-child(3) { transition-delay: 120ms; }
+.about-impact-item:nth-child(4) { transition-delay: 180ms; }
+.about-impact-item:nth-child(5) { transition-delay: 240ms; }
+.about-impact-item:nth-child(6) { transition-delay: 300ms; }
+
+/* ── STAGGER: OUR VALUES (5 Cards, 60ms increments) ────────────────────── */
+.about-value-item:nth-child(1) { transition-delay: 0ms; }
+.about-value-item:nth-child(2) { transition-delay: 60ms; }
+.about-value-item:nth-child(3) { transition-delay: 120ms; }
+.about-value-item:nth-child(4) { transition-delay: 180ms; }
+.about-value-item:nth-child(5) { transition-delay: 240ms; }
+
+/* ── STAGGER: TEAM BRIGEBYTES (6 Cards, 60ms increments) ───────────────── */
 .team-card:nth-child(1) { transition-delay: 0ms; }
 .team-card:nth-child(2) { transition-delay: 60ms; }
 .team-card:nth-child(3) { transition-delay: 120ms; }
@@ -7187,24 +7312,25 @@ button.d-desktop-only {
 .team-card:nth-child(5) { transition-delay: 240ms; }
 .team-card:nth-child(6) { transition-delay: 300ms; }
 
-/* Desktop Hover Effect (Subtle, Restrained, No large scaling) */
+/* Desktop Micro-Elevation Hover Effect */
 @media (hover: hover) and (pointer: fine) {
   .team-card.rx-settled-in:hover {
     transform: translate3d(0, -4px, 0);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 16px rgba(56, 189, 248, 0.14);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.52), 0 0 16px rgba(56, 189, 248, 0.16);
     border-color: rgba(56, 189, 248, 0.38);
   }
 
   .team-card.is-leader.rx-settled-in:hover {
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.52), 0 0 22px rgba(56, 189, 248, 0.28);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55), 0 0 22px rgba(56, 189, 248, 0.28);
     border-color: rgba(56, 189, 248, 0.65);
   }
 
   .about-impact-item:hover,
-  .about-value-item:hover {
-    transform: translate3d(0, -3px, 0);
-    border-color: rgba(56, 189, 248, 0.32);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  .about-value-item:hover,
+  .about-mv-card:hover {
+    transform: translate3d(0, -4px, 0);
+    border-color: rgba(56, 189, 248, 0.35);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45), 0 0 14px rgba(56, 189, 248, 0.12);
   }
 }
 
@@ -7227,6 +7353,14 @@ button.d-desktop-only {
   .about-values-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
+  }
+
+  .rx-mv-mission {
+    transform: translate3d(-20px, 0, 0);
+  }
+
+  .rx-mv-vision {
+    transform: translate3d(20px, 0, 0);
   }
 }
 
@@ -7302,9 +7436,11 @@ button.d-desktop-only {
     gap: 12px;
   }
 
-  /* Mobile initial vertical movement: 12px */
+  /* Mobile initial vertical movement: 12px (subtle vertical, zero horizontal overflow) */
   .rx-about-fade,
   .rx-about-card,
+  .rx-mv-mission,
+  .rx-mv-vision,
   .team-card {
     transform: translate3d(0, 12px, 0);
     transition-duration: 620ms;
