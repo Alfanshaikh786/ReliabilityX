@@ -60,4 +60,5 @@ dist/
 
 # Internal Reports
 *REPORT*.md
+!REPORT X.md
 

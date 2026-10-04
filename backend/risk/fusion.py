@@ -33,10 +33,12 @@ class RiskFusionEngine:
         features: pd.DataFrame,
         anomaly_scores: Dict[str, Any],
         behaviour_fingerprint: Dict[str, Any],
-        predictions: List[Dict[str, Any]]
+        predictions: List[Dict[str, Any]],
+        test_system_status: Optional[str] = "NOMINAL"
     ) -> Dict[str, Any]:
         """
-        Calculates transparent risk level, evidence breakdown, and rules fired.
+        Calculates transparent risk level, multi-frame evidence breakdown, and rules fired.
+        Distinguishes intrinsic component degradation from test-system / instrument anomalies.
         """
         rules_fired = []
         comp_feats = features[features["component_id"] == comp_id]
@@ -50,12 +52,13 @@ class RiskFusionEngine:
         max_accel = 0.0
         max_drift_rate = 0.0
         max_z_score = 0.0
+        max_prob_breach = 0.0
 
         for _, row in comp_feats.iterrows():
             param = row["parameter_name"]
             spec = self.specs.get(param)
             limit = spec.max_limit if spec else 999.0
-            val_now = row["val_96h"] if pd.notnull(row["val_96h"]) else row["val_24h"]
+            val_now = float(row.get("val_96h")) if pd.notnull(row.get("val_96h")) else float(row.get("val_24h", 0.0))
             
             if val_now >= limit:
                 max_limit_breach_now = True
@@ -83,23 +86,61 @@ class RiskFusionEngine:
                 max_p90_breach = True
             if p.get("is_nominal_breach"):
                 max_nominal_pred_breach = True
+            pb = p.get("probability_of_limit_breach")
+            if pb is not None and pb > max_prob_breach:
+                max_prob_breach = pb
 
         ens_anomaly = anomaly_scores.get("normalized_score", 0.0)
         overall_state = behaviour_fingerprint.get("overall_state", "NORMAL")
 
+        # Check safety slope flag and evidence completeness from predictions
+        has_slope_exceeded = any(p.get("slope_exceeded", False) for p in predictions)
+        has_insufficient_evidence = any(p.get("prediction_status") in ["INSUFFICIENT_EVIDENCE", "FORECAST_UNAVAILABLE"] for p in predictions)
+        has_data_quality_issue = False
+
+        # Check feature-level completeness and data quality
+        if features is None or len(features) == 0:
+            has_insufficient_evidence = True
+        else:
+            for _, r in features.iterrows():
+                if r.get("data_quality_issue") or (pd.notnull(r.get("is_valid")) and r.get("is_valid") == 0):
+                    has_data_quality_issue = True
+                if pd.isnull(r.get("val_0h")) and pd.isnull(r.get("val_24h")):
+                    has_insufficient_evidence = True
+
+        # Check statistical detector status (unavailable or fallback should not be treated as normal)
+        det_status = anomaly_scores.get("detector_status", "ACTIVE")
+        detector_unavailable = det_status in ["UNAVAILABLE", "INSUFFICIENT_STATISTICAL_SUPPORT"]
+
+        is_sensor_flatline = (overall_state == "UNSTABLE" and max_drift_rate < 0.0001)
+
         # -------------------------------------------------------------
         # Transparent Rule Ladder (Never overrides hard official specs!)
         # -------------------------------------------------------------
+        is_instrument_issue = (test_system_status == "TEST_SYSTEM_ANOMALY")
         
-        # Rule 1: Hard datasheet limit violation at current stage
+        # Rule 1: Hard datasheet limit violation at current stage (Authoritative)
         if max_limit_breach_now:
             rules_fired.append(f"RULE-01 [HARD LIMIT]: Current measurement in {worst_param} exceeds specification limit.")
             decision = "HIGH RISK"
             priority_score = 100.0
 
+        # Rule 0: Test-System / Sensor Health Anomaly (Phase 5)
+        # If common-mode test-equipment anomaly is active, avoid false scrap classification
+        elif is_instrument_issue:
+            rules_fired.append(
+                "RULE-00 [INSTRUMENT ANOMALY]: Synchronized cross-component shift detected across test channel/lot. "
+                "Engineering investigation of test fixture, DAQ, or thermal chamber required before condemning unit."
+            )
+            decision = "REVIEW"
+            priority_score = 60.0
+
         # Rule 2: High statistical likelihood of limit breach at 168h (P90 worst case exceeds limit)
-        elif max_p90_breach or max_nominal_pred_breach:
-            rules_fired.append("RULE-02 [FORECAST BREACH]: Projected 168h worst-case boundary (P90) exceeds engineering specification.")
+        elif max_p90_breach or max_nominal_pred_breach or max_prob_breach > 0.75:
+            rules_fired.append(
+                f"RULE-02 [FORECAST BREACH]: Projected 168h trajectory or P90 bound exceeds engineering limit "
+                f"(breach probability: {max_prob_breach*100.0:.1f}%)."
+            )
             decision = "HIGH RISK"
             priority_score = 85.0 + (1.0 - max(0.0, max_dist_to_limit_ratio)) * 10.0
 
@@ -121,11 +162,38 @@ class RiskFusionEngine:
             decision = "REVIEW"
             priority_score = 55.0 + ens_anomaly * 15.0
 
+        # Rule 8: Predicted drift rate exceeds allowable safety slope (ReliabilityX engineering safety-margin heuristic)
+        elif has_slope_exceeded:
+            rules_fired.append(
+                "RULE-08 [SAFETY SLOPE]: Projected 168h drift rate exceeds calculated boundary safety slope. "
+                "Engineering review recommended."
+            )
+            decision = "REVIEW"
+            priority_score = 62.0
+
         # Rule 6: Monotonic drift or moderate lot deviation
         elif overall_state in ["DRIFTING", "UNSTABLE"] or ens_anomaly >= 0.45 or max_z_score >= 2.0:
             rules_fired.append(f"RULE-06 [DRIFT MONITOR]: Monotonic drift rate or moderate lot deviation (Z={max_z_score:.1f}σ).")
             decision = "WATCH"
             priority_score = 30.0 + ens_anomaly * 10.0
+
+        # Rule 9: Data quality issue check
+        elif has_data_quality_issue:
+            rules_fired.append("RULE-09 [DATA QUALITY]: Corrupted, non-monotonic, or invalid telemetry packet detected. Data quality audit required.")
+            decision = "WATCH"
+            priority_score = 25.0
+
+        # Rule 10: Insufficient evidence check
+        elif has_insufficient_evidence:
+            rules_fired.append("RULE-10 [INSUFFICIENT EVIDENCE]: Incomplete temporal checkpoints or baseline measurements. Monitoring required.")
+            decision = "WATCH"
+            priority_score = 20.0
+
+        # Rule 11: Statistical detector unavailable (must not silently claim nominal)
+        elif detector_unavailable:
+            rules_fired.append(f"RULE-11 [STATISTICAL SUPPORT]: Anomaly detector status '{det_status}'. Insufficient statistical baseline; cannot confirm nominal status.")
+            decision = "WATCH"
+            priority_score = 18.0
 
         # Rule 7: Nominal stable behavior
         else:
@@ -146,9 +214,11 @@ class RiskFusionEngine:
             "multivariate_anomaly": categorize_score(ens_anomaly),
             "drift_severity": categorize_score(max_drift_rate / 0.08),
             "acceleration_severity": "High" if max_accel > CONFIG.acceleration_alarm_threshold else ("Medium" if max_accel > CONFIG.acceleration_warning_threshold else "Low"),
-            "prediction_risk": "High" if (max_p90_breach or max_nominal_pred_breach) else ("Medium" if max_dist_to_limit_ratio < 0.3 else "Low"),
+            "prediction_risk": "High" if (max_p90_breach or max_nominal_pred_breach or max_prob_breach > 0.75) else ("Medium" if max_dist_to_limit_ratio < 0.3 else "Low"),
             "limit_proximity": "High" if max_dist_to_limit_ratio < 0.2 else ("Medium" if max_dist_to_limit_ratio < 0.5 else "Low"),
-            "behaviour_state": overall_state
+            "behaviour_state": overall_state,
+            "test_system_status": test_system_status or "NOMINAL",
+            "detector_status": det_status
         }
 
         disposition_map = {
@@ -158,14 +228,50 @@ class RiskFusionEngine:
             "HIGH RISK": "Engineering investigation / disposition required."
         }
 
+        # Count parameters showing elevated behavior
+        comp_feats = features[features["component_id"] == comp_id] if features is not None else pd.DataFrame()
+        anom_params_count = 0
+        for _, r in comp_feats.iterrows():
+            z_val = abs(r.get("lot_zscore_24", 0.0))
+            d_val = abs(r.get("drift_rate_24", 0.0))
+            a_val = abs(r.get("drift_acceleration", 0.0))
+            if z_val >= 2.0 or d_val >= 0.01 or a_val > CONFIG.acceleration_warning_threshold:
+                anom_params_count += 1
+
+        # Distinct 9-State Engineering Anomaly & Triage Classification (SIH26170 Requirement 7-9)
+        if max_limit_breach_now:
+            anomaly_class = "COMPONENT_DEGRADATION"
+        elif has_data_quality_issue:
+            anomaly_class = "DATA_QUALITY_ISSUE"
+        elif is_instrument_issue:
+            anomaly_class = "TEST_SYSTEM_ANOMALY"
+        elif test_system_status in ["LOT_SYSTEMIC_ANOMALY", "LOT_SYSTEMIC_SHIFT"]:
+            anomaly_class = "LOT_SYSTEMIC_ANOMALY"
+        elif is_sensor_flatline:
+            anomaly_class = "SENSOR_ANOMALY"
+        elif has_insufficient_evidence or detector_unavailable:
+            anomaly_class = "INSUFFICIENT_EVIDENCE"
+        elif anom_params_count >= 2:
+            anomaly_class = "CORRELATED_MULTIPARAMETER_DEGRADATION"
+        elif max_nominal_pred_breach or max_p90_breach or max_accel > CONFIG.acceleration_warning_threshold or has_slope_exceeded:
+            anomaly_class = "COMPONENT_DEGRADATION"
+        elif ens_anomaly >= 0.70 or max_z_score >= 3.0:
+            anomaly_class = "LOT_RELATIVE_ANOMALY"
+        elif overall_state in ["DRIFTING", "UNSTABLE"]:
+            anomaly_class = "COMPONENT_DEGRADATION"
+        else:
+            anomaly_class = "NOMINAL_STABLE"
+
         return {
             "component_id": comp_id,
             "lot_id": lot_id,
             "risk_level": decision,
+            "anomaly_classification": anomaly_class,
             "priority_score": round(priority_score, 2),
             "rules_fired": rules_fired,
             "evidence_breakdown": evidence_breakdown,
             "worst_parameter": worst_param,
+            "test_system_status": test_system_status or "NOMINAL",
             "disposition_recommendation": disposition_map.get(decision, "Engineering review recommended.")
         }
 
@@ -217,12 +323,17 @@ class RiskFusionEngine:
                     "high_risk_count": 0,
                     "accelerating_count": 0,
                     "drifting_count": 0,
+                    "affected_count": 0,
                     "dominant_abnormal_param": None
                 }
 
             l = lots_dict[lid]
             l["total_components"] += 1
             risk = c["risk_level"]
+            is_anom = risk in ["REVIEW", "HIGH RISK"]
+            is_accel = c.get("evidence_breakdown", {}).get("acceleration_severity") in ["High", "Medium"]
+            is_drift = c.get("evidence_breakdown", {}).get("drift_severity") in ["High", "Medium"]
+
             if risk == "PASS":
                 l["pass_count"] += 1
             elif risk == "WATCH":
@@ -232,38 +343,70 @@ class RiskFusionEngine:
             elif risk == "HIGH RISK":
                 l["high_risk_count"] += 1
 
-            if c.get("evidence_breakdown", {}).get("acceleration_severity") in ["High", "Medium"]:
+            if is_accel:
                 l["accelerating_count"] += 1
-            if c.get("evidence_breakdown", {}).get("drift_severity") in ["High", "Medium"]:
+            if is_drift:
                 l["drifting_count"] += 1
+            if is_anom or is_accel or is_drift:
+                l["affected_count"] += 1
 
-        # Classify Lot-Wide Pattern vs Isolated Anomaly
+        # Classify Lot-Level Taxonomy (Phase 5 & 7):
+        # 1. Individual component anomaly
+        # 2. Small cluster anomaly
+        # 3. Lot-wide shift (LOT_SYSTEMIC_SHIFT)
+        # 4. Possible test-system / common-mode anomaly (TEST_SYSTEM_ANOMALY)
         for lid, l in lots_dict.items():
             tot = l["total_components"] or 1
             anom_pct = ((l["review_count"] + l["high_risk_count"]) / tot) * 100.0
             l["anomaly_percentage"] = round(anom_pct, 1)
-
-            # Check if systematic
             accel_pct = (l["accelerating_count"] / tot) * 100.0
-            if l["accelerating_count"] >= 4 and accel_pct >= 15.0:
+            drift_pct = (l["drifting_count"] / tot) * 100.0
+            affected_ratio = l["affected_count"] / tot
+
+            # Check for common-mode test system / sensor shift across >= 70% of lot (uniform shift, non-accelerating)
+            if affected_ratio >= CONFIG.test_system_shift_ratio and tot >= 5 and l["accelerating_count"] < 3:
+                l["is_test_system_anomaly"] = True
                 l["is_lot_wide_pattern"] = True
+                l["lot_pattern_type"] = "TEST_SYSTEM_ANOMALY"
                 l["pattern_description"] = (
-                    f"CRITICAL LOT-WIDE PATTERN: {l['accelerating_count']} of {tot} components ({accel_pct:.1f}%) "
-                    "exhibit correlated wearout acceleration. Indicates wafer-level fabrication or thermal screening defect."
+                    f"POSSIBLE TEST-SYSTEM / SENSOR HEALTH ANOMALY: Synchronized shift observed across "
+                    f"{affected_ratio * 100.0:.1f}% of monitored units in {lid}. Recommend verifying thermal chamber stability, "
+                    f"ATE probe contact resistance, and DAQ calibration before dispositioning units."
+                )
+                l["lot_health_trend"] = "INSTRUMENT_CHECK"
+            # Check for lot systemic shift (>= 30% correlated wearout or >= 15% acceleration)
+            elif (drift_pct + accel_pct) >= (CONFIG.lot_systemic_shift_ratio * 100.0) or (accel_pct >= 15.0 and l["accelerating_count"] >= 3) or affected_ratio >= 0.30:
+                l["is_test_system_anomaly"] = False
+                l["is_lot_wide_pattern"] = True
+                l["lot_pattern_type"] = "LOT_SYSTEMIC_SHIFT"
+                aff_cnt = l["affected_count"]
+                l["pattern_description"] = (
+                    f"LOT SYSTEMIC SHIFT: Correlated directional drift / wearout identified across "
+                    f"{max(drift_pct, accel_pct, affected_ratio * 100.0):.1f}% of units in {lid} ({aff_cnt} components affected by lot-systemic shift — lot investigation recommended). "
+                    f"Wafer-level process variation or batch contamination suspected."
+                )
+                l["systemic_summary_message"] = (
+                    f"{aff_cnt} components affected by lot-systemic shift — lot investigation recommended."
                 )
                 l["lot_health_trend"] = "COMPROMISED"
             elif l["high_risk_count"] > 0 or l["review_count"] > 0:
+                l["is_test_system_anomaly"] = False
                 l["is_lot_wide_pattern"] = False
+                l["lot_pattern_type"] = "ISOLATED_COMPONENT_ANOMALY"
                 l["pattern_description"] = (
-                    f"ISOLATED COMPONENT ANOMALY: Issues confined to {l['high_risk_count'] + l['review_count']} individual "
-                    f"unit(s) in lot of {tot}. Nominal lot population remains sound."
+                    f"ISOLATED COMPONENT ANOMALY: Suspicious degradation localized to "
+                    f"{l['high_risk_count'] + l['review_count']} individual unit(s) in lot of {tot}. "
+                    f"Bulk lot population ({tot - (l['high_risk_count'] + l['review_count'])} units) remains nominal."
                 )
                 l["lot_health_trend"] = "MODERATE"
             else:
+                l["is_test_system_anomaly"] = False
                 l["is_lot_wide_pattern"] = False
-                l["pattern_description"] = "HEALTHY LOT: All units exhibit nominal statistical behavior."
+                l["lot_pattern_type"] = "HEALTHY_LOT"
+                l["pattern_description"] = f"HEALTHY LOT: All {tot} units exhibit stable lot-relative and temporal behavior."
                 l["lot_health_trend"] = "HEALTHY"
 
             l["dominant_abnormal_param"] = "leakage_current_uA"
 
         return lots_dict
+

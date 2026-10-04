@@ -57,7 +57,7 @@ export function ScreeningPipelineTab({ onInspectComp }: ScreeningPipelineTabProp
       status: "ACTIVE",
       statusType: "review",
       engine: "FuturePredictionEngine (backend/prediction/forecaster.py)",
-      details: "Generates future 168h predictions with estimated prediction intervals (±1.96σ) and P90 estimated upper bounds."
+      details: "Generates future 168h predictions with 95% nominal split-conformal prediction intervals and P90 estimated upper bounds."
     },
     {
       num: 6,
@@ -133,10 +133,10 @@ export function ScreeningPipelineTab({ onInspectComp }: ScreeningPipelineTabProp
     },
     {
       name: "Dynamic Part Average Testing (DPAT)",
-      library: "Native Aerospace Algorithm (AEC-Q001 Standard)",
-      purpose: "Statistical outlier screening based on lot mean and dynamic sigma",
-      hyperparams: "k_factor=3.0 (corresponds to ±3σ statistical cutoff)",
-      role: "Calculates lot-specific screening limits: Limit = Mean ± k * Standard_Deviation"
+      library: "Native Algorithm (AEC-Q001-Referenced DPAT)",
+      purpose: "Statistical outlier screening based on lot median and dynamic robust MAD",
+      hyperparams: "k_factor=3.0 (corresponds to ±3σ robust cutoff)",
+      role: "Calculates lot-specific screening limits: Limit = Median ± k * 1.4826 * MAD"
     },
     {
       name: "Physics Arrhenius Wearout Extrapolator",
@@ -155,7 +155,7 @@ export function ScreeningPipelineTab({ onInspectComp }: ScreeningPipelineTabProp
           <div>
             <h1 className="hero-title">SCREENING PIPELINE & AI ARCHITECTURE</h1>
             <p className="hero-subtitle">
-              End-to-end 10-layer AI decision architecture combining Scikit-Learn machine learning, physics-informed Arrhenius models, and AEC-Q001 aerospace screening limits.
+              End-to-end 10-layer AI decision architecture combining Scikit-Learn machine learning, physics-informed Arrhenius models, and AEC-Q001-referenced statistical DPAT screening limits.
             </p>
           </div>
         </div>
@@ -203,7 +203,7 @@ export function ScreeningPipelineTab({ onInspectComp }: ScreeningPipelineTabProp
         <div className="kpi-card border-orange">
           <div className="kpi-title text-orange">GOVERNING STANDARD</div>
           <div className="kpi-value text-orange" style={{ fontSize: "20px" }}>AEC-Q001</div>
-          <div className="kpi-sub">ISRO ESS Protocol</div>
+          <div className="kpi-sub">Standard ESS Protocol</div>
         </div>
         <div className="kpi-card border-red">
           <div className="kpi-title text-red">INTEGRITY LEDGER</div>

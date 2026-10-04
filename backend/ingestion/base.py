@@ -1,19 +1,29 @@
 """
 ReliabilityX Ingestion Connector Interface
 Defines the generic TelemetrySource abstract base class and standardized TelemetryPacket.
-Compatible with Physical ATE, SECS/GEM, OPC UA, MQTT, CSV Replay, and Live Simulators.
+Hardware connector interface abstraction. Physical test equipment connectivity is not
+physically validated on live chamber hardware; simulator, CSV replay, and MQTT adapter
+implemented for SIH prototype.
 """
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from datetime import datetime
+from enum import Enum
 from typing import Dict, Any, List, Optional, Callable, Coroutine
 from pydantic import BaseModel, Field
+
+
+class TelemetrySourceType(str, Enum):
+    """Explicit provenance taxonomy for streaming telemetry."""
+    SIMULATED = "SIMULATED"
+    REPLAY = "REPLAY"
+    LIVE_HARDWARE = "LIVE_HARDWARE"
 
 
 class TelemetryPacket(BaseModel):
     """
     Normalized internal live telemetry frame for ReliabilityX.
-    Immutable record with full provenance.
+    Transactional record with full provenance.
     """
     component_id: str = Field(..., description="Unique component serial identifier, e.g. C-01008")
     lot_id: str = Field(..., description="Production wafer/fabrication lot, e.g. LOT-2411C")
@@ -24,6 +34,11 @@ class TelemetryPacket(BaseModel):
     value: float = Field(..., description="Physical measurement value")
     unit: str = Field("µA", description="Physical engineering unit (µA, mA, ns, V)")
     source: str = Field("SIMULATED_ATE_01", description="Hardware or simulated telemetry source identifier")
+    source_type: str = Field(TelemetrySourceType.SIMULATED.value, description="Provenance type: SIMULATED, REPLAY, or LIVE_HARDWARE")
+    test_station_id: Optional[str] = Field(default=None, description="Test station or chamber identifier")
+    channel_id: Optional[str] = Field(default=None, description="ATE instrument channel identifier")
+    instrument_id: Optional[str] = Field(default=None, description="Calibrated instrument serial/model")
+    calibration_metadata: Optional[Dict[str, Any]] = Field(default=None, description="Calibration provenance and expiration metadata")
     quality: str = Field("GOOD", description="Quality code: GOOD, SUSPECT_SPIKE, STUCK, LIMIT_BREACH, MISSING")
     extra: Optional[Dict[str, Any]] = Field(default=None, description="Optional metadata or raw packet payload")
 
@@ -95,8 +110,8 @@ def validate_raw_packet(raw: Any) -> ValidationResult:
             reason="Missing or invalid parameter name"
         )
 
-    # 3. Value validation (reject NaN, Inf, non-numeric)
-    val = raw.get("value")
+    # 3. Value validation (support value or alias measured_value; reject NaN, Inf, non-numeric)
+    val = raw.get("value") if raw.get("value") is not None else raw.get("measured_value")
     if val is None or isinstance(val, bool):
         return ValidationResult(
             is_valid=False,
@@ -159,12 +174,53 @@ def validate_raw_packet(raw: Any) -> ValidationResult:
             ts = datetime.now(timezone.utc).isoformat()
             ts_warning = "Invalid ISO timestamp format; server time substituted"
 
-    # 6. Quality determination
+    # 6. Provenance & Source Type Integrity Check (Anti-Spoofing Rule)
+    src_type_raw = str(raw.get("source_type") or "").upper()
+    src_raw = str(raw.get("source") or "").upper()
+    extra_dict = raw.get("extra") if isinstance(raw.get("extra"), dict) else {}
+
+    is_claiming_live_hardware = (
+        src_type_raw == TelemetrySourceType.LIVE_HARDWARE.value or
+        src_raw == "LIVE_HARDWARE" or
+        src_raw.startswith("LIVE_HARDWARE")
+    )
+    is_simulation_marker = bool(
+        extra_dict.get("is_simulated") or
+        extra_dict.get("scenario") or
+        "SIMULAT" in src_raw or
+        "REPLAY" in src_raw or
+        src_type_raw in (TelemetrySourceType.SIMULATED.value, TelemetrySourceType.REPLAY.value)
+    )
+
+    if is_claiming_live_hardware:
+        # Anti-spoofing rule: simulator and replay packets CANNOT masquerade as LIVE_HARDWARE
+        if is_simulation_marker and extra_dict.get("provenance_mode") != "SOFTWARE_INTEGRATION_TEST_MOCK":
+            return ValidationResult(
+                is_valid=False,
+                status="REJECTED",
+                reason="Provenance violation: simulated or replay telemetry cannot masquerade as LIVE_HARDWARE"
+            )
+        # Genuine live hardware packets MUST provide instrument_id and test_station_id
+        station_id = raw.get("test_station_id")
+        inst_id = raw.get("instrument_id")
+        if not station_id or not inst_id:
+            return ValidationResult(
+                is_valid=False,
+                status="REJECTED",
+                reason="Provenance violation: LIVE_HARDWARE telemetry requires explicit test_station_id and instrument_id"
+            )
+        resolved_source_type = TelemetrySourceType.LIVE_HARDWARE.value
+    elif "REPLAY" in src_raw or src_type_raw == TelemetrySourceType.REPLAY.value:
+        resolved_source_type = TelemetrySourceType.REPLAY.value
+    else:
+        resolved_source_type = TelemetrySourceType.SIMULATED.value
+
+    # 7. Quality determination
     quality = raw.get("quality", "GOOD")
     if quality not in ["GOOD", "SUSPECT_SPIKE", "STUCK", "LIMIT_BREACH", "MISSING"]:
         quality = "GOOD"
 
-    # 7. Aggregate warning reason
+    # 8. Aggregate warning reason
     final_warning = None
     if warning_reason and ts_warning:
         final_warning = f"{warning_reason}; {ts_warning}"
@@ -188,6 +244,11 @@ def validate_raw_packet(raw: Any) -> ValidationResult:
             value=val_float,
             unit=raw.get("unit", "µA"),
             source=raw.get("source", "SIMULATED_ATE_01"),
+            source_type=resolved_source_type,
+            test_station_id=raw.get("test_station_id"),
+            channel_id=raw.get("channel_id"),
+            instrument_id=raw.get("instrument_id"),
+            calibration_metadata=raw.get("calibration_metadata"),
             quality=quality,
             extra=raw.get("extra")
         )

@@ -22,10 +22,10 @@ from backend.anomaly.lof import LOFDetector
 class AnomalyEnsembleEngine:
     # Base fusion weights
     DEFAULT_WEIGHTS = {
-        "DPAT": 0.35,              # Critical for AEC-Q001 standard compliance
+        "DPAT": 0.35,              # Robust lot-relative statistical screening (PAT-inspired)
         "Isolation_Forest": 0.25,  # Strong multi-feature tree isolation
         "Mahalanobis": 0.25,       # Strong for cross-parameter covariance shifts
-        "LOF": 0.15                # Local density verification
+        "LOF": 0.15                # Local peer density verification
     }
 
     def __init__(self, k_dpat: float = 3.0):
@@ -36,7 +36,8 @@ class AnomalyEnsembleEngine:
 
     def run_all(self, features_df: pd.DataFrame) -> Tuple[pd.DataFrame, List[Dict[str, Any]]]:
         """
-        Runs all detectors, calibrates their scores, and produces an ensemble score per component.
+        Runs all detectors, calibrates their scores, integrates multi-reference frames,
+        and produces an ensemble score per component.
         """
         all_results = []
 
@@ -68,54 +69,74 @@ class AnomalyEnsembleEngine:
         all_results.extend(iso_results)
         iso_by_comp = {r["component_id"]: r for r in iso_results}
 
-        # 4. Mahalanobis Distance
+        # 4. Mahalanobis Distance (with shrinkage and statistical support safeguards)
         maha_results = self.maha_detector.score(wide_features, feature_cols)
         all_results.extend(maha_results)
         maha_by_comp = {r["component_id"]: r for r in maha_results}
 
-        # 5. Local Outlier Factor
+        # 5. Local Outlier Factor (windowed batch peer density)
         lof_results = self.lof_detector.score(wide_features, feature_cols)
         all_results.extend(lof_results)
         lof_by_comp = {r["component_id"]: r for r in lof_results}
 
-        # 6. Ensemble Fusion per component
+        # 6. Ensemble Fusion per component with Multi-Reference Frame Integration (Phase 6)
         ensemble_scores = []
         for comp_id in wide_features["component_id"]:
             scores = {}
             active_weights = {}
 
-            # Gather calibrated normalized scores
+            # Gather calibrated normalized scores with status discounting
             if comp_id in dpat_by_comp:
+                st = dpat_by_comp[comp_id]["detector_status"]
                 scores["DPAT"] = dpat_by_comp[comp_id]["normalized_score"]
-                active_weights["DPAT"] = self.DEFAULT_WEIGHTS["DPAT"] if dpat_by_comp[comp_id]["detector_status"] == "ACTIVE" else 0.1
+                active_weights["DPAT"] = self.DEFAULT_WEIGHTS["DPAT"] if st == "ACTIVE" else 0.05
 
             if comp_id in iso_by_comp:
+                st = iso_by_comp[comp_id]["detector_status"]
                 scores["Isolation_Forest"] = iso_by_comp[comp_id]["normalized_score"]
-                active_weights["Isolation_Forest"] = self.DEFAULT_WEIGHTS["Isolation_Forest"] if iso_by_comp[comp_id]["detector_status"] == "ACTIVE" else 0.05
+                active_weights["Isolation_Forest"] = self.DEFAULT_WEIGHTS["Isolation_Forest"] if st == "ACTIVE" else 0.05
 
             if comp_id in maha_by_comp:
+                st = maha_by_comp[comp_id]["detector_status"]
                 scores["Mahalanobis"] = maha_by_comp[comp_id]["normalized_score"]
-                active_weights["Mahalanobis"] = self.DEFAULT_WEIGHTS["Mahalanobis"] if "ACTIVE" in maha_by_comp[comp_id]["detector_status"] else 0.05
+                # Zero out weight if covariance support was insufficient
+                active_weights["Mahalanobis"] = self.DEFAULT_WEIGHTS["Mahalanobis"] if "ACTIVE" in st else 0.0
 
             if comp_id in lof_by_comp:
+                st = lof_by_comp[comp_id]["detector_status"]
                 scores["LOF"] = lof_by_comp[comp_id]["normalized_score"]
-                active_weights["LOF"] = self.DEFAULT_WEIGHTS["LOF"] if lof_by_comp[comp_id]["detector_status"] == "ACTIVE" else 0.05
+                active_weights["LOF"] = self.DEFAULT_WEIGHTS["LOF"] if st == "ACTIVE" else 0.0
 
             # Weighted sum normalized by sum of active weights
-            total_weight = sum(active_weights.values()) or 1.0
-            fused_score = sum(scores[k] * active_weights[k] for k in scores) / total_weight
+            total_weight = sum(active_weights.values())
+            if total_weight > 0:
+                fused_score = sum(scores[k] * active_weights[k] for k in scores) / total_weight
+            else:
+                fused_score = scores.get("DPAT", 0.0)
+
+            # Check historical reference baseline shift from feature slice
+            c_feats = features_df[features_df["component_id"] == comp_id]
+            max_hist_dev = 0.0
+            for _, f_row in c_feats.iterrows():
+                # Distance to limit ratio
+                dtl = f_row.get("distance_to_limit", 999.0)
+                if pd.notnull(dtl) and dtl < 2.0:
+                    max_hist_dev = max(max_hist_dev, 0.4)
+
+            # Combine lot-relative with absolute and historical frames
+            fused_score = min(1.0, fused_score + max_hist_dev * 0.25)
             is_anomalous = fused_score >= 0.55 or scores.get("DPAT", 0) > 0.85 or scores.get("Mahalanobis", 0) > 0.90
 
             # Generate natural language evidence summary
             flagged_detectors = []
             if dpat_by_comp.get(comp_id, {}).get("is_anomalous"):
-                flagged_detectors.append("DPAT lot-relative screening")
+                flagged_detectors.append("PAT-inspired lot-relative screening")
             if iso_by_comp.get(comp_id, {}).get("is_anomalous"):
                 flagged_detectors.append("multi-parameter Isolation Forest")
             if maha_by_comp.get(comp_id, {}).get("is_anomalous"):
                 flagged_detectors.append("Mahalanobis covariance shift")
             if lof_by_comp.get(comp_id, {}).get("is_anomalous"):
-                flagged_detectors.append("LOF local density divergence")
+                flagged_detectors.append("LOF local peer density divergence")
 
             if flagged_detectors:
                 evidence = f"Ensemble anomaly detected (score: {fused_score:.2f}) flagged by {', '.join(flagged_detectors)}."

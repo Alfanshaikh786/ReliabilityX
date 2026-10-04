@@ -1,7 +1,7 @@
 # ReliabilityX — Predictive Component Reliability Intelligence
 
 > **SIH26170:** AI-Driven Anomaly Detection in Component Burn-In & Environmental Stress Screening (ESS)  
-> **Domain:** High-Reliability Aerospace, Satellite Payloads, Defense Electronics, ISRO/MIL-STD Qualification
+> **Domain:** High-Reliability Electronic Component Burn-In & ESS Screening
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-v0.115%2B-009688.svg)](https://fastapi.tiangolo.com/)
@@ -10,15 +10,65 @@
 
 ---
 
+### ⚠️ System Positioning & Engineering Disclaimer
+**ReliabilityX** is positioned as an **AI-assisted early anomaly detection, degradation analysis, and predictive reliability decision support prototype for high-reliability electronic component Burn-In and ESS screening**.
+- **Prototype Status:** Decision-support prototype; not an ISRO-certified system, not aerospace certified, and not flight qualified.
+- **Standards:** Not a replacement for mandatory qualification or screening standards (MIL-STD-883, AEC-Q001, JEDEC).
+- **Failure Predictions:** Statistical projections under model assumptions; not a guaranteed physical failure predictor or zero-defect guarantee.
+- **Prediction Uncertainty:** 95% nominal split-conformal prediction intervals with finite-sample marginal coverage under the exchangeability assumption. On the synthetic LOLO benchmark, empirical coverage was 95.96% ± 1.05% across five seeds (per-lot: LOT-A 98.6%, LOT-B 94.2%, LOT-C 96.0%, LOT-D 94.8%, LOT-E 96.2%). Standard exchangeability cannot be established for the current temporally dependent synthetic benchmark; therefore these results are reported as empirical benchmark coverage rather than a universal physical guarantee.
+- **Safety Margin Disclosure:** The 0.80 safety-margin factor is a configurable ReliabilityX engineering heuristic used to provide an internal safety buffer. It is not an official SIH26170 or ISRO threshold.
+- **Hardware & Production Status:** Production-pipeline and cold-start parity validated: YES. Production deployment validation: NO. Real physical hardware validation status is UNVALIDATED (`REAL_HARDWARE_VALIDATED = False`). Connectors provide an explicit hardware abstraction layer; not physically connected to live chamber ATE hardware.
+- **Final Authority:** Human QA / Reliability Engineering remains the final authority for all lot disposition decisions.
+
+---
+
 ## 1. Overview
 
-**ReliabilityX** is an end-to-end, physics-informed, artificial-intelligence-driven reliability intelligence platform engineered to revolutionize semiconductor screening during **Burn-In** and **Environmental Stress Screening (ESS)**.
+**ReliabilityX** is an end-to-end, physics-informed, artificial-intelligence-driven reliability intelligence platform designed to complement semiconductor screening during **Burn-In** and **Environmental Stress Screening (ESS)**.
 
-In mission-critical aerospace and satellite systems, electronic component failure during an active orbital mission is catastrophic. Historically, semiconductor flight lots undergo accelerated thermal-electrical screening (168 hours at 125°C under rated voltage). Traditional qualification relies entirely on static post-test limit checks: if parameters remain within datasheet boundaries at test gates (0h, 24h, 96h, 168h), the unit is certified as flight-ready.
+In mission-critical aerospace and satellite systems, electronic component failure during an active orbital mission is catastrophic. Historically, semiconductor lots undergo accelerated thermal-electrical screening (168 hours at 125°C under rated voltage). Traditional qualification relies entirely on static post-test limit checks: if parameters remain within datasheet boundaries at test gates (0h, 24h, 96h, 168h), the unit passes static screening.
 
-Modern sub-micron failure mechanisms (TDDB, HCI, NBTI, electromigration) frequently exhibit **non-linear, super-linear, or runaway degradation dynamics** with positive second-derivative acceleration ($\frac{d^2x}{dt^2} > 0$). These latent wearout defects remain below official limits at 96 hours but accelerate exponentially to catastrophic failure during orbital deployment.
+Modern sub-micron failure mechanisms (TDDB, HCI, NBTI, electromigration) frequently exhibit **non-linear, super-linear, or runaway degradation dynamics** with positive second-derivative acceleration ($\frac{d^2x}{dt^2} > 0$). These latent wearout defects remain below official limits at 96 hours but accelerate exponentially toward boundary breach.
 
-**ReliabilityX** replaces blunt post-hoc testing with **predictive, physics-informed degradation intelligence**, providing early warnings as early as **24h** and confirmed by **96h**, long before hard limits are breached.
+**ReliabilityX** complements blunt post-hoc testing with **predictive, physics-informed degradation intelligence**. In this synthetic benchmark, degradation cases were flagged at the 24h observation stage, corresponding to a simulated maximum early-warning horizon of 144h before the 168h endpoint.
+
+```
+             BURN-IN / ESS TELEMETRY
+                       │
+              ┌────────┴────────┐
+              │                 │
+              ▼                 ▼
+       MODULE A             MODULE B
+ Dynamic Outlier          168h Predictor
+ Detection                    │
+              │               │
+              │          Value 0h
+              │          Value 24h
+              │               │
+              │               ▼
+              │        ┌─────────────┐
+              │        │ ML Forecast │
+              │        └──────┬──────┘
+              │               │
+              │               ▼
+              │        PREDICTED VALUE
+              │             @ 168h
+              │               │
+              │               ▼
+              │        Drift Rate @168h
+              │               │
+              └───────┬───────┘
+                      ▼
+              RISK / EVIDENCE FUSION
+                      │
+          ┌───────────┼────────────┐
+          ▼           ▼            ▼
+      LOT ANOMALY   DRIFT       SENSOR/
+                               SYSTEM ISSUE
+                      │
+                      ▼
+             ENGINEERING REVIEW
+```
 
 ---
 
@@ -27,8 +77,8 @@ Modern sub-micron failure mechanisms (TDDB, HCI, NBTI, electromigration) frequen
 ### 🔬 Physics-Informed Machine Learning & Ensembles
 - **Arrhenius Reaction Kinetics:** Extrapolates thermal acceleration across operational temperatures ($E_a = 0.7\text{ eV}$).
 - **Ensemble Anomaly Engine:** Combines Isolation Forest, Local Outlier Factor (LOF), and dynamic statistical Z-Score / IQR filtering.
-- **Parametric Extrapolation:** 168-hour forecast with $\pm 1.96\sigma$ estimated prediction intervals and $\text{P}_{90}$ upper risk bounds.
-- **Dynamic Part Average Testing (DPAT):** Evaluates component deviation relative to lot distributions.
+- **Parametric Extrapolation:** 168-hour forecast with 95% nominal split-conformal prediction intervals and $\text{P}_{90}$ upper risk bounds.
+- **Dynamic Part Average Testing (DPAT):** AEC-Q001-referenced robust statistical screening evaluating component deviation relative to lot distributions.
 
 ### ⚡ Real-Time Telemetry Stream Ingestion Engine
 - High-throughput WebSocket stream (`ws://localhost:8000/ws/live`) with sub-50ms latency.
@@ -40,9 +90,9 @@ Modern sub-micron failure mechanisms (TDDB, HCI, NBTI, electromigration) frequen
 - Shapley-style factor attribution percentages and human-readable engineering verdicts explaining root causes.
 
 ### 🛡️ Aerospace Traceability & Audit Ledger
-- Immutable SHA-256 tamper-evident engineering audit log.
+- Append-oriented SHA-256 tamper-evident engineering audit log with cryptographic provenance.
 - Formal sign-off and review protocol for quality assurance (QA) engineers.
-- Automated generation of Aerospace QA Screening Certificates (HTML/PDF) and full telemetry CSV exports.
+- Automated generation of AEC-Q001-Referenced Statistical Screening Analysis Reports (HTML/PDF) and full telemetry CSV exports.
 
 ### 📱 Responsive & Touch-First Experience
 - **Responsive Architecture:** Desktop (1440×900, 1920×1080), Tablet (768×1024), Mobile Web, and Android App viewports.
@@ -100,15 +150,24 @@ Open your browser at:
 ReliabilityX includes an extensive automated verification suite validating all pipelines, security controls, and end-to-end workflows:
 
 ```bash
-# 1. Run End-to-End Workflow & QA Decision Verification
-python backend/tests/verify_end_to_end.py
+# 1. Run Complete Final Scientific Hardening Suite (26/26 tests)
+python -m backend.tests.test_final_hardening
 
-# 2. Run Live Telemetry Stream & Hardening Pipeline Verification
-python backend/tests/verify_live_stream_pipeline.py
+# 2. Run Upgrade Validation Suite (13/13 tests)
+python -m backend.tests.test_upgrade_validation
 
-# 3. Run Security & Upload Ingestion Tests
+# 3. Run Leave-One-Lot-Out (LOLO) Audit & Confusion Matrix Verification
+python backend/tests/run_lolo_audit.py
+
+# 4. Run Security & Upload Ingestion Tests (6/6 tests)
 python backend/tests/verify_security_upload.py
+
+# 5. Run Production Parity Cold-Start Verification
+python backend/tests/verify_production_pipeline.py
 ```
+
+Detailed metrics, per-lot confusion matrices, and scientific disclosures are documented in [`REPORT X.md`](REPORT%20X.md).
+
 
 ---
 

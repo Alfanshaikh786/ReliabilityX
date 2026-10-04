@@ -68,21 +68,71 @@ CHECKPOINT_LABELS = ["0h", "24h", "96h", "168h"]
 
 # Anomaly & Risk Threshold Configurations
 class SystemConfig(BaseModel):
-    # DPAT k-factor (DPAT-inspired statistical analysis; 3.0 provides robust outlier detection)
-    # Note: AEC-Q001 specifies 3–6 sigma; this is a configurable screening parameter.
+    # Positioning & Disclaimer
+    system_positioning: str = (
+        "AI-assisted early anomaly detection, degradation analysis, and predictive reliability decision "
+        "support for high-reliability electronic component Burn-In and ESS screening. "
+        "Engineering decision-support prototype; not an official qualification replacement or certified failure guarantee."
+    )
+
+    # DPAT k-factor (AEC-Q001-referenced robust lot-relative statistical screening)
+    # References AEC-Q001 Part Average Testing principles using robust MAD estimation.
+    # Used as an engineering statistical reference; not a claim of formal automotive or aerospace compliance.
     dpat_k_factor: float = 3.0
     dpat_note: str = (
-        "Lot-relative statistical screening (DPAT-inspired). Not an AEC-Q001 compliance claim. "
+        "AEC-Q001-referenced robust lot-relative statistical screening (DPAT). "
+        "Used as a statistical methodology reference; not an aerospace standard compliance claim. "
         "Threshold calibration requires validation against component-specific historical data."
+    )
+
+    # Configurable ReliabilityX engineering safety-margin heuristic factor (default 0.80)
+    # Used to provide an internal buffer when comparing predicted drift rate against the allowable boundary slope.
+    # Not an official SIH26170 requirement or ISRO threshold.
+    safety_margin_factor: float = 0.80
+    safety_margin_factor_description: str = (
+        "Configurable ReliabilityX engineering safety-margin factor heuristic used to provide "
+        "an internal buffer when comparing predicted drift rate against the allowable boundary slope. "
+        "Not an official SIH26170 or ISRO specification requirement."
     )
 
     # Statistical Z-score thresholds
     z_score_threshold: float = 3.0
     robust_z_threshold: float = 3.0
 
-    # Drift acceleration threshold (positive acceleration in units/hr^2)
+    # Dual-Path Telemetry Windows (Phase 3 & 4)
+    # Fast path: Immediate per-sample deterministic checks (<15ms)
+    # Windowed path: Deep analytical ML ensemble, trajectory forecast, and risk fusion
+    ai_window_size: int = 6  # Run windowed ML every N incoming samples per stream
+    fast_path_enabled: bool = True
+
+    # Drift acceleration threshold (positive acceleration in units/hr^2) (Phase 10)
     acceleration_warning_threshold: float = 0.0005
     acceleration_alarm_threshold: float = 0.002
+    acceleration_persistence_count: int = 2  # Minimum consecutive observations to confirm ACCELERATING state
+
+    # Test-System / Sensor Health Layer Thresholds (Phase 5)
+    # If >=70% of monitored components experience concurrent, synchronized step changes,
+    # flag TEST_SYSTEM_ANOMALY rather than misclassifying individual components as failures.
+    test_system_shift_ratio: float = 0.70
+
+    # Lot-Wide Systemic Degradation Threshold (Phase 7)
+    # If >=30% of a lot exhibits correlated directional drift, flag LOT_SYSTEMIC_SHIFT
+    lot_systemic_shift_ratio: float = 0.30
+
+    # Mahalanobis Covariance Safeguards (Phase 8)
+    mahalanobis_min_samples: int = 8
+    mahalanobis_max_condition_number: float = 1e4
+
+    # Gating & Sensor Health Prototype Thresholds (Phase 8 Audit)
+    forecast_gate_min_checkpoints: int = 3
+    forecast_gate_min_hours: float = 20.0
+    stuck_sensor_buffer_size: int = 5
+    spike_iqr_multiplier: float = 5.0
+    threshold_calibration_status: str = "PROTOTYPE_ENGINEERING_DEFAULT"
+    threshold_governance_note: str = (
+        "Prototype engineering thresholds; empirical calibration on historical burn-in/qualification "
+        "datasets required before flight production screening deployment."
+    )
 
     # Cost model: cost of missing a defective flight part vs cost of reviewing/scrapping a good part
     miss_to_false_alarm_cost_ratio: float = 50.0
@@ -98,33 +148,45 @@ class SystemConfig(BaseModel):
     db_path: str = os.environ.get("RELIABILITYX_DB_PATH", "/tmp/reliabilityx.db" if os.environ.get("VERCEL") else "reliabilityx.db")
 
     # Versioning
-    model_version: str = "v1.4.0-physics-ensemble"
-    pipeline_version: str = "ReliabilityX-Core-2026.1"
+    model_version: str = "v1.5.0-prognostic-support"
+    pipeline_version: str = "ReliabilityX-Core-2026.2"
 
     # -----------------------------------------------------------------------
-    # TELEMETRY INTERVAL CONFIGURATION (Part 7 — Configurable Stale Timeout)
+    # TELEMETRY INTERVAL CONFIGURATION (Configurable Stale Timeout)
     # -----------------------------------------------------------------------
-    # Expected inter-packet arrival interval for the active telemetry source.
-    # Adjust based on equipment sampling rate (e.g., 1 s for fast ATE, 60 s for MQTT).
     expected_interval_seconds: float = 1.0
-
-    # STALE detection: if no packet arrives within this many seconds, status → STALE.
-    # Default: 5× the expected interval for single-source streaming.
     stale_timeout_seconds: float = 5.0
 
     # -----------------------------------------------------------------------
-    # PHYSICS MODEL DISCLAIMER (Part 5 — Arrhenius Activation Energy)
+    # ARRHENIUS-INSPIRED SYNTHETIC DEGRADATION MODEL (Phase 29)
     # -----------------------------------------------------------------------
-    # Default Arrhenius activation energy used in the prototype.
-    # This is a PROTOTYPE/DEFAULT parameter — NOT a universal semiconductor value.
-    # Calibration against component-specific HTOL data is required for production use.
+    # Configurable Arrhenius parameters for synthetic degradation generation.
+    # Prototype default — production deployment requires component-specific degradation models.
     arrhenius_activation_energy_eV: float = 0.7   # eV — prototype default
+    stress_temp_celsius: float = 125.0           # °C — typical accelerated burn-in temp
+    use_temp_celsius: float = 25.0              # °C — nominal operating temp
     arrhenius_parameter_status: str = "PROTOTYPE_DEFAULT"
     arrhenius_calibration_note: str = (
-        "Physics model parameters are configurable and require calibration against "
-        "component-specific reliability data. The default Ea=0.7 eV is a prototype "
-        "placeholder; it is not a universal semiconductor value."
+        "Arrhenius-inspired synthetic degradation model parameters are configurable and require calibration "
+        "against component-specific reliability data. The default Ea=0.7 eV is a synthetic benchmark parameter, "
+        "not a universal semiconductor value."
     )
-    arrhenius_voltage_exponent_beta: float = 2.0  # prototype default
+    arrhenius_voltage_exponent_beta: float = 2.0
+
+    # -----------------------------------------------------------------------
+    # PHYSICAL HARDWARE & PRODUCTION VALIDATION STATUS
+    # -----------------------------------------------------------------------
+    real_hardware_validated: bool = False
+    hardware_validation_status: str = "UNVALIDATED_NO_PHYSICAL_HARDWARE"
+    production_pipeline_parity_validated: bool = True
+    production_deployment_validated: bool = False
+    production_deployment_status: str = "UNVALIDATED_NO_PRODUCTION_DEPLOYMENT"
+    hardware_validation_note: str = (
+        "Real physical hardware validation status is UNVALIDATED. No physical automated test equipment (ATE) "
+        "or environmental thermal chamber instruments are physically connected to this environment. "
+        "The system provides an explicit Hardware ATE Adapter interface, but remains an engineering decision-support "
+        "prototype evaluated against synthetic Arrhenius and historical CSV replay benchmarks."
+    )
 
 CONFIG = SystemConfig()
+

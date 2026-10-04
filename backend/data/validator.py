@@ -7,14 +7,14 @@ Validates raw telemetry before model execution:
 - Timestamp & test stage continuity
 - Physical impossibility checks (e.g. negative current)
 - Measurement noise / spike detection
-- Preserves immutable raw values while creating clean analysis frames
+- Preserves unmodified raw measurements in transactional store while creating clean analysis frames
 - Generates transparent Data Quality Summary
 """
 from __future__ import annotations
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Tuple
-from backend.core.config import DEFAULT_PARAMETER_SPECS, CHECKPOINTS, CHECKPOINT_LABELS
+from backend.core.config import CONFIG, DEFAULT_PARAMETER_SPECS, CHECKPOINTS, CHECKPOINT_LABELS
 
 
 class DataQualityEngine:
@@ -94,11 +94,11 @@ class DataQualityEngine:
             if len(p_slice) > 10:
                 q25, q75 = p_slice["parameter_value"].quantile([0.25, 0.75])
                 iqr = q75 - q25
-                extreme_high = q75 + 5.0 * iqr
+                extreme_high = q75 + CONFIG.spike_iqr_multiplier * iqr
                 spike_idx = p_slice[p_slice["parameter_value"] > extreme_high].index
                 clean_df.loc[spike_idx, "noise_flag"] = 1
                 if len(spike_idx) > 0:
-                    warnings.append(f"Flagged {len(spike_idx)} extreme measurement spikes (>5x IQR) for parameter '{param}'.")
+                    warnings.append(f"Flagged {len(spike_idx)} extreme measurement spikes (>{CONFIG.spike_iqr_multiplier}x IQR) for parameter '{param}'.")
 
         # Processed value defaults to raw_value
         clean_df["processed_value"] = clean_df["raw_value"]

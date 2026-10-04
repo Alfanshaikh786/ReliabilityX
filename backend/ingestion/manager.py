@@ -12,10 +12,11 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional, Set
 from fastapi import WebSocket
 
-from backend.ingestion.base import TelemetryPacket, TelemetrySource, validate_raw_packet, ValidationResult
+from backend.ingestion.base import TelemetryPacket, TelemetrySource, TelemetrySourceType, validate_raw_packet, ValidationResult
 from backend.ingestion.simulator import LiveSimulatorAdapter
 from backend.ingestion.csv_adapter import CsvReplayAdapter
 from backend.ingestion.mqtt_adapter import MqttAdapter
+from backend.ingestion.hardware_adapter import HardwareATEAdapter
 
 from backend.core.config import CONFIG, DEFAULT_PARAMETER_SPECS
 from backend.core.db import get_db_connection, log_audit
@@ -26,6 +27,7 @@ from backend.timeseries.behaviour import BehaviourEngine
 from backend.prediction.forecaster import FuturePredictionEngine
 from backend.risk.fusion import RiskFusionEngine
 from backend.explainability.explainer import ExplainabilityEngine
+from scipy.stats import norm
 import pandas as pd
 import numpy as np
 
@@ -45,7 +47,8 @@ class IngestionManager:
         self.sources: Dict[str, TelemetrySource] = {
             "simulator": LiveSimulatorAdapter(source_name="SIMULATED_ATE_01"),
             "csv_replay": CsvReplayAdapter(source_name="CSV_REPLAY_GATE"),
-            "mqtt": MqttAdapter(source_name="MQTT_BROKER_01")
+            "mqtt": MqttAdapter(source_name="MQTT_BROKER_01"),
+            "hardware": HardwareATEAdapter(source_name="LIVE_HARDWARE_ATE_STATION_01")
         }
         self.active_source_type: str = "simulator"
         self.active_source: TelemetrySource = self.sources["simulator"]
@@ -80,7 +83,9 @@ class IngestionManager:
         self._stuck_tracker: Dict[str, List[float]] = {}
         self._alerts_feed: List[Dict[str, Any]] = []
         self._window_counter: int = 0
-        self._window_interval: int = 6 # Run windowed ML every 6 samples
+        self._window_interval: int = CONFIG.ai_window_size # Run windowed ML every N samples
+        self.test_system_status: str = "NOMINAL"
+        self._recent_steps: List[Tuple[float, str, float]] = []
         
         # Connected WebSocket clients
         self._websockets: Set[WebSocket] = set()
@@ -169,7 +174,8 @@ class IngestionManager:
         source_display_names = {
             "simulator": "LIVE TELEMETRY SIMULATOR",
             "csv_replay": "CSV REPLAY",
-            "mqtt": "MQTT LIVE STREAM"
+            "mqtt": "MQTT LIVE STREAM",
+            "hardware": "LIVE HARDWARE ATE INTERFACE (UNVALIDATED)"
         }
         display_source = source_display_names.get(self.active_source_type, "LIVE TELEMETRY SIMULATOR")
 
@@ -181,6 +187,9 @@ class IngestionManager:
             "source_name": display_source,
             "adapter_identifier": self.active_source.source_name,
             "source_integration_note": "Hardware connector abstraction implemented; physical equipment integration not yet validated.",
+            "real_hardware_validated": CONFIG.real_hardware_validated,
+            "hardware_validation_status": CONFIG.hardware_validation_status,
+            "hardware_validation_note": CONFIG.hardware_validation_note,
             "messages_count": self.messages_count,
             "messages_received": self.messages_count,
             "messages_processed": self.good_count + self.warnings_count,
@@ -359,7 +368,7 @@ class IngestionManager:
         """
         Fast Path:
         1. Fast Data Quality validation (impossible values, limits, spikes, stuck)
-        2. Immutable raw storage to database
+        2. Transactional raw storage with audit provenance
         3. Real-time rolling drift & moving statistics
         4. Rapid state & alert evaluation
         """
@@ -377,11 +386,11 @@ class IngestionManager:
         if val < spec.min_limit:
             quality = "IMPOSSIBLE_VALUE"
 
-        # Check stuck sensor condition (sliding buffer of 5 values)
+        # Check stuck sensor condition (sliding buffer using configurable stuck_sensor_buffer_size)
         if cid not in self._stuck_tracker:
             self._stuck_tracker[cid] = []
         self._stuck_tracker[cid].append(val)
-        if len(self._stuck_tracker[cid]) > 5:
+        if len(self._stuck_tracker[cid]) > CONFIG.stuck_sensor_buffer_size:
             self._stuck_tracker[cid].pop(0)
             if len(set(self._stuck_tracker[cid])) == 1:
                 quality = "STUCK"
@@ -390,7 +399,7 @@ class IngestionManager:
         if val >= limit:
             quality = "LIMIT_BREACH"
 
-        # 2. Immutable raw measurement persistence
+        # 2. Transactional measurement store persistence
         self._persist_measurement(packet, quality)
 
         # 3. Rolling history & Drift calculation
@@ -510,11 +519,45 @@ class IngestionManager:
         hist["last_state"] = state
         hist["last_risk"] = risk
 
-        # Check sufficient history for 168h Prognostic Prediction:
-        # Requires at least 3 points, distinct operational hours >= 3, and time span >= 20.0h
+        # Check sufficient history for 168h Prognostic Prediction (Phase 8 Configurable Gate)
         distinct_hours = {round(p[0], 1) for p in hist["points"]}
         hour_span = max(p[0] for p in hist["points"]) - min(p[0] for p in hist["points"]) if hist["points"] else 0.0
-        has_sufficient_history = (len(hist["points"]) >= 3 and len(distinct_hours) >= 3 and hour_span >= 20.0)
+        has_sufficient_history = (
+            len(hist["points"]) >= CONFIG.forecast_gate_min_checkpoints
+            and len(distinct_hours) >= CONFIG.forecast_gate_min_checkpoints
+            and hour_span >= CONFIG.forecast_gate_min_hours
+        )
+
+        # Common-mode synchronized step change detection (Phase 5 - Test-System Anomaly)
+        step_delta = abs(val - prev_val)
+        now_ts = time.time()
+        if step_delta > 0.8 and dt_recent <= 3.0:
+            self._recent_steps.append((now_ts, cid, val - prev_val))
+        # Keep only steps in last 5 seconds
+        self._recent_steps = [s for s in self._recent_steps if (now_ts - s[0]) <= 5.0]
+        stepped_comps = {s[1] for s in self._recent_steps}
+        active_comps_count = len(self._comp_history)
+        if active_comps_count >= 4 and (len(stepped_comps) / active_comps_count) >= CONFIG.test_system_shift_ratio:
+            self.test_system_status = "TEST_SYSTEM_ANOMALY"
+            if not alert:
+                alert = {
+                    "component_id": cid,
+                    "lot_id": lid,
+                    "title": "TEST-SYSTEM / SENSOR HEALTH ANOMALY",
+                    "parameter": spec.display_name,
+                    "value": val,
+                    "limit": limit,
+                    "unit": spec.unit,
+                    "state": "UNSTABLE",
+                    "risk": "REVIEW",
+                    "timestamp": datetime.utcnow().strftime("%H:%M:%S"),
+                    "reason": (
+                        f"Synchronized common-mode shift observed across {len(stepped_comps)} of {active_comps_count} units. "
+                        "Recommend checking thermal chamber stability and DAQ calibration before condemning components."
+                    )
+                }
+        else:
+            self.test_system_status = "NOMINAL"
 
         if has_sufficient_history:
             # Physics-informed forecast to 168h end-of-screen:
@@ -523,32 +566,73 @@ class IngestionManager:
             pred_168 = val + (drift_rate * dt_to_168) + (0.5 * accel * (dt_to_168 ** 2))
             pred_168 = max(spec.min_limit, pred_168)
 
-            # Uncertainty estimation (±1.96 sigma for estimated prediction interval)
+            # Split-Conformal prediction interval estimation (95% nominal level)
+            from backend.prediction.conformal import CANONICAL_BENCHMARK_CONFORMAL_QUANTILES
+            q_conf = CANONICAL_BENCHMARK_CONFORMAL_QUANTILES.get(param, 2.25)
             accel_factor = 1.0 + min(2.0, abs(accel) * 500.0)
             unc_std = max(0.20, abs(val) * 0.04 * accel_factor)
-            lower_bound = max(0.0, pred_168 - 1.96 * unc_std)
-            upper_bound = pred_168 + 1.96 * unc_std
+            conformal_radius = q_conf * unc_std
+            lower_bound = max(0.0, pred_168 - conformal_radius)
+            upper_bound = pred_168 + conformal_radius
             p90_upper_bound = pred_168 + CONFIG.p90_z_multiplier * unc_std
+
+            # Probability of Specification-Limit Breach (Phase 15)
+            if unc_std > 0.001:
+                z_breach = (pred_168 - limit) / unc_std
+                prob_breach = float(norm.cdf(z_breach))
+                prob_breach_pct = round(prob_breach * 100.0, 1)
+            else:
+                prob_breach = 1.0 if pred_168 >= limit else 0.0
+                prob_breach_pct = 100.0 if pred_168 >= limit else 0.0
+
+            # Estimated Time-to-Breach Window (Phase 12)
+            if val >= limit:
+                est_time_to_breach = f"Breached at {t_hr:.0f}h"
+            elif drift_rate > 0.005:
+                hrs_left = (limit - val) / drift_rate
+                proj_breach_hr = t_hr + hrs_left
+                if proj_breach_hr <= 168.0:
+                    b_min = max(t_hr, proj_breach_hr - 5.0)
+                    b_max = min(168.0, proj_breach_hr + 5.0)
+                    est_time_to_breach = f"{b_min:.0f}–{b_max:.0f}h"
+                else:
+                    est_time_to_breach = "TIME-TO-BREACH UNAVAILABLE (>168h)"
+            else:
+                est_time_to_breach = "TIME-TO-BREACH UNAVAILABLE (no upward drift)"
+
+            pred_confidence = "HIGH EVIDENCE" if (t_hr >= 96.0 and abs(accel) <= 0.001) else "MODERATE EVIDENCE"
 
             prediction_data = {
                 "predicted_168h": round(pred_168, 3),
+                "predicted_168h_value": round(pred_168, 3),
                 "estimated_prediction_interval": [round(lower_bound, 3), round(upper_bound, 3)],
                 "p90_upper_bound": round(p90_upper_bound, 3),
                 "p90_worst_case": round(p90_upper_bound, 3), # Backward-compatibility alias
                 "uncertainty_std": round(unc_std, 3),
                 "prediction_status": "Available",
                 "prediction_available": True,
+                "prediction_confidence": pred_confidence,
+                "probability_of_limit_breach": round(prob_breach, 4),
+                "probability_of_breach_pct": prob_breach_pct,
+                "estimated_time_to_breach": est_time_to_breach,
+                "test_system_status": self.test_system_status,
                 "p90_tooltip": "P90 represents an estimated upper prediction bound from the current model; it is not a guaranteed physical worst-case limit."
             }
         else:
             prediction_data = {
                 "predicted_168h": None,
+                "predicted_168h_value": None,
                 "estimated_prediction_interval": None,
                 "p90_upper_bound": None,
                 "p90_worst_case": None,
                 "uncertainty_std": None,
                 "prediction_status": "Prediction unavailable — insufficient history",
                 "prediction_available": False,
+                "prediction_confidence": "INSUFFICIENT_EVIDENCE",
+                "probability_of_limit_breach": None,
+                "probability_of_breach_pct": None,
+                "estimated_time_to_breach": "TIME-TO-BREACH UNAVAILABLE",
+                "test_system_status": self.test_system_status,
                 "p90_tooltip": "P90 represents an estimated upper prediction bound from the current model; it is not a guaranteed physical worst-case limit."
             }
 
@@ -586,6 +670,7 @@ class IngestionManager:
             "state": state,
             "risk": risk,
             "alert": alert,
+            "test_system_status": self.test_system_status,
             **prediction_data,
             "pipeline_status": pipeline_status
         }
@@ -597,7 +682,7 @@ class IngestionManager:
         - Extract multi-checkpoint features from DB measurements
         - Run Isolation Forest, Mahalanobis, LOF, and DPAT ensemble
         - Execute Behaviour state machine
-        - Fit 168h Arrhenius / ML forecaster with 95% confidence bounds
+        - Fit 168h Arrhenius / ML forecaster with empirical estimated prediction intervals
         - Risk Fusion, Inspection Ranking, and Lot-Wide pattern detection
         - Updates SQLite components & lots tables
         """
@@ -650,7 +735,7 @@ class IngestionManager:
         for p in preds_output:
             preds_by_comp.setdefault(p["component_id"], []).append(p)
 
-        # STAGE 7: Risk Fusion
+        # STAGE 7: Risk Fusion (passing test_system_status)
         anomaly_by_comp = {r["component_id"]: r for r in ensemble_df.to_dict("records")}
         assessed_components = []
         for cid in component_ids:
@@ -666,7 +751,8 @@ class IngestionManager:
                 features=features_df,
                 anomaly_scores=anom,
                 behaviour_fingerprint=fp,
-                predictions=c_preds
+                predictions=c_preds,
+                test_system_status=self.test_system_status
             )
             risk_eval["behaviour_fingerprint"] = fp
             assessed_components.append(risk_eval)
@@ -751,12 +837,12 @@ class IngestionManager:
         }
 
     def _persist_measurement(self, packet: TelemetryPacket, quality: str) -> None:
-        """Saves immutable raw measurement to both live_telemetry_raw and measurements."""
+        """Saves raw measurement to transactional measurement store (both live_telemetry_raw and measurements)."""
         conn = get_db_connection(self.db_path)
         cur = conn.cursor()
         now_iso = datetime.utcnow().isoformat()
 
-        # 1. Immutable raw table
+        # 1. Transactional raw table with tamper-evident audit provenance
         cur.execute("""
         INSERT INTO live_telemetry_raw (component_id, lot_id, timestamp, timestamp_hours, test_stage, parameter_name, value, unit, source, quality, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)

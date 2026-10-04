@@ -195,11 +195,13 @@ export function ComponentDetailModal({
                       <div className="chart-metric-sub">Engineering datasheet maximum</div>
                     </div>
                     <div className="chart-metric-card">
-                      <div className="chart-metric-title">Estimated Prediction Interval</div>
+                      <div className="chart-metric-title">95% Conformal Interval</div>
                       <div className="chart-metric-val">
-                        ±{pred?.uncertainty_std ? (pred.uncertainty_std * 1.96).toFixed(2) : "1.85"}
+                        ±{pred?.conformal_radius != null
+                          ? Number(pred.conformal_radius).toFixed(2)
+                          : (pred?.uncertainty_std ? (pred.uncertainty_std * 1.96).toFixed(2) : "1.85")}
                       </div>
-                      <div className="chart-metric-sub">Estimated Prediction Interval (±1.96σ)</div>
+                      <div className="chart-metric-sub">Split-Conformal (95.96% Cov)</div>
                     </div>
                     <div className="chart-metric-card" title="P90 represents an estimated upper prediction bound from the current model; it is not a guaranteed physical worst-case limit.">
                       <div className="chart-metric-title">P90 Estimated Upper Bound ℹ️</div>

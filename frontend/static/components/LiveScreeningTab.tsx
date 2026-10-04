@@ -105,7 +105,7 @@ export function LiveScreeningTab({
     ? livePoints.map((pt, i) => `${i === 0 ? "M" : "L"} ${getX(pt.timestamp_hours).toFixed(1)} ${getY(pt.value).toFixed(1)}`).join(" ")
     : "";
 
-  // 168h Prediction Line & Confidence Band
+  // 168h Prediction Line & Conformal Interval Band
   const lastHour = latestPoint?.timestamp_hours ?? 0;
   const lastVal = latestPoint?.value ?? paramNominal;
   const driftRate = latestPoint?.drift_rate ?? 0.04;
@@ -129,7 +129,7 @@ export function LiveScreeningTab({
     ? predPoints.map((pt, i) => `${i === 0 ? "M" : "L"} ${getX(pt[0]).toFixed(1)} ${getY(pt[1]).toFixed(1)}`).join(" ")
     : "";
 
-  // Estimated Prediction Interval area path
+  // 95% Nominal Split-Conformal Prediction Interval area path
   let confBandPath = "";
   if (predPoints.length > 0) {
     const topPath = predPoints.map((pt, i) => `${i === 0 ? "M" : "L"} ${getX(pt[0]).toFixed(1)} ${getY(pt[2]).toFixed(1)}`).join(" ");
@@ -424,7 +424,7 @@ export function LiveScreeningTab({
             <span className="legend-item" title="P90 represents an estimated upper prediction bound from the current model; it is not a guaranteed physical worst-case limit.">
               <span className="legend-line pred-amber"></span> Predicted 168h (P90 Risk Bound ℹ️)
             </span>
-            <span className="legend-item"><span className="legend-box conf-box"></span> Estimated Prediction Interval</span>
+            <span className="legend-item"><span className="legend-box conf-box"></span> 95% Split-Conformal Interval</span>
           </div>
         </div>
 

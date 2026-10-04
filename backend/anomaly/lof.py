@@ -19,9 +19,10 @@ class LOFDetector:
         results = []
         n_samples = len(wide_features)
         
-        # Need at least n_neighbors + 1 samples
+        # LOF is strictly a windowed batch peer density estimator requiring sufficient peers
+        min_samples_required = max(self.n_neighbors, 8)
         k = min(self.n_neighbors, max(2, n_samples - 1))
-        if n_samples < 5:
+        if n_samples < min_samples_required or k < 3:
             for comp_id in wide_features["component_id"]:
                 results.append({
                     "component_id": comp_id,
@@ -29,8 +30,11 @@ class LOFDetector:
                     "raw_score": 1.0,
                     "normalized_score": 0.0,
                     "is_anomalous": False,
-                    "evidence": f"Sample size ({n_samples}) too small for density-based LOF.",
-                    "detector_status": "FALLBACK"
+                    "evidence": (
+                        f"Sample size ({n_samples}) insufficient for local density estimation "
+                        f"(requires >= {min_samples_required} peer observations). Neutral score assigned."
+                    ),
+                    "detector_status": "INSUFFICIENT_STATISTICAL_SUPPORT"
                 })
             return results
 

@@ -1,6 +1,6 @@
 // ==============================================================================
-// ReliabilityX — Reports & Aerospace Certificate Tab Component
-// Official Screening Certificate & Parametric Data Export
+// ReliabilityX — Reports Tab Component
+// AEC-Q001-Referenced Statistical Screening Analysis & Parametric Data Export
 // ==============================================================================
 import React, { useState, useEffect } from "react";
 import { API_BASE } from "../types";
@@ -44,7 +44,7 @@ export function ReportsTab({ onInspectComp }: ReportsTabProps) {
       <div className="hero-header mb-4">
         <h1 className="page-main-title">AI-ASSISTED SCREENING ANALYSIS REPORT</h1>
         <p className="page-main-subtitle">
-          Parametric screening degradation analysis, estimated prediction intervals, and tamper-evident SHA-256 digital verification.
+          Parametric screening degradation analysis, 95% nominal split-conformal prediction intervals, and tamper-evident SHA-256 digital verification.
         </p>
       </div>
 
@@ -89,7 +89,7 @@ export function ReportsTab({ onInspectComp }: ReportsTabProps) {
               type="button"
               className="btn btn-secondary btn-sm"
               onClick={fetchReport}
-              title="Reload report certificate"
+              title="Reload screening analysis report"
             >
               Refresh
             </button>
@@ -141,7 +141,7 @@ export function ReportsTab({ onInspectComp }: ReportsTabProps) {
                 }}
               />
               <span style={{ fontSize: "13px", letterSpacing: "0.04em" }}>
-                Rendering official AEC-Q001 screening certificate...
+                Rendering AEC-Q001-referenced statistical screening analysis report...
               </span>
             </div>
           )}

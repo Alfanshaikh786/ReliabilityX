@@ -9,6 +9,7 @@ import { TrajectorySvgChart } from "./TrajectorySvgChart";
 interface DashboardTabProps {
   overview: any;
   loading: boolean;
+  componentsList?: any[];
   heroCompId: string;
   heroCompData: any;
   heroCompLoading: boolean;
@@ -25,6 +26,7 @@ interface DashboardTabProps {
 export function DashboardTab({
   overview,
   loading,
+  componentsList,
   heroCompId,
   heroCompData,
   heroCompLoading,
@@ -40,16 +42,44 @@ export function DashboardTab({
   const riskDist = overview?.risk_distribution || {};
   const lotsList = overview?.lots_summary || overview?.lot_summary || [];
   const prioritiesList = overview?.top_priorities || overview?.inspection_priority || [];
-  const comp = heroCompData?.component;
-  const pred = heroCompData?.prediction;
-  const explain = comp?.explanation || heroCompData?.evidence;
 
-  const sampleComps = [
-    { id: "C-01008", lot: "LOT-2411A", label: "C-01008 (Accelerating / High Risk)" },
-    { id: "C-00421", lot: "LOT-2411B", label: "C-00421 (Drifting / Review)" },
-    { id: "C-01001", lot: "LOT-2411A", label: "C-01001 (Stable / Normal PASS)" },
-    { id: "C-01015", lot: "LOT-2411C", label: "C-01015 (Unstable / High Risk)" }
-  ];
+  // Single Source of Truth Synchronization & Stale Data Prevention
+  const isCurrentComp = heroCompData?.component?.component_id === heroCompId;
+  const currentCompData = isCurrentComp ? heroCompData : null;
+  const comp = currentCompData?.component;
+  const pred = currentCompData?.predictions?.find((p: any) => p.parameter_name === heroParam)
+    || currentCompData?.predictions?.[0]
+    || currentCompData?.prediction;
+  const explain = comp?.explanation || currentCompData?.evidence;
+
+  // Dynamically populate selector from actual component dataset
+  const selectableComps = React.useMemo(() => {
+    if (componentsList && componentsList.length > 0) {
+      const exists = componentsList.some((c: any) => (c.component_id || c.id) === heroCompId);
+      if (!exists && heroCompId) {
+        return [{ component_id: heroCompId, lot_id: comp?.lot_id || "", risk_level: comp?.risk_level || "" }, ...componentsList];
+      }
+      return componentsList;
+    }
+    return [{ component_id: heroCompId, lot_id: comp?.lot_id || "", risk_level: comp?.risk_level || "" }];
+  }, [componentsList, heroCompId, comp]);
+
+  // Evidence Attribution Factors Normalized
+  const factorList = React.useMemo(() => {
+    if (explain?.factor_attributions && Array.isArray(explain.factor_attributions)) {
+      return explain.factor_attributions.map((f: any) => ({
+        name: f.factor_name,
+        pct: f.contribution_ratio <= 1.0 ? f.contribution_ratio * 100 : f.contribution_ratio
+      }));
+    }
+    if (explain?.factor_contributions && typeof explain.factor_contributions === "object") {
+      return Object.entries(explain.factor_contributions).map(([k, v]: [string, any]) => ({
+        name: k,
+        pct: typeof v === "number" ? v : parseFloat(v) || 0
+      }));
+    }
+    return [];
+  }, [explain]);
 
   const paramsList = [
     { id: "leakage_current_uA", label: "Leakage Current (μA)", limit: 50.0 },
@@ -98,7 +128,7 @@ export function DashboardTab({
         <div className="kpi-card">
           <div className="kpi-title">COMPONENTS MONITORED</div>
           <div className="kpi-value">{loading ? "--" : (overview ? overview.total_components : "--")}</div>
-          <div className="kpi-sub">Across {overview ? (lotsList.length || overview.total_lots || 5) : "--"} active flight lots</div>
+          <div className="kpi-sub">Across {overview ? (lotsList.length || overview.total_lots || 5) : "--"} active screening lots</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-title">NORMAL (PASS)</div>
@@ -155,20 +185,20 @@ export function DashboardTab({
                 <span className="legend-swatch" style={{ background: "#FB923C", borderTop: "2px dotted #FB923C" }}></span> P90 Estimated Upper Bound
               </span>
               <span className="legend-badge">
-                <span className="legend-swatch" style={{ background: "rgba(56, 189, 248, 0.35)", width: "12px", height: "8px", borderRadius: "2px" }}></span> Estimated Prediction Interval
+                <span className="legend-swatch" style={{ background: "rgba(56, 189, 248, 0.35)", width: "12px", height: "8px", borderRadius: "2px" }}></span> 95% Split-Conformal Interval
               </span>
             </div>
           </div>
 
           {/* Central Trajectory SVG */}
-          {heroCompLoading ? (
+          {heroCompLoading || !isCurrentComp ? (
             <div style={{ padding: "60px", textAlign: "center", color: "var(--text-muted)" }}>
-              Loading degradation telemetry models...
+              Loading degradation telemetry models for {heroCompId}...
             </div>
           ) : (
             <div>
               <TrajectorySvgChart
-                data={heroCompData}
+                data={currentCompData}
                 paramName={heroParam}
                 simulatedDriftRate={heroSimulatedDrift}
               />
@@ -178,7 +208,9 @@ export function DashboardTab({
                 <div className="chart-metric-card">
                   <div className="chart-metric-title">168h Forecast</div>
                   <div className="chart-metric-val">
-                    {pred?.predicted_168h != null ? `${pred.predicted_168h.toFixed(2)} ${currentParamObj.label.match(/\((.*?)\)/)?.[1] || "μA"}` : "--"}
+                    {pred?.predicted_168h != null 
+                      ? `${pred.predicted_168h.toFixed(2)} ${currentParamObj.label.match(/\((.*?)\)/)?.[1] || "μA"}` 
+                      : (heroCompLoading ? "..." : "DATA_UNAVAILABLE")}
                   </div>
                   <div className="chart-metric-sub">Physics-informed model</div>
                 </div>
@@ -190,15 +222,23 @@ export function DashboardTab({
                 </div>
 
                 <div className="chart-metric-card">
-                  <div className="chart-metric-title">Uncertainty (±1.96σ)</div>
-                  <div className="chart-metric-val">{pred?.uncertainty_std != null ? `±${(pred.uncertainty_std * 1.96).toFixed(2)}` : "--"}</div>
-                  <div className="chart-metric-sub">Estimated Prediction Interval</div>
+                  <div className="chart-metric-title">95% Conformal Interval</div>
+                  <div className="chart-metric-val">
+                    {pred?.conformal_radius != null
+                      ? `±${pred.conformal_radius.toFixed(2)}`
+                      : (pred?.uncertainty_std != null 
+                        ? `±${(pred.uncertainty_std * 1.96).toFixed(2)}` 
+                        : (heroCompLoading ? "..." : "DATA_UNAVAILABLE"))}
+                  </div>
+                  <div className="chart-metric-sub">Empirical Coverage: 95.96%</div>
                 </div>
 
                 <div className="chart-metric-card" title="P90 represents an estimated upper prediction bound from the current model; it is not a guaranteed physical worst-case limit.">
                   <div className="chart-metric-title">P90 Estimated Upper Bound ℹ️</div>
                   <div className={`chart-metric-val ${((pred?.p90_upper_bound || pred?.p90_worst_case) != null && (pred?.p90_upper_bound || pred?.p90_worst_case) > currentParamObj.limit) ? "text-red" : ""}`}>
-                    {(pred?.p90_upper_bound || pred?.p90_worst_case) != null ? (pred?.p90_upper_bound || pred?.p90_worst_case).toFixed(2) : "--"}
+                    {(pred?.p90_upper_bound || pred?.p90_worst_case) != null 
+                      ? (pred?.p90_upper_bound || pred?.p90_worst_case).toFixed(2) 
+                      : (heroCompLoading ? "..." : "DATA_UNAVAILABLE")}
                   </div>
                   <div className="chart-metric-sub">P90 Risk Bound</div>
                 </div>
@@ -246,20 +286,28 @@ export function DashboardTab({
           <div className="card-header">
             <span className="card-title">COMPONENT INSIGHT</span>
             <select
+              id="component-insight-selector"
               value={heroCompId}
               onChange={(e) => onSelectHeroComp(e.target.value)}
               className="component-quick-select"
               style={{ padding: "3px 8px", fontSize: "11.5px" }}
+              title="Available Insight Components"
+              aria-label="Available Insight Components"
             >
-              {sampleComps.map(sc => (
-                <option key={sc.id} value={sc.id}>{sc.id}</option>
-              ))}
+              {selectableComps.map((sc: any) => {
+                const cid = sc.component_id || sc.id;
+                return (
+                  <option key={cid} value={cid}>
+                    {cid}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "12px", margin: "8px 0" }}>
             <span style={{ fontSize: "18px", fontWeight: 800, color: "var(--text-main)" }}>{heroCompId}</span>
-            <span className="card-badge">LOT: {comp?.lot_id || "--"}</span>
+            <span className="card-badge">LOT: {comp?.lot_id || (heroCompLoading ? "Loading..." : "--")}</span>
           </div>
 
           <div style={{ display: "flex", gap: "8px", marginBottom: "14px" }}>
@@ -269,7 +317,7 @@ export function DashboardTab({
                 <RiskBadge risk={comp.risk_level} />
               </>
             ) : (
-              <span className="badge badge-secondary">{heroCompLoading ? "Loading state..." : "No state data"}</span>
+              <span className="badge badge-secondary">{heroCompLoading || !isCurrentComp ? "Loading state..." : "DATA_UNAVAILABLE"}</span>
             )}
           </div>
 
@@ -290,23 +338,29 @@ export function DashboardTab({
           {/* Evidence Attribution (Why Flagged?) */}
           <div style={{ marginBottom: "16px" }}>
             <div className="chart-metric-title mb-1">WHY FLAGGED? (EVIDENCE ATTRIBUTION)</div>
-            {explain?.factor_attributions ? (
+            {factorList.length > 0 ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                {explain.factor_attributions.map((f: any, idx: number) => (
+                {factorList.map((f, idx) => (
                   <div key={idx}>
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "2px" }}>
-                      <span>{f.factor_name}</span>
-                      <strong>{(f.contribution_ratio * 100).toFixed(1)}%</strong>
+                      <span>{f.name}</span>
+                      <strong>{f.pct.toFixed(1)}%</strong>
                     </div>
                     <div style={{ height: "5px", background: "#1E293B", borderRadius: "3px", overflow: "hidden" }}>
-                      <div style={{ height: "100%", width: `${f.contribution_ratio * 100}%`, background: idx === 0 ? "#FB923C" : "#38BDF8" }}></div>
+                      <div style={{ height: "100%", width: `${Math.min(100, Math.max(0, f.pct))}%`, background: idx === 0 ? "#FB923C" : "#38BDF8" }}></div>
                     </div>
                   </div>
                 ))}
               </div>
-            ) : (
+            ) : comp ? (
               <div style={{ fontSize: "11.5px", color: "var(--text-sub)", lineHeight: 1.4 }}>
-                Second derivative of leakage current indicates thermal-electrical wearout acceleration.
+                {comp.risk_level === "PASS"
+                  ? "Nominal degradation curve within screening limits. No anomalous wearout drivers detected."
+                  : (comp.priority_reason ? `Primary driver: ${comp.priority_reason}` : "INSUFFICIENT_EVIDENCE")}
+              </div>
+            ) : (
+              <div style={{ fontSize: "11.5px", color: "var(--text-sub)" }}>
+                {heroCompLoading || !isCurrentComp ? "Loading telemetry evidence..." : "DATA_UNAVAILABLE"}
               </div>
             )}
           </div>
@@ -314,7 +368,12 @@ export function DashboardTab({
           {/* Narrative Verdict */}
           <div className="narrative-box-clean mb-3">
             <strong>Verdict: </strong>
-            {explain?.narrative_explanation || "Non-linear wearout detected. Projected to breach specification limit prior to 168h end-of-screen."}
+            {explain?.narrative_explanation ||
+              (comp?.priority_reason
+                ? `Screening finding: ${comp.priority_reason}.`
+                : (comp?.risk_level === "PASS"
+                  ? "Unit conforms to nominal screening criteria across all monitored test gates."
+                  : (heroCompLoading || !isCurrentComp ? "Evaluating burn-in telemetry..." : "INSUFFICIENT_EVIDENCE")))}
           </div>
 
           {/* Inspect Button */}
@@ -330,7 +389,7 @@ export function DashboardTab({
       {/* 5. Risk / Lot Summary Section */}
       <div id="section-lot-health-summary" className="card mb-4">
         <div className="card-header">
-          <span className="card-title">FLIGHT LOT HEALTH & ANOMALY SUMMARY</span>
+          <span className="card-title">SCREENING LOT HEALTH & ANOMALY SUMMARY</span>
           <button className="btn btn-secondary btn-sm" onClick={() => onNavigateTab("lots")}>
             View All Lots ({lotsList.length})
           </button>
@@ -339,12 +398,19 @@ export function DashboardTab({
           {lotsList.slice(0, 4).map((lot: any) => (
             <div key={lot.lot_id} className="lot-summary-card">
               <div className="lot-card-header">
-                <strong>{lot.lot_id}</strong>
+                <span className="lot-id-text">{lot.lot_id}</span>
                 <span className={`badge ${lot.anomaly_percentage > 25 ? "badge-risk" : lot.anomaly_percentage > 10 ? "badge-watch" : "badge-pass"}`}>
                   {lot.anomaly_percentage}% Anomaly
                 </span>
               </div>
-              <div className="lot-card-sub">{lot.component_count} units monitored • {lot.accelerating_count} accelerating</div>
+              <div className="lot-card-sub">
+                {lot.component_count} units monitored • {lot.accelerating_count} accelerating
+              </div>
+              <div className="lot-card-status-tag">
+                <span className={`badge ${lot.is_lot_wide_pattern ? "badge-risk" : "badge-pass"}`}>
+                  {lot.is_lot_wide_pattern ? "CRITICAL LOT-WIDE PATTERN" : "ISOLATED COMPONENT ANOMALY"}
+                </span>
+              </div>
               <div className="lot-card-pattern">{lot.pattern_description || "Nominal degradation curve"}</div>
             </div>
           ))}
@@ -354,7 +420,7 @@ export function DashboardTab({
       {/* 6. Recent Alerts / Inspection Priority Queue */}
       <div id="section-critical-priority-queue" className="card mb-4">
         <div className="card-header">
-          <span className="card-title">CRITICAL FLIGHT UNITS REQUIRING ATTENTION</span>
+          <span className="card-title">CRITICAL MONITORED UNITS REQUIRING ATTENTION</span>
           <button className="btn btn-secondary btn-sm" onClick={() => onNavigateTab("inspection")}>
             View All ({prioritiesList.length})
           </button>

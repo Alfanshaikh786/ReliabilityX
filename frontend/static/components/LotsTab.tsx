@@ -42,9 +42,9 @@ export function LotsTab({ onSelectLot }: LotsTabProps) {
       {/* 2. Top KPI Metrics Row (4 equal-width cards) */}
       <div className="kpi-grid mb-4">
         <div className="kpi-card">
-          <div className="kpi-title">FLIGHT LOTS</div>
+          <div className="kpi-title">SCREENING LOTS</div>
           <div className="kpi-value">{loading ? "--" : totalLots}</div>
-          <div className="kpi-sub">Total active production batches</div>
+          <div className="kpi-sub">Total active screening batches</div>
         </div>
         <div className="kpi-card border-green">
           <div className="kpi-title text-green">NOMINAL BATCHES</div>
@@ -66,14 +66,14 @@ export function LotsTab({ onSelectLot }: LotsTabProps) {
       {/* 3. Lot Cards Grid */}
       <div className="card" style={{ padding: "18px" }}>
         <div className="card-header">
-          <span className="card-title">📦 PRODUCTION LOT PROFILES</span>
-          <span className="card-badge">Flight Batch Quality</span>
+          <span className="card-title">📦 SCREENING LOT PROFILES</span>
+          <span className="card-badge">Lot Screening Quality</span>
         </div>
 
         <div className="grid-2col" style={{ marginTop: "14px" }}>
           {loading ? (
             <div style={{ gridColumn: "span 2", textAlign: "center", padding: "40px" }}>
-              Loading production lot health telemetry...
+              Loading screening lot health telemetry...
             </div>
           ) : (
             lots.map((lot) => (
@@ -91,7 +91,7 @@ export function LotsTab({ onSelectLot }: LotsTabProps) {
                   <div>
                     <strong style={{ fontSize: "16px", color: "var(--text-main)" }}>{lot.lot_id}</strong>
                     <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-                      {lot.component_count} Total Flight Units · {lot.anomaly_percentage}% Anomaly Rate
+                      {lot.component_count} Total Monitored Units · {lot.anomaly_percentage}% Anomaly Rate
                     </div>
                   </div>
 
@@ -117,7 +117,7 @@ export function LotsTab({ onSelectLot }: LotsTabProps) {
                   >
                     <strong>Lot-Wide Alert: </strong>
                     {lot.pattern_description ||
-                      "Systemic leakage current acceleration detected across multiple flight units in this wafer batch."}
+                      "Systemic leakage current acceleration detected across multiple monitored units in this wafer batch."}
                   </div>
                 ) : (
                   <div

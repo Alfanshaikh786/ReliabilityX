@@ -53,7 +53,7 @@ export function DatasetModal({ onClose, onDatasetLoaded, showToast }: DatasetMod
           <div className="dataset-mode-card" style={{ padding: "14px", border: "1px solid var(--border-color)", borderRadius: "var(--radius-sm)" }}>
             <h4 style={{ fontSize: "14px", marginBottom: "6px" }}>🧪 Demo Benchmark Mode</h4>
             <p className="input-hint" style={{ fontSize: "11.5px", color: "var(--text-muted)", lineHeight: 1.4 }}>
-              Generates 125 flight-grade component telemetries across 5 lots using Arrhenius physics, oxide leakage trap models, and known ground truth defect labels.
+              Generates 125 synthetic benchmark component telemetries across 5 lots using Arrhenius physics, oxide leakage trap models, and simulated ground-truth degradation cases.
             </p>
             <button
               className="btn btn-secondary btn-block mt-2"

@@ -13,7 +13,9 @@ interface TrajectorySvgChartProps {
 
 export function TrajectorySvgChart({ data, paramName, simulatedDriftRate }: TrajectorySvgChartProps) {
   const measurements: MeasurementItem[] = data?.measurements || [];
-  const pred = data?.prediction;
+  const pred = data?.predictions?.find((p: any) => p.parameter_name === paramName)
+    || data?.predictions?.[0]
+    || data?.prediction;
 
   const paramMeasures = useMemo(() => {
     return measurements

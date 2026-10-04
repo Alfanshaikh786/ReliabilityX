@@ -2,7 +2,7 @@
 // ReliabilityX — Dedicated About Page & Team Brigebytes Component
 // Separate Informational View Accessible from Left Sidebar
 // ==============================================================================
-import React, { useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 interface TeamMember {
   id: string;
@@ -200,6 +200,65 @@ const VALUES = [
 export function AboutSection() {
   const sectionRef = useRef<HTMLElement | null>(null);
 
+  // Independent touch interaction state for mobile / touch devices
+  const [touchedCardId, setTouchedCardId] = useState<string | null>(null);
+  const touchStartRef = useRef<{ id: string; x: number; y: number } | null>(null);
+  const touchTimeoutRef = useRef<any>(null);
+
+  const handleTouchStart = (id: string, e: any) => {
+    if (touchTimeoutRef.current) {
+      clearTimeout(touchTimeoutRef.current);
+    }
+    const touch = e.touches && e.touches[0];
+    if (touch) {
+      touchStartRef.current = { id, x: touch.clientX, y: touch.clientY };
+    }
+  };
+
+  const handleTouchMove = (e: any) => {
+    if (!touchStartRef.current) return;
+    const touch = e.touches && e.touches[0];
+    if (touch) {
+      const dx = Math.abs(touch.clientX - touchStartRef.current.x);
+      const dy = Math.abs(touch.clientY - touchStartRef.current.y);
+      // If finger moves more than 8px in any direction, user is scrolling: cancel highlight
+      if (dx > 8 || dy > 8) {
+        touchStartRef.current = null;
+        setTouchedCardId(null);
+      }
+    }
+  };
+
+  const handleTouchEnd = (id: string) => {
+    if (touchStartRef.current && touchStartRef.current.id === id) {
+      // Genuine tap on this specific card
+      setTouchedCardId(id);
+      if (touchTimeoutRef.current) clearTimeout(touchTimeoutRef.current);
+      touchTimeoutRef.current = setTimeout(() => {
+        setTouchedCardId((prev) => (prev === id ? null : prev));
+      }, 480);
+    }
+    touchStartRef.current = null;
+  };
+
+  const handleTouchCancel = () => {
+    touchStartRef.current = null;
+    setTouchedCardId(null);
+  };
+
+  const getTouchProps = (id: string) => ({
+    onTouchStart: (e: any) => handleTouchStart(id, e),
+    onTouchMove: handleTouchMove,
+    onTouchEnd: () => handleTouchEnd(id),
+    onTouchCancel: handleTouchCancel,
+  });
+
+  useEffect(() => {
+    return () => {
+      if (touchTimeoutRef.current) clearTimeout(touchTimeoutRef.current);
+    };
+  }, []);
+
   useEffect(() => {
     const rootEl = sectionRef.current;
     if (!rootEl) return;
@@ -300,8 +359,9 @@ export function AboutSection() {
           {IMPACT_AREAS.map((item, idx) => (
             <div
               key={item.id}
-              className="about-impact-item rx-about-card rx-stagger-item"
+              className={`about-impact-item rx-about-card rx-stagger-item ${touchedCardId === item.id ? "is-touched" : ""}`}
               style={{ "--stagger-index": idx } as any}
+              {...getTouchProps(item.id)}
             >
               <div className="about-impact-icon-badge">
                 {item.icon}
@@ -316,7 +376,10 @@ export function AboutSection() {
       {/* 3. Our Mission & 4. Our Vision (Side-by-Side Responsive Grid with Opposing Sliding Entrance) */}
       <div className="about-two-col-grid mb-4">
         {/* OUR MISSION: Left -> Center ingress */}
-        <div className="card about-mv-card rx-mv-mission">
+        <div
+          className={`card about-mv-card rx-mv-mission ${touchedCardId === "mission" ? "is-touched" : ""}`}
+          {...getTouchProps("mission")}
+        >
           <div className="about-card-top-icon-row">
             <div className="about-icon-box icon-mission">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -334,7 +397,10 @@ export function AboutSection() {
         </div>
 
         {/* OUR VISION: Right -> Center ingress */}
-        <div className="card about-mv-card rx-mv-vision">
+        <div
+          className={`card about-mv-card rx-mv-vision ${touchedCardId === "vision" ? "is-touched" : ""}`}
+          {...getTouchProps("vision")}
+        >
           <div className="about-card-top-icon-row">
             <div className="about-icon-box icon-vision">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -367,8 +433,9 @@ export function AboutSection() {
           {VALUES.map((val, idx) => (
             <div
               key={val.num}
-              className="about-value-item rx-about-card rx-stagger-item"
+              className={`about-value-item rx-about-card rx-stagger-item ${touchedCardId === val.num ? "is-touched" : ""}`}
               style={{ "--stagger-index": idx } as any}
+              {...getTouchProps(val.num)}
             >
               <div className="about-value-header">
                 <div className="about-value-num">{val.num}</div>
@@ -400,8 +467,9 @@ export function AboutSection() {
               <div
                 key={member.id}
                 role="listitem"
-                className={`team-card ${isLeader ? "is-leader" : "is-member"} rx-stagger-item`}
+                className={`team-card ${isLeader ? "is-leader" : "is-member"} rx-stagger-item ${touchedCardId === member.id ? "is-touched" : ""}`}
                 style={{ "--stagger-index": idx } as any}
+                {...getTouchProps(member.id)}
               >
                 {/* Top identifier */}
                 <div className="team-card-top-bar">
@@ -449,4 +517,5 @@ export function AboutSection() {
     </section>
   );
 }
+
 

@@ -210,6 +210,7 @@ export function ReliabilityXApp() {
   const [heroSimulatedDrift, setHeroSimulatedDrift] = useState<number>(0.08);
   const [heroSimResult, setHeroSimResult] = useState<any>(null);
   const [heroParam, setHeroParam] = useState<string>("leakage_current_uA");
+  const [componentsList, setComponentsList] = useState<any[]>([]);
 
   // Inspect Modal State
   const [selectedCompId, setSelectedCompId] = useState<string | null>(null);
@@ -234,20 +235,34 @@ export function ReliabilityXApp() {
     setTimeout(() => setToast(null), 4000);
   };
 
-  // Load Overview Data
+  // Load Overview Data & Component Directory (Single Source of Truth)
   const loadSystemData = useCallback(async () => {
     try {
       setLoading(true);
-      const [healthRes, overviewRes] = await Promise.all([
+      const [healthRes, overviewRes, compRes] = await Promise.all([
         fetch(`${API_BASE}/health`).then((r) => r.json()),
-        fetch(`${API_BASE}/dashboard/overview`).then((r) => r.json())
+        fetch(`${API_BASE}/dashboard/overview`).then((r) => r.json()),
+        fetch(`${API_BASE}/components?limit=500`).then((r) => r.json())
       ]);
       setActiveDataset(healthRes.active_dataset);
       setOverview(overviewRes);
 
-      const pList = overviewRes?.top_priorities || overviewRes?.inspection_priority;
-      if (pList && pList.length > 0) {
-        setHeroCompId(pList[0].component_id);
+      const comps = compRes?.components || [];
+      setComponentsList(comps);
+
+      // Single source of truth synchronization for default component:
+      // If heroCompId exists in loaded comps (e.g. C-01008), keep it.
+      // Otherwise, select the first priority unit or first dataset component.
+      if (comps.length > 0) {
+        setHeroCompId((currentId) => {
+          const exists = comps.some((c: any) => c.component_id === currentId);
+          if (exists) return currentId;
+          const pList = overviewRes?.top_priorities || overviewRes?.inspection_priority;
+          if (pList && pList.length > 0 && comps.some((c: any) => c.component_id === pList[0].component_id)) {
+            return pList[0].component_id;
+          }
+          return comps[0].component_id;
+        });
       }
     } catch (err: any) {
       showToast("Error connecting to backend: " + err.message, "error");
@@ -746,6 +761,7 @@ export function ReliabilityXApp() {
             <DashboardTab
               overview={overview}
               loading={loading}
+              componentsList={componentsList}
               heroCompId={heroCompId}
               heroCompData={heroCompData}
               heroCompLoading={heroCompLoading}

@@ -46,7 +46,7 @@ export function InspectionTriageTab({ onInspectComp }: InspectionTriageTabProps)
       <div className="page-header mb-4">
         <h1 className="page-main-title">Inspection Priority Triage Queue</h1>
         <p className="page-main-subtitle">
-          Prioritized triage of flight-grade units requiring authoritative physical QA / reliability engineer verification prior to lot sign-off.
+          Prioritized triage of screening units requiring authoritative physical QA / reliability engineer verification prior to lot sign-off.
         </p>
       </div>
 

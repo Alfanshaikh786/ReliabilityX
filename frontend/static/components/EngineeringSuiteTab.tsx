@@ -214,7 +214,7 @@ export function EngineeringSuiteTab({ onSaved, initialSubTab = "benchmarks" }: E
 
             <div className="form-group" style={{ marginBottom: "14px" }}>
               <label style={{ display: "block", fontSize: "12px", fontWeight: 600, marginBottom: "4px" }}>
-                DPAT k-Factor (AEC-Q001 Standard):
+                DPAT k-Factor (AEC-Q001-Referenced Robust MAD):
               </label>
               <input
                 type="number"

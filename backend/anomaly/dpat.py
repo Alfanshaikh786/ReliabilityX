@@ -1,9 +1,10 @@
 """
-Dynamic Part Average Testing (DPAT / AEC-Q001 standard)
-Lot-relative statistical screening algorithm.
-Calculates robust outlier limits per lot and parameter:
+Dynamic Part Average Testing (AEC-Q001-referenced robust statistical DPAT)
+Lot-relative statistical screening algorithm inspired by AEC-Q001 Part Average Testing principles.
+Calculates robust outlier limits per lot and parameter using median and MAD:
 Upper = Median + k * 1.4826 * MAD
 Lower = Median - k * 1.4826 * MAD
+Used as an engineering statistical reference; not a certification or formal compliance claim.
 """
 from __future__ import annotations
 import numpy as np
@@ -12,6 +13,8 @@ from typing import Dict, Any, List
 
 
 class DPATDetector:
+    reference_standard: str = "AEC-Q001-referenced robust statistical DPAT methodology (statistical reference only; not aerospace certification)"
+
     def __init__(self, k_factor: float = 3.0):
         self.k_factor = k_factor
 
@@ -74,7 +77,7 @@ class DPATDetector:
                 
                 evidence = ""
                 if is_outlier:
-                    evidence = f"DPAT breached AEC-Q001 limit: {val:.3f} outside [{lower_limit:.3f}, {upper_limit:.3f}] (dev: {deviation:.1f}σ)"
+                    evidence = f"DPAT breached AEC-Q001-referenced robust limit: {val:.3f} outside [{lower_limit:.3f}, {upper_limit:.3f}] (dev: {deviation:.1f}σ)"
                 else:
                     evidence = f"DPAT nominal: {val:.3f} within [{lower_limit:.3f}, {upper_limit:.3f}]"
 

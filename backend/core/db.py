@@ -1,7 +1,10 @@
 """
 Database module for ReliabilityX
-Structured SQLite database with relational tables and audit tracking.
-Designed to be compatible with PostgreSQL if upgraded.
+Transactional prototype data store (SQLite in WAL mode) with relational tables and tamper-evident audit log.
+Architecture Assessment:
+- SQLite: Suitable for prototype / single-instance screening station deployment with Write-Ahead Logging (WAL).
+  Known boundary: Single-writer concurrency limitation.
+- Production recommendation: Transition to PostgreSQL for multi-user / multi-chamber enterprise deployment.
 """
 from __future__ import annotations
 import os
@@ -169,7 +172,7 @@ def init_db(db_path: str = None):
     )
     """)
 
-    # Measurements (Immutable raw data preserved)
+    # Measurements (Transactional measurement store with provenance)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS measurements (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

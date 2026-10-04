@@ -1,4 +1,4 @@
-// ReliabilityX Bundled Application (2026-10-04T01:14:10.952Z)
+// ReliabilityX Bundled Application (2026-10-04T07:34:18.787Z)
 (function() {
   if (typeof window !== 'undefined') {
     if (window.React && !window.React.default) window.React.default = window.React;
@@ -237,6 +237,7 @@ function ReliabilityXApp() {
   const [heroSimulatedDrift, setHeroSimulatedDrift] = (0, _react.useState)(0.08);
   const [heroSimResult, setHeroSimResult] = (0, _react.useState)(null);
   const [heroParam, setHeroParam] = (0, _react.useState)("leakage_current_uA");
+  const [componentsList, setComponentsList] = (0, _react.useState)([]);
 
   // Inspect Modal State
   const [selectedCompId, setSelectedCompId] = (0, _react.useState)(null);
@@ -262,16 +263,29 @@ function ReliabilityXApp() {
     setTimeout(() => setToast(null), 4000);
   };
 
-  // Load Overview Data
+  // Load Overview Data & Component Directory (Single Source of Truth)
   const loadSystemData = (0, _react.useCallback)(async () => {
     try {
       setLoading(true);
-      const [healthRes, overviewRes] = await Promise.all([fetch(`${_types.API_BASE}/health`).then(r => r.json()), fetch(`${_types.API_BASE}/dashboard/overview`).then(r => r.json())]);
+      const [healthRes, overviewRes, compRes] = await Promise.all([fetch(`${_types.API_BASE}/health`).then(r => r.json()), fetch(`${_types.API_BASE}/dashboard/overview`).then(r => r.json()), fetch(`${_types.API_BASE}/components?limit=500`).then(r => r.json())]);
       setActiveDataset(healthRes.active_dataset);
       setOverview(overviewRes);
-      const pList = overviewRes?.top_priorities || overviewRes?.inspection_priority;
-      if (pList && pList.length > 0) {
-        setHeroCompId(pList[0].component_id);
+      const comps = compRes?.components || [];
+      setComponentsList(comps);
+
+      // Single source of truth synchronization for default component:
+      // If heroCompId exists in loaded comps (e.g. C-01008), keep it.
+      // Otherwise, select the first priority unit or first dataset component.
+      if (comps.length > 0) {
+        setHeroCompId(currentId => {
+          const exists = comps.some(c => c.component_id === currentId);
+          if (exists) return currentId;
+          const pList = overviewRes?.top_priorities || overviewRes?.inspection_priority;
+          if (pList && pList.length > 0 && comps.some(c => c.component_id === pList[0].component_id)) {
+            return pList[0].component_id;
+          }
+          return comps[0].component_id;
+        });
       }
     } catch (err) {
       showToast("Error connecting to backend: " + err.message, "error");
@@ -716,6 +730,7 @@ function ReliabilityXApp() {
   }, activeTab === "dashboard" && /*#__PURE__*/_react.default.createElement(_DashboardTab.DashboardTab, {
     overview: overview,
     loading: loading,
+    componentsList: componentsList,
     heroCompId: heroCompId,
     heroCompData: heroCompData,
     heroCompLoading: heroCompLoading,
@@ -817,11 +832,10 @@ exports.AboutSection = AboutSection;
 var _react = _interopRequireWildcard(require("react"));
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
 function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
-// ==============================================================================
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); } // ==============================================================================
 // ReliabilityX — Dedicated About Page & Team Brigebytes Component
 // Separate Informational View Accessible from Left Sidebar
 // ==============================================================================
-
 const TEAM_MEMBERS = [{
   id: "alfan",
   name: "Alfan Yaseen Shaikh",
@@ -1154,6 +1168,63 @@ const VALUES = [{
 }];
 function AboutSection() {
   const sectionRef = (0, _react.useRef)(null);
+
+  // Independent touch interaction state for mobile / touch devices
+  const [touchedCardId, setTouchedCardId] = (0, _react.useState)(null);
+  const touchStartRef = (0, _react.useRef)(null);
+  const touchTimeoutRef = (0, _react.useRef)(null);
+  const handleTouchStart = (id, e) => {
+    if (touchTimeoutRef.current) {
+      clearTimeout(touchTimeoutRef.current);
+    }
+    const touch = e.touches && e.touches[0];
+    if (touch) {
+      touchStartRef.current = {
+        id,
+        x: touch.clientX,
+        y: touch.clientY
+      };
+    }
+  };
+  const handleTouchMove = e => {
+    if (!touchStartRef.current) return;
+    const touch = e.touches && e.touches[0];
+    if (touch) {
+      const dx = Math.abs(touch.clientX - touchStartRef.current.x);
+      const dy = Math.abs(touch.clientY - touchStartRef.current.y);
+      // If finger moves more than 8px in any direction, user is scrolling: cancel highlight
+      if (dx > 8 || dy > 8) {
+        touchStartRef.current = null;
+        setTouchedCardId(null);
+      }
+    }
+  };
+  const handleTouchEnd = id => {
+    if (touchStartRef.current && touchStartRef.current.id === id) {
+      // Genuine tap on this specific card
+      setTouchedCardId(id);
+      if (touchTimeoutRef.current) clearTimeout(touchTimeoutRef.current);
+      touchTimeoutRef.current = setTimeout(() => {
+        setTouchedCardId(prev => prev === id ? null : prev);
+      }, 480);
+    }
+    touchStartRef.current = null;
+  };
+  const handleTouchCancel = () => {
+    touchStartRef.current = null;
+    setTouchedCardId(null);
+  };
+  const getTouchProps = id => ({
+    onTouchStart: e => handleTouchStart(id, e),
+    onTouchMove: handleTouchMove,
+    onTouchEnd: () => handleTouchEnd(id),
+    onTouchCancel: handleTouchCancel
+  });
+  (0, _react.useEffect)(() => {
+    return () => {
+      if (touchTimeoutRef.current) clearTimeout(touchTimeoutRef.current);
+    };
+  }, []);
   (0, _react.useEffect)(() => {
     const rootEl = sectionRef.current;
     if (!rootEl) return;
@@ -1236,13 +1307,13 @@ function AboutSection() {
     className: "card-badge d-desktop-only"
   }, "6 OPERATIONAL DOMAINS")), /*#__PURE__*/_react.default.createElement("div", {
     className: "about-impact-grid"
-  }, IMPACT_AREAS.map((item, idx) => /*#__PURE__*/_react.default.createElement("div", {
+  }, IMPACT_AREAS.map((item, idx) => /*#__PURE__*/_react.default.createElement("div", _extends({
     key: item.id,
-    className: "about-impact-item rx-about-card rx-stagger-item",
+    className: `about-impact-item rx-about-card rx-stagger-item ${touchedCardId === item.id ? "is-touched" : ""}`,
     style: {
       "--stagger-index": idx
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, getTouchProps(item.id)), /*#__PURE__*/_react.default.createElement("div", {
     className: "about-impact-icon-badge"
   }, item.icon), /*#__PURE__*/_react.default.createElement("h4", {
     className: "about-impact-title"
@@ -1250,9 +1321,9 @@ function AboutSection() {
     className: "about-impact-text"
   }, item.description))))), /*#__PURE__*/_react.default.createElement("div", {
     className: "about-two-col-grid mb-4"
-  }, /*#__PURE__*/_react.default.createElement("div", {
-    className: "card about-mv-card rx-mv-mission"
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react.default.createElement("div", _extends({
+    className: `card about-mv-card rx-mv-mission ${touchedCardId === "mission" ? "is-touched" : ""}`
+  }, getTouchProps("mission")), /*#__PURE__*/_react.default.createElement("div", {
     className: "about-card-top-icon-row"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "about-icon-box icon-mission"
@@ -1283,9 +1354,9 @@ function AboutSection() {
     className: "about-card-title rx-about-heading"
   }, "Our Mission"), /*#__PURE__*/_react.default.createElement("p", {
     className: "about-card-body-text"
-  }, "To make high-reliability component screening more intelligent, predictive, and explainable by transforming Burn-In and ESS measurements into actionable reliability insights for engineering teams.")), /*#__PURE__*/_react.default.createElement("div", {
-    className: "card about-mv-card rx-mv-vision"
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, "To make high-reliability component screening more intelligent, predictive, and explainable by transforming Burn-In and ESS measurements into actionable reliability insights for engineering teams.")), /*#__PURE__*/_react.default.createElement("div", _extends({
+    className: `card about-mv-card rx-mv-vision ${touchedCardId === "vision" ? "is-touched" : ""}`
+  }, getTouchProps("vision")), /*#__PURE__*/_react.default.createElement("div", {
     className: "about-card-top-icon-row"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "about-icon-box icon-vision"
@@ -1324,13 +1395,13 @@ function AboutSection() {
     className: "card-badge d-desktop-only"
   }, "5 PILLARS")), /*#__PURE__*/_react.default.createElement("div", {
     className: "about-values-grid"
-  }, VALUES.map((val, idx) => /*#__PURE__*/_react.default.createElement("div", {
+  }, VALUES.map((val, idx) => /*#__PURE__*/_react.default.createElement("div", _extends({
     key: val.num,
-    className: "about-value-item rx-about-card rx-stagger-item",
+    className: `about-value-item rx-about-card rx-stagger-item ${touchedCardId === val.num ? "is-touched" : ""}`,
     style: {
       "--stagger-index": idx
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, getTouchProps(val.num)), /*#__PURE__*/_react.default.createElement("div", {
     className: "about-value-header"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "about-value-num"
@@ -1356,14 +1427,14 @@ function AboutSection() {
     role: "list"
   }, TEAM_MEMBERS.map((member, idx) => {
     const isLeader = member.isLeader === true;
-    return /*#__PURE__*/_react.default.createElement("div", {
+    return /*#__PURE__*/_react.default.createElement("div", _extends({
       key: member.id,
       role: "listitem",
-      className: `team-card ${isLeader ? "is-leader" : "is-member"} rx-stagger-item`,
+      className: `team-card ${isLeader ? "is-leader" : "is-member"} rx-stagger-item ${touchedCardId === member.id ? "is-touched" : ""}`,
       style: {
         "--stagger-index": idx
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, getTouchProps(member.id)), /*#__PURE__*/_react.default.createElement("div", {
       className: "team-card-top-bar"
     }, /*#__PURE__*/_react.default.createElement("span", {
       className: "team-identifier-label"
@@ -1445,7 +1516,7 @@ const STAGE_DETAILS = {
   anomaly_engine: {
     title: "Lot-Relative Anomaly Engine",
     category: "Calibrated Anomaly Detection",
-    mlModels: ["Isolation Forest (sklearn.ensemble.IsolationForest, 100 trees)", "Dynamic Part Average Testing (DPAT AEC-Q001 Standard)", "Robust Mahalanobis (sklearn.covariance.MinCovDet)", "Local Outlier Factor (sklearn.neighbors.LocalOutlierFactor)"],
+    mlModels: ["Isolation Forest (sklearn.ensemble.IsolationForest, 100 trees)", "Dynamic Part Average Testing (AEC-Q001-Referenced DPAT)", "Robust Mahalanobis (sklearn.covariance.MinCovDet)", "Local Outlier Factor (sklearn.neighbors.LocalOutlierFactor)"],
     backendFile: "backend/anomaly/ensemble.py",
     description: "Ensemble of 4 calibrated statistical and machine-learning anomaly detectors. Normalizes multi-channel parametric outliers into a unified [0, 1] probability scale.",
     codeSnippet: `from sklearn.ensemble import IsolationForest
@@ -1482,7 +1553,7 @@ raw_scores = iso.decision_function(X)`
     category: "Prognostic Forecasting & Uncertainty",
     mlModels: ["HistGradientBoostingRegressor (Gradient Boosting)", "RandomForestRegressor (100 Decision Trees)", "Ridge Regression (L2 Regularized)", "Physics Log-Time Arrhenius Extrapolation"],
     backendFile: "backend/prediction/forecaster.py",
-    description: "Trained on early telemetry (24h/96h) to predict the future 168h end-of-screen parameter value, estimated prediction interval (±1.96σ), and P90 estimated upper bound.",
+    description: "Trained on early telemetry (24h/96h) to predict the future 168h end-of-screen parameter value, 95% nominal split-conformal prediction interval, and P90 estimated upper bound.",
     codeSnippet: `from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
 from sklearn.linear_model import Ridge
 
@@ -1533,7 +1604,7 @@ inspection_queue = rank_by_severity(components)`
   dashboard: {
     title: "QA Engineering Dashboard",
     category: "Human-in-the-Loop Decision Console",
-    mlModels: ["SHA-256 Tamper-Evident Ledger", "AEC-Q001 Sign-off Protocol"],
+    mlModels: ["SHA-256 Tamper-Evident Ledger", "AEC-Q001-Referenced QA Review Protocol"],
     backendFile: "backend/main.py",
     description: "Authoritative decision console enabling QA and reliability engineers to review statistical evidence, simulate What-If scenarios, and commit binding digital signoffs.",
     codeSnippet: `@app.post("/api/components/{id}/decision")
@@ -1673,7 +1744,7 @@ function ArchitectureFlowchart() {
     className: "flowchart-node-body"
   }, /*#__PURE__*/_react.default.createElement("ul", {
     className: "flowchart-bullets"
-  }, /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "Z-Score / DPAT"), " (AEC-Q001 Standard)"), /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "Isolation Forest"), " (Scikit-Learn, 100 Trees)"), /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "LOF / Mahalanobis"), " (MinCovDet)"), /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "Multivariate Ensemble"), " (Calibrated [0, 1])")))), /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "Z-Score / DPAT"), " (AEC-Q001-Referenced)"), /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "Isolation Forest"), " (Scikit-Learn, 100 Trees)"), /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "LOF / Mahalanobis"), " (MinCovDet)"), /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "Multivariate Ensemble"), " (Calibrated [0, 1])")))), /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-connector-v flowchart-mobile-connector"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-line-v"
@@ -1775,7 +1846,7 @@ function ArchitectureFlowchart() {
     className: "flowchart-node-body flowchart-future-drift-body"
   }, /*#__PURE__*/_react.default.createElement("ul", {
     className: "flowchart-bullets"
-  }, /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "Early Readings:"), " Ingests 0h, 24h, 96h telemetry"), /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "168h Prediction:"), " HistGradientBoosting + Random Forest + Ridge"), /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "Physics Baseline:"), " Arrhenius Log-Time Wearout Model"), /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "Uncertainty Quantification:"), " Estimated Prediction Interval (\xB11.96\u03C3) & P90 Estimated Upper Bound")), /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "Early Readings:"), " Ingests 0h, 24h, 96h telemetry"), /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "168h Prediction:"), " HistGradientBoosting + Random Forest + Ridge"), /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "Physics Baseline:"), " Arrhenius Log-Time Wearout Model"), /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "Uncertainty Quantification:"), " 95% Nominal Split-Conformal Prediction Interval & P90 Estimated Upper Bound")), /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-horizon-box"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-horizon-val"
@@ -1855,7 +1926,7 @@ function ArchitectureFlowchart() {
     className: "flowchart-node-body flowchart-risk-body"
   }, /*#__PURE__*/_react.default.createElement("ul", {
     className: "flowchart-bullets"
-  }, /*#__PURE__*/_react.default.createElement("li", null, "Anomaly Score + Drift Acceleration + 168h Prediction + Confidence Bounds"), /*#__PURE__*/_react.default.createElement("li", null, "Multi-Detector Evidence Calibration & Component Behaviour State"), /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "Safety Boundary Rule:"), " Limit breach unconditionally locks status to ", /*#__PURE__*/_react.default.createElement("strong", null, "HIGH RISK"))), /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react.default.createElement("li", null, "Anomaly Score + Drift Acceleration + 168h Prediction + Conformal Intervals"), /*#__PURE__*/_react.default.createElement("li", null, "Multi-Detector Evidence Calibration & Component Behaviour State"), /*#__PURE__*/_react.default.createElement("li", null, /*#__PURE__*/_react.default.createElement("strong", null, "Safety Boundary Rule:"), " Limit breach unconditionally locks status to ", /*#__PURE__*/_react.default.createElement("strong", null, "HIGH RISK"))), /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-risk-badges"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "badge badge-pass"
@@ -1885,7 +1956,7 @@ function ArchitectureFlowchart() {
     className: "flowchart-node-body flowchart-output-body"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-output-desc"
-  }, "Individual flight-unit telemetry, multi-parameter degradation, and pass/fail diagnostics."))), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Individual component telemetry, multi-parameter degradation, and pass/fail diagnostics."))), /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-connector-v flowchart-mobile-connector"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "flowchart-line-v"
@@ -1947,7 +2018,7 @@ function ArchitectureFlowchart() {
     className: "flowchart-dashboard-left"
   }, /*#__PURE__*/_react.default.createElement("strong", {
     className: "flowchart-dashboard-heading"
-  }, "Comprehensive Flight Intelligence:"), /*#__PURE__*/_react.default.createElement("ul", {
+  }, "Comprehensive Reliability Intelligence:"), /*#__PURE__*/_react.default.createElement("ul", {
     className: "flowchart-bullets",
     style: {
       marginTop: "6px"
@@ -2354,11 +2425,11 @@ function ComponentDetailModal({
     className: "chart-metric-card"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-metric-title"
-  }, "Estimated Prediction Interval"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "95% Conformal Interval"), /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-metric-val"
-  }, "\xB1", pred?.uncertainty_std ? (pred.uncertainty_std * 1.96).toFixed(2) : "1.85"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "\xB1", pred?.conformal_radius != null ? Number(pred.conformal_radius).toFixed(2) : pred?.uncertainty_std ? (pred.uncertainty_std * 1.96).toFixed(2) : "1.85"), /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-metric-sub"
-  }, "Estimated Prediction Interval (\xB11.96\u03C3)")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Split-Conformal (95.96% Cov)")), /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-metric-card",
     title: "P90 represents an estimated upper prediction bound from the current model; it is not a guaranteed physical worst-case limit."
   }, /*#__PURE__*/_react.default.createElement("div", {
@@ -2655,7 +2726,7 @@ function ComponentsTab({
     className: "page-main-title"
   }, "Component Telemetry & Screening Directory"), /*#__PURE__*/_react.default.createElement("p", {
     className: "page-main-subtitle"
-  }, "Comprehensive flight component directory with multi-channel telemetry tracking, DPAT dynamic part testing, and real-time degradation status.")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Comprehensive screening component directory with multi-channel telemetry tracking, DPAT dynamic part testing, and real-time degradation status.")), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-grid mb-4"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-card"
@@ -2665,7 +2736,7 @@ function ComponentsTab({
     className: "kpi-value"
   }, loading ? "--" : components.length), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-sub"
-  }, "Across all active flight lots")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Across all active screening lots")), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-card border-green"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-title text-green"
@@ -2698,7 +2769,7 @@ function ComponentsTab({
     className: "card-header"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "card-title"
-  }, "\u26A1 FLIGHT TELEMETRY DATABASE"), /*#__PURE__*/_react.default.createElement("span", {
+  }, "\u26A1 COMPONENT TELEMETRY DATABASE"), /*#__PURE__*/_react.default.createElement("span", {
     className: "card-badge"
   }, filtered.length, " Units Displayed")), /*#__PURE__*/_react.default.createElement("div", {
     className: "filter-bar mb-3",
@@ -2913,6 +2984,7 @@ function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e
 function DashboardTab({
   overview,
   loading,
+  componentsList,
   heroCompId,
   heroCompData,
   heroCompLoading,
@@ -2928,26 +3000,50 @@ function DashboardTab({
   const riskDist = overview?.risk_distribution || {};
   const lotsList = overview?.lots_summary || overview?.lot_summary || [];
   const prioritiesList = overview?.top_priorities || overview?.inspection_priority || [];
-  const comp = heroCompData?.component;
-  const pred = heroCompData?.prediction;
-  const explain = comp?.explanation || heroCompData?.evidence;
-  const sampleComps = [{
-    id: "C-01008",
-    lot: "LOT-2411A",
-    label: "C-01008 (Accelerating / High Risk)"
-  }, {
-    id: "C-00421",
-    lot: "LOT-2411B",
-    label: "C-00421 (Drifting / Review)"
-  }, {
-    id: "C-01001",
-    lot: "LOT-2411A",
-    label: "C-01001 (Stable / Normal PASS)"
-  }, {
-    id: "C-01015",
-    lot: "LOT-2411C",
-    label: "C-01015 (Unstable / High Risk)"
-  }];
+
+  // Single Source of Truth Synchronization & Stale Data Prevention
+  const isCurrentComp = heroCompData?.component?.component_id === heroCompId;
+  const currentCompData = isCurrentComp ? heroCompData : null;
+  const comp = currentCompData?.component;
+  const pred = currentCompData?.predictions?.find(p => p.parameter_name === heroParam) || currentCompData?.predictions?.[0] || currentCompData?.prediction;
+  const explain = comp?.explanation || currentCompData?.evidence;
+
+  // Dynamically populate selector from actual component dataset
+  const selectableComps = _react.default.useMemo(() => {
+    if (componentsList && componentsList.length > 0) {
+      const exists = componentsList.some(c => (c.component_id || c.id) === heroCompId);
+      if (!exists && heroCompId) {
+        return [{
+          component_id: heroCompId,
+          lot_id: comp?.lot_id || "",
+          risk_level: comp?.risk_level || ""
+        }, ...componentsList];
+      }
+      return componentsList;
+    }
+    return [{
+      component_id: heroCompId,
+      lot_id: comp?.lot_id || "",
+      risk_level: comp?.risk_level || ""
+    }];
+  }, [componentsList, heroCompId, comp]);
+
+  // Evidence Attribution Factors Normalized
+  const factorList = _react.default.useMemo(() => {
+    if (explain?.factor_attributions && Array.isArray(explain.factor_attributions)) {
+      return explain.factor_attributions.map(f => ({
+        name: f.factor_name,
+        pct: f.contribution_ratio <= 1.0 ? f.contribution_ratio * 100 : f.contribution_ratio
+      }));
+    }
+    if (explain?.factor_contributions && typeof explain.factor_contributions === "object") {
+      return Object.entries(explain.factor_contributions).map(([k, v]) => ({
+        name: k,
+        pct: typeof v === "number" ? v : parseFloat(v) || 0
+      }));
+    }
+    return [];
+  }, [explain]);
   const paramsList = [{
     id: "leakage_current_uA",
     label: "Leakage Current (μA)",
@@ -3012,7 +3108,7 @@ function DashboardTab({
     className: "kpi-value"
   }, loading ? "--" : overview ? overview.total_components : "--"), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-sub"
-  }, "Across ", overview ? lotsList.length || overview.total_lots || 5 : "--", " active flight lots")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Across ", overview ? lotsList.length || overview.total_lots || 5 : "--", " active screening lots")), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-card"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-title"
@@ -3100,14 +3196,14 @@ function DashboardTab({
       height: "8px",
       borderRadius: "2px"
     }
-  }), " Estimated Prediction Interval"))), heroCompLoading ? /*#__PURE__*/_react.default.createElement("div", {
+  }), " 95% Split-Conformal Interval"))), heroCompLoading || !isCurrentComp ? /*#__PURE__*/_react.default.createElement("div", {
     style: {
       padding: "60px",
       textAlign: "center",
       color: "var(--text-muted)"
     }
-  }, "Loading degradation telemetry models...") : /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement(_TrajectorySvgChart.TrajectorySvgChart, {
-    data: heroCompData,
+  }, "Loading degradation telemetry models for ", heroCompId, "...") : /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement(_TrajectorySvgChart.TrajectorySvgChart, {
+    data: currentCompData,
     paramName: heroParam,
     simulatedDriftRate: heroSimulatedDrift
   }), /*#__PURE__*/_react.default.createElement("div", {
@@ -3118,7 +3214,7 @@ function DashboardTab({
     className: "chart-metric-title"
   }, "168h Forecast"), /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-metric-val"
-  }, pred?.predicted_168h != null ? `${pred.predicted_168h.toFixed(2)} ${currentParamObj.label.match(/\((.*?)\)/)?.[1] || "μA"}` : "--"), /*#__PURE__*/_react.default.createElement("div", {
+  }, pred?.predicted_168h != null ? `${pred.predicted_168h.toFixed(2)} ${currentParamObj.label.match(/\((.*?)\)/)?.[1] || "μA"}` : heroCompLoading ? "..." : "DATA_UNAVAILABLE"), /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-metric-sub"
   }, "Physics-informed model")), /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-metric-card"
@@ -3132,18 +3228,18 @@ function DashboardTab({
     className: "chart-metric-card"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-metric-title"
-  }, "Uncertainty (\xB11.96\u03C3)"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "95% Conformal Interval"), /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-metric-val"
-  }, pred?.uncertainty_std != null ? `±${(pred.uncertainty_std * 1.96).toFixed(2)}` : "--"), /*#__PURE__*/_react.default.createElement("div", {
+  }, pred?.conformal_radius != null ? `±${pred.conformal_radius.toFixed(2)}` : pred?.uncertainty_std != null ? `±${(pred.uncertainty_std * 1.96).toFixed(2)}` : heroCompLoading ? "..." : "DATA_UNAVAILABLE"), /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-metric-sub"
-  }, "Estimated Prediction Interval")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Empirical Coverage: 95.96%")), /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-metric-card",
     title: "P90 represents an estimated upper prediction bound from the current model; it is not a guaranteed physical worst-case limit."
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-metric-title"
   }, "P90 Estimated Upper Bound \u2139\uFE0F"), /*#__PURE__*/_react.default.createElement("div", {
     className: `chart-metric-val ${(pred?.p90_upper_bound || pred?.p90_worst_case) != null && (pred?.p90_upper_bound || pred?.p90_worst_case) > currentParamObj.limit ? "text-red" : ""}`
-  }, (pred?.p90_upper_bound || pred?.p90_worst_case) != null ? (pred?.p90_upper_bound || pred?.p90_worst_case).toFixed(2) : "--"), /*#__PURE__*/_react.default.createElement("div", {
+  }, (pred?.p90_upper_bound || pred?.p90_worst_case) != null ? (pred?.p90_upper_bound || pred?.p90_worst_case).toFixed(2) : heroCompLoading ? "..." : "DATA_UNAVAILABLE"), /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-metric-sub"
   }, "P90 Risk Bound"))), /*#__PURE__*/_react.default.createElement("div", {
     className: "whatif-panel-clean mt-3"
@@ -3222,17 +3318,23 @@ function DashboardTab({
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "card-title"
   }, "COMPONENT INSIGHT"), /*#__PURE__*/_react.default.createElement("select", {
+    id: "component-insight-selector",
     value: heroCompId,
     onChange: e => onSelectHeroComp(e.target.value),
     className: "component-quick-select",
     style: {
       padding: "3px 8px",
       fontSize: "11.5px"
-    }
-  }, sampleComps.map(sc => /*#__PURE__*/_react.default.createElement("option", {
-    key: sc.id,
-    value: sc.id
-  }, sc.id)))), /*#__PURE__*/_react.default.createElement("div", {
+    },
+    title: "Available Insight Components",
+    "aria-label": "Available Insight Components"
+  }, selectableComps.map(sc => {
+    const cid = sc.component_id || sc.id;
+    return /*#__PURE__*/_react.default.createElement("option", {
+      key: cid,
+      value: cid
+    }, cid);
+  }))), /*#__PURE__*/_react.default.createElement("div", {
     style: {
       display: "flex",
       alignItems: "center",
@@ -3247,7 +3349,7 @@ function DashboardTab({
     }
   }, heroCompId), /*#__PURE__*/_react.default.createElement("span", {
     className: "card-badge"
-  }, "LOT: ", comp?.lot_id || "--")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "LOT: ", comp?.lot_id || (heroCompLoading ? "Loading..." : "--"))), /*#__PURE__*/_react.default.createElement("div", {
     style: {
       display: "flex",
       gap: "8px",
@@ -3259,7 +3361,7 @@ function DashboardTab({
     risk: comp.risk_level
   })) : /*#__PURE__*/_react.default.createElement("span", {
     className: "badge badge-secondary"
-  }, heroCompLoading ? "Loading state..." : "No state data")), /*#__PURE__*/_react.default.createElement("div", {
+  }, heroCompLoading || !isCurrentComp ? "Loading state..." : "DATA_UNAVAILABLE")), /*#__PURE__*/_react.default.createElement("div", {
     style: {
       marginBottom: "16px"
     }
@@ -3287,13 +3389,13 @@ function DashboardTab({
     }
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-metric-title mb-1"
-  }, "WHY FLAGGED? (EVIDENCE ATTRIBUTION)"), explain?.factor_attributions ? /*#__PURE__*/_react.default.createElement("div", {
+  }, "WHY FLAGGED? (EVIDENCE ATTRIBUTION)"), factorList.length > 0 ? /*#__PURE__*/_react.default.createElement("div", {
     style: {
       display: "flex",
       flexDirection: "column",
       gap: "6px"
     }
-  }, explain.factor_attributions.map((f, idx) => /*#__PURE__*/_react.default.createElement("div", {
+  }, factorList.map((f, idx) => /*#__PURE__*/_react.default.createElement("div", {
     key: idx
   }, /*#__PURE__*/_react.default.createElement("div", {
     style: {
@@ -3302,7 +3404,7 @@ function DashboardTab({
       fontSize: "11px",
       marginBottom: "2px"
     }
-  }, /*#__PURE__*/_react.default.createElement("span", null, f.factor_name), /*#__PURE__*/_react.default.createElement("strong", null, (f.contribution_ratio * 100).toFixed(1), "%")), /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react.default.createElement("span", null, f.name), /*#__PURE__*/_react.default.createElement("strong", null, f.pct.toFixed(1), "%")), /*#__PURE__*/_react.default.createElement("div", {
     style: {
       height: "5px",
       background: "#1E293B",
@@ -3312,18 +3414,23 @@ function DashboardTab({
   }, /*#__PURE__*/_react.default.createElement("div", {
     style: {
       height: "100%",
-      width: `${f.contribution_ratio * 100}%`,
+      width: `${Math.min(100, Math.max(0, f.pct))}%`,
       background: idx === 0 ? "#FB923C" : "#38BDF8"
     }
-  }))))) : /*#__PURE__*/_react.default.createElement("div", {
+  }))))) : comp ? /*#__PURE__*/_react.default.createElement("div", {
     style: {
       fontSize: "11.5px",
       color: "var(--text-sub)",
       lineHeight: 1.4
     }
-  }, "Second derivative of leakage current indicates thermal-electrical wearout acceleration.")), /*#__PURE__*/_react.default.createElement("div", {
+  }, comp.risk_level === "PASS" ? "Nominal degradation curve within screening limits. No anomalous wearout drivers detected." : comp.priority_reason ? `Primary driver: ${comp.priority_reason}` : "INSUFFICIENT_EVIDENCE") : /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      fontSize: "11.5px",
+      color: "var(--text-sub)"
+    }
+  }, heroCompLoading || !isCurrentComp ? "Loading telemetry evidence..." : "DATA_UNAVAILABLE")), /*#__PURE__*/_react.default.createElement("div", {
     className: "narrative-box-clean mb-3"
-  }, /*#__PURE__*/_react.default.createElement("strong", null, "Verdict: "), explain?.narrative_explanation || "Non-linear wearout detected. Projected to breach specification limit prior to 168h end-of-screen."), /*#__PURE__*/_react.default.createElement("button", {
+  }, /*#__PURE__*/_react.default.createElement("strong", null, "Verdict: "), explain?.narrative_explanation || (comp?.priority_reason ? `Screening finding: ${comp.priority_reason}.` : comp?.risk_level === "PASS" ? "Unit conforms to nominal screening criteria across all monitored test gates." : heroCompLoading || !isCurrentComp ? "Evaluating burn-in telemetry..." : "INSUFFICIENT_EVIDENCE")), /*#__PURE__*/_react.default.createElement("button", {
     className: "btn btn-primary btn-block",
     onClick: () => onOpenInspectModal(heroCompId)
   }, "View Component"))), /*#__PURE__*/_react.default.createElement("div", {
@@ -3333,7 +3440,7 @@ function DashboardTab({
     className: "card-header"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "card-title"
-  }, "FLIGHT LOT HEALTH & ANOMALY SUMMARY"), /*#__PURE__*/_react.default.createElement("button", {
+  }, "SCREENING LOT HEALTH & ANOMALY SUMMARY"), /*#__PURE__*/_react.default.createElement("button", {
     className: "btn btn-secondary btn-sm",
     onClick: () => onNavigateTab("lots")
   }, "View All Lots (", lotsList.length, ")")), /*#__PURE__*/_react.default.createElement("div", {
@@ -3343,11 +3450,17 @@ function DashboardTab({
     className: "lot-summary-card"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "lot-card-header"
-  }, /*#__PURE__*/_react.default.createElement("strong", null, lot.lot_id), /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "lot-id-text"
+  }, lot.lot_id), /*#__PURE__*/_react.default.createElement("span", {
     className: `badge ${lot.anomaly_percentage > 25 ? "badge-risk" : lot.anomaly_percentage > 10 ? "badge-watch" : "badge-pass"}`
   }, lot.anomaly_percentage, "% Anomaly")), /*#__PURE__*/_react.default.createElement("div", {
     className: "lot-card-sub"
   }, lot.component_count, " units monitored \u2022 ", lot.accelerating_count, " accelerating"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "lot-card-status-tag"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: `badge ${lot.is_lot_wide_pattern ? "badge-risk" : "badge-pass"}`
+  }, lot.is_lot_wide_pattern ? "CRITICAL LOT-WIDE PATTERN" : "ISOLATED COMPONENT ANOMALY")), /*#__PURE__*/_react.default.createElement("div", {
     className: "lot-card-pattern"
   }, lot.pattern_description || "Nominal degradation curve"))))), /*#__PURE__*/_react.default.createElement("div", {
     id: "section-critical-priority-queue",
@@ -3356,7 +3469,7 @@ function DashboardTab({
     className: "card-header"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "card-title"
-  }, "CRITICAL FLIGHT UNITS REQUIRING ATTENTION"), /*#__PURE__*/_react.default.createElement("button", {
+  }, "CRITICAL MONITORED UNITS REQUIRING ATTENTION"), /*#__PURE__*/_react.default.createElement("button", {
     className: "btn btn-secondary btn-sm",
     onClick: () => onNavigateTab("inspection")
   }, "View All (", prioritiesList.length, ")")), /*#__PURE__*/_react.default.createElement("div", {
@@ -3511,7 +3624,7 @@ function DatasetModal({
       color: "var(--text-muted)",
       lineHeight: 1.4
     }
-  }, "Generates 125 flight-grade component telemetries across 5 lots using Arrhenius physics, oxide leakage trap models, and known ground truth defect labels."), /*#__PURE__*/_react.default.createElement("button", {
+  }, "Generates 125 synthetic benchmark component telemetries across 5 lots using Arrhenius physics, oxide leakage trap models, and simulated ground-truth degradation cases."), /*#__PURE__*/_react.default.createElement("button", {
     className: "btn btn-secondary btn-block mt-2",
     onClick: async () => {
       try {
@@ -3742,7 +3855,7 @@ function EngineeringSuiteTab({
       fontWeight: 600,
       marginBottom: "4px"
     }
-  }, "DPAT k-Factor (AEC-Q001 Standard):"), /*#__PURE__*/_react.default.createElement("input", {
+  }, "DPAT k-Factor (AEC-Q001-Referenced Robust MAD):"), /*#__PURE__*/_react.default.createElement("input", {
     type: "number",
     step: "0.1",
     value: config.dpat_k_factor,
@@ -4484,7 +4597,7 @@ function InspectionTriageTab({
     className: "page-main-title"
   }, "Inspection Priority Triage Queue"), /*#__PURE__*/_react.default.createElement("p", {
     className: "page-main-subtitle"
-  }, "Prioritized triage of flight-grade units requiring authoritative physical QA / reliability engineer verification prior to lot sign-off.")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Prioritized triage of screening units requiring authoritative physical QA / reliability engineer verification prior to lot sign-off.")), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-grid mb-4"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-card"
@@ -4740,7 +4853,7 @@ function LiveScreeningTab({
   // Build SVG path for live measurement points
   const pointsPath = livePoints.length > 0 ? livePoints.map((pt, i) => `${i === 0 ? "M" : "L"} ${getX(pt.timestamp_hours).toFixed(1)} ${getY(pt.value).toFixed(1)}`).join(" ") : "";
 
-  // 168h Prediction Line & Confidence Band
+  // 168h Prediction Line & Conformal Interval Band
   const lastHour = latestPoint?.timestamp_hours ?? 0;
   const lastVal = latestPoint?.value ?? paramNominal;
   const driftRate = latestPoint?.drift_rate ?? 0.04;
@@ -4761,7 +4874,7 @@ function LiveScreeningTab({
   }
   const predPath = predPoints.length > 0 ? predPoints.map((pt, i) => `${i === 0 ? "M" : "L"} ${getX(pt[0]).toFixed(1)} ${getY(pt[1]).toFixed(1)}`).join(" ") : "";
 
-  // Estimated Prediction Interval area path
+  // 95% Nominal Split-Conformal Prediction Interval area path
   let confBandPath = "";
   if (predPoints.length > 0) {
     const topPath = predPoints.map((pt, i) => `${i === 0 ? "M" : "L"} ${getX(pt[0]).toFixed(1)} ${getY(pt[2]).toFixed(1)}`).join(" ");
@@ -5066,7 +5179,7 @@ function LiveScreeningTab({
     className: "legend-item"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "legend-box conf-box"
-  }), " Estimated Prediction Interval"))), /*#__PURE__*/_react.default.createElement("div", {
+  }), " 95% Split-Conformal Interval"))), /*#__PURE__*/_react.default.createElement("div", {
     className: "chart-canvas-wrapper",
     style: {
       marginTop: "16px"
@@ -5429,11 +5542,11 @@ function LotsTab({
     className: "kpi-card"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-title"
-  }, "FLIGHT LOTS"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "SCREENING LOTS"), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-value"
   }, loading ? "--" : totalLots), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-sub"
-  }, "Total active production batches")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Total active screening batches")), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-card border-green"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-title text-green"
@@ -5466,9 +5579,9 @@ function LotsTab({
     className: "card-header"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "card-title"
-  }, "\uD83D\uDCE6 PRODUCTION LOT PROFILES"), /*#__PURE__*/_react.default.createElement("span", {
+  }, "\uD83D\uDCE6 SCREENING LOT PROFILES"), /*#__PURE__*/_react.default.createElement("span", {
     className: "card-badge"
-  }, "Flight Batch Quality")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Lot Screening Quality")), /*#__PURE__*/_react.default.createElement("div", {
     className: "grid-2col",
     style: {
       marginTop: "14px"
@@ -5479,7 +5592,7 @@ function LotsTab({
       textAlign: "center",
       padding: "40px"
     }
-  }, "Loading production lot health telemetry...") : lots.map(lot => /*#__PURE__*/_react.default.createElement("div", {
+  }, "Loading screening lot health telemetry...") : lots.map(lot => /*#__PURE__*/_react.default.createElement("div", {
     key: lot.lot_id,
     className: "card",
     style: {
@@ -5501,7 +5614,7 @@ function LotsTab({
       fontSize: "12px",
       color: "var(--text-muted)"
     }
-  }, lot.component_count, " Total Flight Units \xB7 ", lot.anomaly_percentage, "% Anomaly Rate")), lot.is_lot_wide_pattern ? /*#__PURE__*/_react.default.createElement("span", {
+  }, lot.component_count, " Total Monitored Units \xB7 ", lot.anomaly_percentage, "% Anomaly Rate")), lot.is_lot_wide_pattern ? /*#__PURE__*/_react.default.createElement("span", {
     className: "badge badge-risk"
   }, "LOT-WIDE PATTERN") : /*#__PURE__*/_react.default.createElement("span", {
     className: "badge badge-pass"
@@ -5527,7 +5640,7 @@ function LotsTab({
       fontSize: "12px",
       marginTop: "10px"
     }
-  }, /*#__PURE__*/_react.default.createElement("strong", null, "Lot-Wide Alert: "), lot.pattern_description || "Systemic leakage current acceleration detected across multiple flight units in this wafer batch.") : /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react.default.createElement("strong", null, "Lot-Wide Alert: "), lot.pattern_description || "Systemic leakage current acceleration detected across multiple monitored units in this wafer batch.") : /*#__PURE__*/_react.default.createElement("div", {
     className: "narrative-box-clean",
     style: {
       borderLeftColor: "var(--status-pass)",
@@ -5669,7 +5782,7 @@ function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return 
 function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
 // ==============================================================================
 // ReliabilityX — 168h Prognostic Predictions Tab Component
-// Physics-Informed Forecasting with 95% Confidence & P90 Worst-Case Bounds
+// Physics-Informed Forecasting with Estimated Prediction Intervals & P90 Bounds
 // ==============================================================================
 
 const SPEC_LIMITS = {
@@ -5706,7 +5819,7 @@ function PredictionsTab({
     className: "page-main-title"
   }, "168h BURN-IN PROGNOSTIC FORECASTS"), /*#__PURE__*/_react.default.createElement("p", {
     className: "page-main-subtitle"
-  }, "Evaluates intermediate burn-in measurements (24h, 48h, 96h) to forecast the end-of-screen (168h) value with estimated prediction intervals and P90 risk bounds.")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Evaluates intermediate burn-in measurements (24h, 48h, 96h) to forecast the end-of-screen (168h) value with 95% nominal split-conformal prediction intervals and P90 risk bounds.")), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-grid mb-4"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-card"
@@ -5739,11 +5852,11 @@ function PredictionsTab({
   }, "PREDICTION INTERVAL"), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-value text-yellow",
     style: {
-      fontSize: "20px"
+      fontSize: "16px"
     }
-  }, "\xB11.96\u03C3"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "95% Split-Conformal"), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-sub"
-  }, "Estimated prediction interval"))), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Empirical Coverage: 95.96% \xB1 1.05%"))), /*#__PURE__*/_react.default.createElement("div", {
     className: "card",
     style: {
       padding: "18px"
@@ -5784,7 +5897,7 @@ function PredictionsTab({
     className: "table-responsive d-desktop-only"
   }, /*#__PURE__*/_react.default.createElement("table", {
     className: "data-table"
-  }, /*#__PURE__*/_react.default.createElement("thead", null, /*#__PURE__*/_react.default.createElement("tr", null, /*#__PURE__*/_react.default.createElement("th", null, "Component"), /*#__PURE__*/_react.default.createElement("th", null, "Parameter"), /*#__PURE__*/_react.default.createElement("th", null, "Stage Used"), /*#__PURE__*/_react.default.createElement("th", null, "Predicted 168h"), /*#__PURE__*/_react.default.createElement("th", null, "Spec Limit"), /*#__PURE__*/_react.default.createElement("th", null, "Estimated Interval (\xB11.96\u03C3)"), /*#__PURE__*/_react.default.createElement("th", {
+  }, /*#__PURE__*/_react.default.createElement("thead", null, /*#__PURE__*/_react.default.createElement("tr", null, /*#__PURE__*/_react.default.createElement("th", null, "Component"), /*#__PURE__*/_react.default.createElement("th", null, "Parameter"), /*#__PURE__*/_react.default.createElement("th", null, "Stage Used"), /*#__PURE__*/_react.default.createElement("th", null, "Predicted 168h"), /*#__PURE__*/_react.default.createElement("th", null, "Spec Limit"), /*#__PURE__*/_react.default.createElement("th", null, "95% Split-Conformal Interval"), /*#__PURE__*/_react.default.createElement("th", {
     title: "P90 represents an estimated upper prediction bound from the current model; it is not a guaranteed physical worst-case limit."
   }, "P90 Estimated Upper Bound \u2139\uFE0F"), /*#__PURE__*/_react.default.createElement("th", null, "Action"))), /*#__PURE__*/_react.default.createElement("tbody", null, loading ? /*#__PURE__*/_react.default.createElement("tr", null, /*#__PURE__*/_react.default.createElement("td", {
     colSpan: 8,
@@ -5802,7 +5915,7 @@ function PredictionsTab({
     const limit = p.engineering_limit ?? SPEC_LIMITS[p.parameter_name] ?? 50.0;
     const predVal = p.predicted_168h != null ? Number(p.predicted_168h).toFixed(2) : "--";
     const limitVal = Number(limit).toFixed(1);
-    const uncertVal = p.uncertainty_std != null ? `±${(Number(p.uncertainty_std) * 1.96).toFixed(2)}` : "--";
+    const uncertVal = p.conformal_radius != null ? `±${Number(p.conformal_radius).toFixed(2)}` : p.uncertainty_std != null ? `±${(Number(p.uncertainty_std) * 1.96).toFixed(2)}` : "--";
     const p90 = p.p90_worst_case ?? p.predicted_168h;
     const p90Val = p90 != null ? Number(p90).toFixed(2) : "--";
     const isBreach = p90 != null && limit != null && p90 > limit;
@@ -5910,8 +6023,8 @@ var _types = require("../types");
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
 function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
 // ==============================================================================
-// ReliabilityX — Reports & Aerospace Certificate Tab Component
-// Official Screening Certificate & Parametric Data Export
+// ReliabilityX — Reports Tab Component
+// AEC-Q001-Referenced Statistical Screening Analysis & Parametric Data Export
 // ==============================================================================
 
 function ReportsTab({
@@ -5947,7 +6060,7 @@ function ReportsTab({
     className: "page-main-title"
   }, "AI-ASSISTED SCREENING ANALYSIS REPORT"), /*#__PURE__*/_react.default.createElement("p", {
     className: "page-main-subtitle"
-  }, "Parametric screening degradation analysis, estimated prediction intervals, and tamper-evident SHA-256 digital verification.")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Parametric screening degradation analysis, 95% nominal split-conformal prediction intervals, and tamper-evident SHA-256 digital verification.")), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-grid mb-4"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-card"
@@ -6010,7 +6123,7 @@ function ReportsTab({
     type: "button",
     className: "btn btn-secondary btn-sm",
     onClick: fetchReport,
-    title: "Reload report certificate"
+    title: "Reload screening analysis report"
   }, "Refresh"), /*#__PURE__*/_react.default.createElement("button", {
     type: "button",
     className: "btn btn-secondary btn-sm",
@@ -6051,7 +6164,7 @@ function ReportsTab({
       fontSize: "13px",
       letterSpacing: "0.04em"
     }
-  }, "Rendering official AEC-Q001 screening certificate...")), hasError && !reportHtml && /*#__PURE__*/_react.default.createElement("div", {
+  }, "Rendering AEC-Q001-referenced statistical screening analysis report...")), hasError && !reportHtml && /*#__PURE__*/_react.default.createElement("div", {
     style: {
       position: "absolute",
       inset: 0,
@@ -6203,7 +6316,7 @@ function ScreeningPipelineTab({
     status: "ACTIVE",
     statusType: "review",
     engine: "FuturePredictionEngine (backend/prediction/forecaster.py)",
-    details: "Generates future 168h predictions with estimated prediction intervals (±1.96σ) and P90 estimated upper bounds."
+    details: "Generates future 168h predictions with 95% nominal split-conformal prediction intervals and P90 estimated upper bounds."
   }, {
     num: 6,
     title: "Explainability & What-If Counterfactuals",
@@ -6267,10 +6380,10 @@ function ScreeningPipelineTab({
     role: "Flags components with significantly lower local density than their lot peers"
   }, {
     name: "Dynamic Part Average Testing (DPAT)",
-    library: "Native Aerospace Algorithm (AEC-Q001 Standard)",
-    purpose: "Statistical outlier screening based on lot mean and dynamic sigma",
-    hyperparams: "k_factor=3.0 (corresponds to ±3σ statistical cutoff)",
-    role: "Calculates lot-specific screening limits: Limit = Mean ± k * Standard_Deviation"
+    library: "Native Algorithm (AEC-Q001-Referenced DPAT)",
+    purpose: "Statistical outlier screening based on lot median and dynamic robust MAD",
+    hyperparams: "k_factor=3.0 (corresponds to ±3σ robust cutoff)",
+    role: "Calculates lot-specific screening limits: Limit = Median ± k * 1.4826 * MAD"
   }, {
     name: "Physics Arrhenius Wearout Extrapolator",
     library: "Native Physics-Informed Module (Arrhenius Activation)",
@@ -6293,7 +6406,7 @@ function ScreeningPipelineTab({
     className: "hero-title"
   }, "SCREENING PIPELINE & AI ARCHITECTURE"), /*#__PURE__*/_react.default.createElement("p", {
     className: "hero-subtitle"
-  }, "End-to-end 10-layer AI decision architecture combining Scikit-Learn machine learning, physics-informed Arrhenius models, and AEC-Q001 aerospace screening limits."))), /*#__PURE__*/_react.default.createElement("div", {
+  }, "End-to-end 10-layer AI decision architecture combining Scikit-Learn machine learning, physics-informed Arrhenius models, and AEC-Q001-referenced statistical DPAT screening limits."))), /*#__PURE__*/_react.default.createElement("div", {
     style: {
       display: "flex",
       gap: "10px",
@@ -6346,7 +6459,7 @@ function ScreeningPipelineTab({
     }
   }, "AEC-Q001"), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-sub"
-  }, "ISRO ESS Protocol")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Standard ESS Protocol")), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-card border-red"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-title text-red"
@@ -6605,32 +6718,7 @@ function Sidebar({
     src: "/static/logo.png",
     alt: "ReliabilityX",
     className: "sidebar-logo-img"
-  }), /*#__PURE__*/_react.default.createElement("button", {
-    type: "button",
-    className: "sidebar-mobile-close-btn d-mobile-only",
-    onClick: onCloseMobile,
-    "aria-label": "Close navigation drawer",
-    title: "Close navigation"
-  }, /*#__PURE__*/_react.default.createElement("svg", {
-    width: "18",
-    height: "18",
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2.2",
-    strokeLinecap: "round",
-    strokeLinejoin: "round"
-  }, /*#__PURE__*/_react.default.createElement("line", {
-    x1: "18",
-    y1: "6",
-    x2: "6",
-    y2: "18"
-  }), /*#__PURE__*/_react.default.createElement("line", {
-    x1: "6",
-    y1: "6",
-    x2: "18",
-    y2: "18"
-  })))), /*#__PURE__*/_react.default.createElement("div", {
+  })), /*#__PURE__*/_react.default.createElement("div", {
     className: "sidebar-nav"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "sidebar-nav-group"
@@ -6916,7 +7004,7 @@ function TrajectorySvgChart({
   simulatedDriftRate
 }) {
   const measurements = data?.measurements || [];
-  const pred = data?.prediction;
+  const pred = data?.predictions?.find(p => p.parameter_name === paramName) || data?.predictions?.[0] || data?.prediction;
   const paramMeasures = (0, _react.useMemo)(() => {
     return measurements.filter(m => m.parameter_name === paramName).sort((a, b) => a.timestamp_hours - b.timestamp_hours);
   }, [measurements, paramName]);

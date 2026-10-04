@@ -45,7 +45,7 @@ const STAGE_DETAILS: Record<string, NodeDetail> = {
     category: "Calibrated Anomaly Detection",
     mlModels: [
       "Isolation Forest (sklearn.ensemble.IsolationForest, 100 trees)",
-      "Dynamic Part Average Testing (DPAT AEC-Q001 Standard)",
+      "Dynamic Part Average Testing (AEC-Q001-Referenced DPAT)",
       "Robust Mahalanobis (sklearn.covariance.MinCovDet)",
       "Local Outlier Factor (sklearn.neighbors.LocalOutlierFactor)"
     ],
@@ -94,7 +94,7 @@ raw_scores = iso.decision_function(X)`
       "Physics Log-Time Arrhenius Extrapolation"
     ],
     backendFile: "backend/prediction/forecaster.py",
-    description: "Trained on early telemetry (24h/96h) to predict the future 168h end-of-screen parameter value, estimated prediction interval (±1.96σ), and P90 estimated upper bound.",
+    description: "Trained on early telemetry (24h/96h) to predict the future 168h end-of-screen parameter value, 95% nominal split-conformal prediction interval, and P90 estimated upper bound.",
     codeSnippet: `from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
 from sklearn.linear_model import Ridge
 
@@ -151,7 +151,7 @@ inspection_queue = rank_by_severity(components)`
   dashboard: {
     title: "QA Engineering Dashboard",
     category: "Human-in-the-Loop Decision Console",
-    mlModels: ["SHA-256 Tamper-Evident Ledger", "AEC-Q001 Sign-off Protocol"],
+    mlModels: ["SHA-256 Tamper-Evident Ledger", "AEC-Q001-Referenced QA Review Protocol"],
     backendFile: "backend/main.py",
     description: "Authoritative decision console enabling QA and reliability engineers to review statistical evidence, simulate What-If scenarios, and commit binding digital signoffs.",
     codeSnippet: `@app.post("/api/components/{id}/decision")
@@ -272,7 +272,7 @@ export function ArchitectureFlowchart() {
             </div>
             <div className="flowchart-node-body">
               <ul className="flowchart-bullets">
-                <li><strong>Z-Score / DPAT</strong> (AEC-Q001 Standard)</li>
+                <li><strong>Z-Score / DPAT</strong> (AEC-Q001-Referenced)</li>
                 <li><strong>Isolation Forest</strong> (Scikit-Learn, 100 Trees)</li>
                 <li><strong>LOF / Mahalanobis</strong> (MinCovDet)</li>
                 <li><strong>Multivariate Ensemble</strong> (Calibrated [0, 1])</li>
@@ -357,7 +357,7 @@ export function ArchitectureFlowchart() {
               <li><strong>Early Readings:</strong> Ingests 0h, 24h, 96h telemetry</li>
               <li><strong>168h Prediction:</strong> HistGradientBoosting + Random Forest + Ridge</li>
               <li><strong>Physics Baseline:</strong> Arrhenius Log-Time Wearout Model</li>
-              <li><strong>Uncertainty Quantification:</strong> Estimated Prediction Interval (±1.96σ) & P90 Estimated Upper Bound</li>
+              <li><strong>Uncertainty Quantification:</strong> 95% Nominal Split-Conformal Prediction Interval & P90 Estimated Upper Bound</li>
             </ul>
             <div className="flowchart-horizon-box">
               <div className="flowchart-horizon-val">168h</div>
@@ -439,7 +439,7 @@ export function ArchitectureFlowchart() {
           </div>
           <div className="flowchart-node-body flowchart-risk-body">
             <ul className="flowchart-bullets">
-              <li>Anomaly Score + Drift Acceleration + 168h Prediction + Confidence Bounds</li>
+              <li>Anomaly Score + Drift Acceleration + 168h Prediction + Conformal Intervals</li>
               <li>Multi-Detector Evidence Calibration & Component Behaviour State</li>
               <li><strong>Safety Boundary Rule:</strong> Limit breach unconditionally locks status to <strong>HIGH RISK</strong></li>
             </ul>
@@ -470,7 +470,7 @@ export function ArchitectureFlowchart() {
             </div>
             <div className="flowchart-node-body flowchart-output-body">
               <div className="flowchart-output-desc">
-                Individual flight-unit telemetry, multi-parameter degradation, and pass/fail diagnostics.
+                Individual component telemetry, multi-parameter degradation, and pass/fail diagnostics.
               </div>
             </div>
           </div>
@@ -536,7 +536,7 @@ export function ArchitectureFlowchart() {
           </div>
           <div className="flowchart-node-body flowchart-dashboard-body">
             <div className="flowchart-dashboard-left">
-              <strong className="flowchart-dashboard-heading">Comprehensive Flight Intelligence:</strong>
+              <strong className="flowchart-dashboard-heading">Comprehensive Reliability Intelligence:</strong>
               <ul className="flowchart-bullets" style={{ marginTop: "6px" }}>
                 <li>Reliability Profile & Historical Trajectory</li>
                 <li>168h Trend & Physics Prognostic Forecast</li>

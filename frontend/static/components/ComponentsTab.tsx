@@ -68,7 +68,7 @@ export function ComponentsTab({ onInspectComp, selectedLot }: ComponentsTabProps
       <div className="page-header mb-4">
         <h1 className="page-main-title">Component Telemetry & Screening Directory</h1>
         <p className="page-main-subtitle">
-          Comprehensive flight component directory with multi-channel telemetry tracking, DPAT dynamic part testing, and real-time degradation status.
+          Comprehensive screening component directory with multi-channel telemetry tracking, DPAT dynamic part testing, and real-time degradation status.
         </p>
       </div>
 
@@ -77,7 +77,7 @@ export function ComponentsTab({ onInspectComp, selectedLot }: ComponentsTabProps
         <div className="kpi-card">
           <div className="kpi-title">TOTAL MONITORED</div>
           <div className="kpi-value">{loading ? "--" : components.length}</div>
-          <div className="kpi-sub">Across all active flight lots</div>
+          <div className="kpi-sub">Across all active screening lots</div>
         </div>
         <div className="kpi-card border-green">
           <div className="kpi-title text-green">NOMINAL (PASS)</div>
@@ -99,7 +99,7 @@ export function ComponentsTab({ onInspectComp, selectedLot }: ComponentsTabProps
       {/* 3. Main Directory Card with Filters & Table */}
       <div className="card" style={{ padding: "18px" }}>
         <div className="card-header">
-          <span className="card-title">⚡ FLIGHT TELEMETRY DATABASE</span>
+          <span className="card-title">⚡ COMPONENT TELEMETRY DATABASE</span>
           <span className="card-badge">{filtered.length} Units Displayed</span>
         </div>
 

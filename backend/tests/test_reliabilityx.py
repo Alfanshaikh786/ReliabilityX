@@ -121,7 +121,10 @@ def test_anomaly_detectors_calibration():
     # Check that all normalized scores are strictly calibrated within [0, 1]
     for r in all_results:
         assert 0.0 <= r["normalized_score"] <= 1.0
-        assert r["detector_status"] in ["ACTIVE", "FALLBACK", "ACTIVE_REGULARIZED", "FALLBACK_DIAGONAL"]
+        assert r["detector_status"] in [
+            "ACTIVE", "FALLBACK", "ACTIVE_REGULARIZED", "FALLBACK_DIAGONAL",
+            "ACTIVE_SHRUNK", "ACTIVE_ROBUST", "INSUFFICIENT_STATISTICAL_SUPPORT"
+        ]
         assert len(r["evidence"]) > 0
 
 
@@ -203,7 +206,7 @@ def test_edge_case_very_small_lots():
     # Every detector should return a valid score between 0 and 1 without crash
     for r in all_results:
         assert 0.0 <= r["normalized_score"] <= 1.0
-        assert r["detector_status"] in ["ACTIVE", "FALLBACK", "ACTIVE_REGULARIZED", "FALLBACK_DIAGONAL", "FALLBACK_LOT_TOO_SMALL"]
+        assert r["detector_status"] in ["ACTIVE", "FALLBACK", "ACTIVE_REGULARIZED", "FALLBACK_DIAGONAL", "FALLBACK_LOT_TOO_SMALL", "INSUFFICIENT_STATISTICAL_SUPPORT"]
 
 
 def test_edge_case_constant_parameter():

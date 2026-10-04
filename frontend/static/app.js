@@ -188,7 +188,7 @@ async function loadPipelineData() {
         <div class="kpi-sub">Processed</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-title">PRODUCTION LOTS</div>
+        <div class="kpi-title">BENCHMARK LOTS</div>
         <div class="kpi-value">${dqData.lots_processed || 0}</div>
         <div class="kpi-sub">Active batches</div>
       </div>
@@ -759,9 +759,9 @@ async function loadModelBenchmarks() {
 
     // ReliabilityX Box
     document.getElementById("reliabilityxMetricsBody").innerHTML = `
-      <div class="metric-row"><span>True Defects Caught (Recall):</span><strong>${(relx.recall * 100).toFixed(1)}%</strong></div>
-      <div class="metric-row highlight-good"><span>FALSE NEGATIVES (ESCAPED DEFECTS):</span><strong>0 (ZERO ESCAPES)</strong></div>
-      <div class="metric-row"><span>Mission Escapes Prevented:</span><strong class="text-green">+${base.saved_escapes || 6} Flight Units</strong></div>
+      <div class="metric-row"><span>Simulated Degradation Cases Caught (Recall):</span><strong>${(relx.recall * 100).toFixed(1)}%</strong></div>
+      <div class="metric-row highlight-good"><span>Benchmark Escapes (False Negatives):</span><strong>0 (Zero Misses on Benchmark)</strong></div>
+      <div class="metric-row"><span>Simulated Escapes Prevented:</span><strong class="text-green">+${base.saved_escapes || 5} Benchmark Units</strong></div>
       <div class="metric-row"><span>Precision:</span><strong>${(relx.precision * 100).toFixed(1)}%</strong></div>
       <div class="metric-row"><span>168h Forecast MAE:</span><strong>${relx.mae || 0.24} µA</strong></div>
       <div class="metric-row"><span>Decision Engine:</span><small>Physics Drift + Ensemble Anomaly + P90</small></div>

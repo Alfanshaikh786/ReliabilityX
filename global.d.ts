@@ -44,6 +44,23 @@ declare module "react" {
     [key: string]: any;
   }
 
+  export interface TouchEvent<T = any> {
+    preventDefault(): void;
+    stopPropagation(): void;
+    touches: any[];
+    targetTouches?: any[];
+    changedTouches?: any[];
+    [key: string]: any;
+  }
+
+  export interface PointerEvent<T = any> {
+    preventDefault(): void;
+    stopPropagation(): void;
+    clientX: number;
+    clientY: number;
+    [key: string]: any;
+  }
+
   export type FC<P = {}> = (props: P) => any;
   export type ReactNode = any;
   export type ReactElement = any;
@@ -113,6 +130,23 @@ declare namespace React {
   interface MouseEvent<T = any> {
     preventDefault(): void;
     stopPropagation(): void;
+    [key: string]: any;
+  }
+
+  interface TouchEvent<T = any> {
+    preventDefault(): void;
+    stopPropagation(): void;
+    touches: any[];
+    targetTouches?: any[];
+    changedTouches?: any[];
+    [key: string]: any;
+  }
+
+  interface PointerEvent<T = any> {
+    preventDefault(): void;
+    stopPropagation(): void;
+    clientX: number;
+    clientY: number;
     [key: string]: any;
   }
 

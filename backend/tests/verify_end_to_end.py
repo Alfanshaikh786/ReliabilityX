@@ -117,7 +117,7 @@ def run_checks():
     cert_html = req.read().decode("utf-8")
     assert "Screening Analysis Report" in cert_html or "COMPONENT SCREENING CERTIFICATE" in cert_html
     assert "AEC-Q001" in cert_html
-    print("[PASS] 9. Aerospace QA Screening Certificate HTML generated successfully.")
+    print("[PASS] 9. AEC-Q001-Referenced Statistical Screening Analysis Report HTML generated successfully.")
 
     # 10. Test CSV Export
     req = urllib.request.urlopen(f"{BASE_URL}/api/reports/export-csv")

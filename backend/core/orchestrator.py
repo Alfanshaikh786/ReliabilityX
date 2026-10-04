@@ -217,6 +217,24 @@ class PipelineOrchestrator:
 
         anomaly_by_comp = {r["component_id"]: r for r in ensemble_df.to_dict("records")}
 
+        # Phase 5: Check cross-component correlation for common-mode test-system anomalies
+        lot_test_status = {}
+        for lid, lot_group in features_df.groupby("lot_id"):
+            comps_in_lot = lot_group["component_id"].nunique()
+            if comps_in_lot >= 5 and "delta_24_96" in lot_group.columns:
+                deltas = lot_group["delta_24_96"].dropna()
+                if len(deltas) >= comps_in_lot * 0.7:
+                    pos_jumps = (deltas > 2.0).sum()
+                    neg_jumps = (deltas < -2.0).sum()
+                    if max(pos_jumps, neg_jumps) / max(1, comps_in_lot) >= CONFIG.test_system_shift_ratio:
+                        lot_test_status[lid] = "TEST_SYSTEM_ANOMALY"
+                    else:
+                        lot_test_status[lid] = "NOMINAL"
+                else:
+                    lot_test_status[lid] = "NOMINAL"
+            else:
+                lot_test_status[lid] = "NOMINAL"
+
         assessed_components = []
         for cid in component_ids:
             c_feats = features_df[features_df["component_id"] == cid]
@@ -224,6 +242,7 @@ class PipelineOrchestrator:
             anom = anomaly_by_comp.get(cid, {"normalized_score": 0.0})
             fp = behaviour_fingerprints[cid]
             c_preds = predictions_by_comp.get(cid, [])
+            test_status = lot_test_status.get(lid, "NOMINAL")
 
             risk_eval = self.risk_engine.assess_component_risk(
                 comp_id=cid,
@@ -231,7 +250,8 @@ class PipelineOrchestrator:
                 features=features_df,
                 anomaly_scores=anom,
                 behaviour_fingerprint=fp,
-                predictions=c_preds
+                predictions=c_preds,
+                test_system_status=test_status
             )
             
             # Explainability synthesis
@@ -315,7 +335,7 @@ class PipelineOrchestrator:
                 datetime.utcnow().isoformat(),
                 perf_metrics["regression_metrics"]["mae"],
                 perf_metrics["regression_metrics"]["rmse"],
-                0.92,
+                perf_metrics["regression_metrics"]["r2"],
                 perf_metrics["reliabilityx"]["precision"],
                 perf_metrics["reliabilityx"]["recall"],
                 perf_metrics["reliabilityx"]["f1_score"],

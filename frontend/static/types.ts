@@ -70,6 +70,9 @@ export interface LiveTelemetryPoint {
   alert?: LiveAlertItem;
   predicted_168h?: number | null;
   estimated_prediction_interval?: [number, number] | null;
+  conformal_radius?: number | null;
+  interval_method?: string;
+  nominal_coverage_pct?: number;
   p90_upper_bound?: number | null;
   p90_worst_case?: number | null;
   uncertainty_std?: number | null;
@@ -164,6 +167,9 @@ export interface PredictionItem {
   uncertainty_std: number;
   lower_bound_95: number;
   upper_bound_95: number;
+  conformal_radius?: number;
+  interval_method?: string;
+  nominal_coverage_pct?: number;
   p90_worst_case: number;
   actual_168h: number | null;
   engineering_limit: number;

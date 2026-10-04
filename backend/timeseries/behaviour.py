@@ -58,39 +58,67 @@ class BehaviourEngine:
             safety_slope = row["safety_slope"]
             z_score = row["lot_zscore_24"]
 
-            # Physical classification logic:
+            # Physical classification logic with persistence and noise safeguards (Phase 10):
+            # Check history completeness
+            has_history = pd.notnull(v0) and pd.notnull(v24) and pd.notnull(v96)
+            
             # 1. Check if current value already violates limit
             current_val = v96 if pd.notnull(v96) else v24
             if current_val >= max_limit:
                 p_state = "HIGH RISK"
+                p_confidence = "HIGH EVIDENCE"
                 p_evidence = f"{param} ({current_val:.2f}) has breached hard engineering limit ({max_limit:.2f})."
             
-            # 2. Check for runaway acceleration towards limit
-            elif accel > CONFIG.acceleration_warning_threshold and drift_rate_24 > 0:
-                if dist_limit < (max_limit * 0.3) or drift_rate_96 > safety_slope:
+            # 2. Check for runaway acceleration towards limit with persistence safeguards
+            elif has_history and accel > CONFIG.acceleration_warning_threshold and drift_rate_24 > 0:
+                # Require persistence: late drift rate must exceed early drift rate consistently
+                rate_increase = drift_rate_96 - drift_rate_24
+                is_persistent = (rate_increase > 0.005) or (accel > CONFIG.acceleration_alarm_threshold)
+
+                if is_persistent and (dist_limit < (max_limit * 0.3) or drift_rate_96 > safety_slope):
                     p_state = "HIGH RISK"
-                    p_evidence = f"Accelerating degradation (+{accel:.5f}/h²) with acute limit proximity ({dist_limit:.2f} {spec.unit if spec else ''} margin remaining)."
-                else:
+                    p_confidence = "HIGH EVIDENCE"
+                    p_evidence = (
+                        f"Persistent accelerating degradation (+{accel:.5f}/h², rate increased by +{rate_increase:.4f}/h) "
+                        f"with acute limit proximity ({dist_limit:.2f} {spec.unit if spec else ''} margin remaining)."
+                    )
+                elif is_persistent:
                     p_state = "ACCELERATING"
-                    p_evidence = f"Non-linear wearout detected: drift rate increased from {drift_rate_24:.4f} to {drift_rate_96:.4f} (accel: +{accel:.5f}/h²)."
+                    p_confidence = "HIGH EVIDENCE" if accel > CONFIG.acceleration_alarm_threshold else "MODERATE EVIDENCE"
+                    p_evidence = (
+                        f"Non-linear wearout detected: drift rate increased from {drift_rate_24:.4f} to {drift_rate_96:.4f} "
+                        f"(persistent accel: +{accel:.5f}/h² over 96h window)."
+                    )
+                else:
+                    # Single sample fluctuation or noise below persistent threshold
+                    p_state = "DRIFTING"
+                    p_confidence = "LOW EVIDENCE"
+                    p_evidence = (
+                        f"Transient acceleration (+{accel:.5f}/h²) within thermal noise band; "
+                        f"classified as steady linear drift (rate: {drift_rate_24:+.4f}/h) pending further observations."
+                    )
 
             # 3. Check for steady linear drift
             elif abs(drift_rate_24) > 0.02 or pct_24 > 15.0 or abs(z_score) > 2.2:
                 # Distinguish if erratic / unstable
                 if pd.notnull(v96) and ((v24 - v0) * (v96 - v24) < -0.2): # Direction reversal / erratic oscillation
                     p_state = "UNSTABLE"
+                    p_confidence = "MODERATE EVIDENCE"
                     p_evidence = f"Erratic trajectory detected: direction flipped from {v0:.2f}->{v24:.2f} to {v24:.2f}->{v96:.2f}."
                 else:
                     p_state = "DRIFTING"
+                    p_confidence = "HIGH EVIDENCE" if abs(z_score) > 2.5 else "MODERATE EVIDENCE"
                     p_evidence = f"Monotonic drift: {pct_24:+.1f}% shift at 24h (rate: {drift_rate_24:+.4f}/h, Z: {z_score:+.2f})."
 
             # 4. Otherwise stable / normal
             else:
                 p_state = "NORMAL"
+                p_confidence = "HIGH EVIDENCE" if has_history else "MODERATE EVIDENCE"
                 p_evidence = f"Stable telemetry ({pct_24:+.1f}% drift, acceleration within thermal noise boundary)."
 
             param_behaviours[param] = {
                 "state": p_state,
+                "confidence": p_confidence,
                 "drift_rate_24": round(float(drift_rate_24), 5),
                 "drift_rate_96": round(float(drift_rate_96), 5),
                 "drift_acceleration": round(float(accel), 6),
@@ -123,10 +151,21 @@ class BehaviourEngine:
         elif worst_state in ["DRIFTING", "UNSTABLE"]:
             trajectory_type = "increasing drift"
 
+        # Overall fingerprint confidence
+        comp_confidence = "HIGH EVIDENCE"
+        conf_levels = [pb["confidence"] for pb in param_behaviours.values()]
+        if "INSUFFICIENT EVIDENCE" in conf_levels:
+            comp_confidence = "INSUFFICIENT EVIDENCE"
+        elif "LOW EVIDENCE" in conf_levels:
+            comp_confidence = "LOW EVIDENCE"
+        elif "MODERATE EVIDENCE" in conf_levels:
+            comp_confidence = "MODERATE EVIDENCE"
+
         fingerprint = {
             "component_id": comp_id,
             "lot_id": lot_id,
             "overall_state": worst_state,
+            "confidence": comp_confidence,
             "trajectory_type": trajectory_type,
             "primary_driver": primary_driver,
             "parameter_behaviours": param_behaviours,

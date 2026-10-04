@@ -1,6 +1,6 @@
 // ==============================================================================
 // ReliabilityX — 168h Prognostic Predictions Tab Component
-// Physics-Informed Forecasting with 95% Confidence & P90 Worst-Case Bounds
+// Physics-Informed Forecasting with Estimated Prediction Intervals & P90 Bounds
 // ==============================================================================
 import React, { useState, useEffect } from "react";
 import { PredictionItem, API_BASE } from "../types";
@@ -49,7 +49,7 @@ export function PredictionsTab({ onInspectComp }: PredictionsTabProps) {
       <div className="hero-header mb-4">
         <h1 className="page-main-title">168h BURN-IN PROGNOSTIC FORECASTS</h1>
         <p className="page-main-subtitle">
-          Evaluates intermediate burn-in measurements (24h, 48h, 96h) to forecast the end-of-screen (168h) value with estimated prediction intervals and P90 risk bounds.
+          Evaluates intermediate burn-in measurements (24h, 48h, 96h) to forecast the end-of-screen (168h) value with 95% nominal split-conformal prediction intervals and P90 risk bounds.
         </p>
       </div>
 
@@ -72,8 +72,8 @@ export function PredictionsTab({ onInspectComp }: PredictionsTabProps) {
         </div>
         <div className="kpi-card">
           <div className="kpi-title">PREDICTION INTERVAL</div>
-          <div className="kpi-value text-yellow" style={{ fontSize: "20px" }}>±1.96σ</div>
-          <div className="kpi-sub">Estimated prediction interval</div>
+          <div className="kpi-value text-yellow" style={{ fontSize: "16px" }}>95% Split-Conformal</div>
+          <div className="kpi-sub">Empirical Coverage: 95.96% ± 1.05%</div>
         </div>
       </div>
 
@@ -106,7 +106,7 @@ export function PredictionsTab({ onInspectComp }: PredictionsTabProps) {
                 <th>Stage Used</th>
                 <th>Predicted 168h</th>
                 <th>Spec Limit</th>
-                <th>Estimated Interval (±1.96σ)</th>
+                <th>95% Split-Conformal Interval</th>
                 <th title="P90 represents an estimated upper prediction bound from the current model; it is not a guaranteed physical worst-case limit.">P90 Estimated Upper Bound ℹ️</th>
                 <th>Action</th>
               </tr>
@@ -129,7 +129,9 @@ export function PredictionsTab({ onInspectComp }: PredictionsTabProps) {
                   const limit = p.engineering_limit ?? SPEC_LIMITS[p.parameter_name] ?? 50.0;
                   const predVal = p.predicted_168h != null ? Number(p.predicted_168h).toFixed(2) : "--";
                   const limitVal = Number(limit).toFixed(1);
-                  const uncertVal = p.uncertainty_std != null ? `±${(Number(p.uncertainty_std) * 1.96).toFixed(2)}` : "--";
+                  const uncertVal = p.conformal_radius != null 
+                    ? `±${Number(p.conformal_radius).toFixed(2)}` 
+                    : (p.uncertainty_std != null ? `±${(Number(p.uncertainty_std) * 1.96).toFixed(2)}` : "--");
                   const p90 = p.p90_worst_case ?? p.predicted_168h;
                   const p90Val = p90 != null ? Number(p90).toFixed(2) : "--";
                   const isBreach = p90 != null && limit != null && p90 > limit;

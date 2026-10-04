@@ -64,6 +64,12 @@ class CounterfactualEngine:
                     f"{max_allowed_rate:.4f} {unit}/h before violating the 168h specification."
                 )
 
+        # Resulting estimated trajectory curve under assumed drift
+        resulting_trajectory = [
+            {"hour": current_hour, "value": round(current_value, 3)},
+            {"hour": 168.0, "value": round(current_value + current_drift_rate * remaining_hours, 3)}
+        ]
+
         return {
             "parameter_name": parameter_name,
             "current_value": round(current_value, 3),
@@ -75,5 +81,9 @@ class CounterfactualEngine:
             "max_allowable_drift_rate": round(max_allowed_rate, 4),
             "margin_status": margin_status,
             "is_already_breached": is_already_breached,
+            "calculation_type": "MATHEMATICAL_SENSITIVITY_ANALYSIS",
+            "assumptions": "Linear velocity extrapolation from current screening checkpoint under constant thermal stress conditions.",
+            "disclaimer": "Mathematical engineering sensitivity calculation under stated model assumptions, not a guaranteed physical outcome.",
+            "resulting_trajectory": resulting_trajectory,
             "engineering_guidance": recommendation
         }

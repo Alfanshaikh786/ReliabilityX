@@ -599,7 +599,7 @@ section,
 }
 
 .sidebar-mobile-close-btn {
-  display: none;
+  display: none !important;
 }
 
 /* Tablet Layout (769px - 1024px): Collapsed Icon Sidebar */
@@ -1789,44 +1789,118 @@ section,
   font-size: 12.5px;
 }
 
-/* Lot Summary Section (Dashboard & Lots tab - 1440+: 5 cols, 1200-1440: 3 cols, 768-1200: 2 cols, <768: 1 col) */
-.lot-summary-grid, .lots-grid {
+/* Lot Summary Section (Dashboard 4-Card Preview & Lots Tab Grid) */
+.lot-summary-grid {
   display: grid;
   gap: 16px;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.lots-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 }
 
 @media (min-width: 1440px) {
-  .lot-summary-grid, .lots-grid {
-    grid-template-columns: repeat(5, 1fr);
+  .lot-summary-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
   }
 }
 
-@media (min-width: 1200px) and (max-width: 1439px) {
-  .lot-summary-grid, .lots-grid {
-    grid-template-columns: repeat(3, 1fr);
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .lot-summary-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
   }
 }
 
-@media (min-width: 768px) and (max-width: 1199px) {
-  .lot-summary-grid, .lots-grid {
+@media (min-width: 768px) and (max-width: 1023px) {
+  .lot-summary-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
   }
 }
 
 @media (max-width: 767px) {
-  .lot-summary-grid, .lots-grid {
+  .lot-summary-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 }
 
 .lot-summary-card {
   background-color: #111C3D;
   border: 1px solid #1E293B;
-  border-radius: 10px;
-  padding: 16px;
+  border-radius: 12px;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 9px;
+  box-sizing: border-box;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.lot-summary-card:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.lot-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 2px;
+}
+
+.lot-id-text {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-main, #F8FAFC);
+  letter-spacing: 0.25px;
+  line-height: 1.25;
+}
+
+.lot-card-header .badge {
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.2px;
+}
+
+.lot-card-sub {
+  font-size: 11.5px;
+  color: var(--text-muted, #94A3B8);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.lot-card-status-tag {
+  display: flex;
+  align-items: center;
+  margin: 1px 0;
+}
+
+.lot-card-status-tag .badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2.5px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.lot-card-pattern {
+  font-size: 11.5px;
+  color: var(--text-sub, #CBD5E1);
+  line-height: 1.45;
+  margin-top: 2px;
 }
 
 /* Live Telemetry Status Grid (Live Screening) */
@@ -7332,6 +7406,43 @@ button.d-desktop-only {
     border-color: rgba(56, 189, 248, 0.35);
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45), 0 0 14px rgba(56, 189, 248, 0.12);
   }
+}
+
+/* Touch & Mobile-Safe Card Interaction Styles (Equally responsive on mobile/app) */
+.about-impact-item,
+.about-value-item,
+.about-mv-card,
+.team-card {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: pan-y; /* Permits uninhibited vertical scrolling */
+}
+
+/* Touch feedback for mobile devices (triggered on genuine tap) */
+.about-impact-item.is-touched,
+.about-value-item.is-touched,
+.about-mv-card.is-touched,
+.team-card.is-touched,
+.about-impact-item.rx-settled-in.is-touched,
+.about-value-item.rx-settled-in.is-touched,
+.about-mv-card.rx-settled-in.is-touched,
+.team-card.rx-settled-in.is-touched,
+.about-impact-item:active,
+.about-value-item:active,
+.about-mv-card:active,
+.team-card:active {
+  transform: translate3d(0, -3px, 0) !important;
+  border-color: rgba(56, 189, 248, 0.42) !important;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.48), 0 0 14px rgba(56, 189, 248, 0.18) !important;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.team-card.is-leader.is-touched,
+.team-card.is-leader.rx-settled-in.is-touched,
+.team-card.is-leader:active {
+  transform: translate3d(0, -3px, 0) !important;
+  border-color: rgba(56, 189, 248, 0.65) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.52), 0 0 20px rgba(56, 189, 248, 0.28) !important;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
 /* ==============================================================================
