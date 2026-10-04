@@ -1,8 +1,17 @@
 import React, { useState } from "react";
 
-export function SafetyNotice() {
+interface SafetyNoticeProps {
+  activeTab?: string;
+}
+
+export function SafetyNotice({ activeTab }: SafetyNoticeProps = {}) {
   const [dismissed, setDismissed] = useState(false);
-  if (dismissed) return null;
+  if (
+    dismissed ||
+    activeTab !== "dashboard"
+  ) {
+    return null;
+  }
 
   return (
     <div className="safety-banner">

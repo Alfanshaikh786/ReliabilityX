@@ -4,6 +4,7 @@
 // ==============================================================================
 import React, { useState, useEffect } from "react";
 import { LotItem, API_BASE } from "../types";
+import { SectionHero } from "./SectionHero";
 
 interface LotsTabProps {
   onSelectLot: (lotId: string) => void;
@@ -31,13 +32,12 @@ export function LotsTab({ onSelectLot }: LotsTabProps) {
 
   return (
     <div className="tab-pane active">
-      {/* 1. Page Header */}
-      <div className="page-header mb-4">
-        <h1 className="page-main-title">Lot Health & Batch Anomaly Detection</h1>
-        <p className="page-main-subtitle">
-          Evaluates lot-wide degradation distributions to distinguish isolated component wearout from wafer-level or batch-wide manufacturing flaws.
-        </p>
-      </div>
+      {/* 1. Page Header (Standardized Reusable About Hero) */}
+      <SectionHero
+        badge="LOT HEALTH"
+        title="Lot Health & Anomaly Triage"
+        subtitle="Lot-relative anomaly detection, systemic shift analysis, and component-level screening risk assessment."
+      />
 
       {/* 2. Top KPI Metrics Row (4 equal-width cards) */}
       <div className="kpi-grid mb-4">

@@ -3,6 +3,7 @@
 // Separate Informational View Accessible from Left Sidebar
 // ==============================================================================
 import React, { useState, useEffect, useRef } from "react";
+import { SectionHero } from "./SectionHero";
 
 interface TeamMember {
   id: string;
@@ -321,27 +322,13 @@ export function AboutSection() {
       className="about-section-container mb-4"
       aria-labelledby="about-main-heading"
     >
-      {/* 1. Hero-Style Introduction (Eyebrow -> Heading -> Divider -> Tagline sequential reveal) */}
-      <div className="card about-hero-intro mb-4 rx-about-fade">
-        <div className="about-hero-eyebrow">
-          <span className="about-hero-eyebrow-dot" />
-          ABOUT RELIABILITYX
-        </div>
-
-        <h1 id="about-main-heading" className="about-hero-title">
-          About Reliability<span style={{ color: "var(--accent-blue)" }}>X</span>
-        </h1>
-
-        <div className="about-hero-divider" aria-hidden="true">
-          <span className="about-divider-line line-left" />
-          <span className="about-divider-accent" />
-          <span className="about-divider-line line-right" />
-        </div>
-
-        <p className="about-hero-tagline">
-          AI-assisted reliability intelligence for high-reliability component screening and space applications.
-        </p>
-      </div>
+      {/* 1. Hero-Style Introduction */}
+      <SectionHero
+        badge="ABOUT RELIABILITYX"
+        title={<>About Reliability<span style={{ color: "var(--accent-blue)" }}>X</span></>}
+        titleId="about-main-heading"
+        subtitle="AI-assisted reliability intelligence for high-reliability component screening and space applications."
+      />
 
       {/* 2. Our Impact Areas (6 Professional Cards with Staggered Upward Ingress) */}
       <div className="card mb-4 rx-about-fade">

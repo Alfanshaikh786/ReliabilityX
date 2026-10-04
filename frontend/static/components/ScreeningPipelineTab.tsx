@@ -4,6 +4,7 @@
 // ==============================================================================
 import React, { useState } from "react";
 import { ArchitectureFlowchart } from "./ArchitectureFlowchart";
+import { SectionHero } from "./SectionHero";
 
 interface ScreeningPipelineTabProps {
   onInspectComp: (id: string) => void;
@@ -149,38 +150,33 @@ export function ScreeningPipelineTab({ onInspectComp }: ScreeningPipelineTabProp
 
   return (
     <div className="tab-pane active">
-      {/* 1. Dashboard-Style Hero Branding Header */}
-      <div className="hero-header" style={{ marginBottom: "16px", borderRadius: "var(--radius-md)", border: "1px solid var(--border-color)" }}>
-        <div className="hero-brand-row">
-          <div>
-            <h1 className="hero-title">SCREENING PIPELINE & AI ARCHITECTURE</h1>
-            <p className="hero-subtitle">
-              End-to-end 10-layer AI decision architecture combining Scikit-Learn machine learning, physics-informed Arrhenius models, and AEC-Q001-referenced statistical DPAT screening limits.
-            </p>
-          </div>
-        </div>
+      {/* 1. Page Header (Standardized Reusable About Hero) */}
+      <SectionHero
+        badge="ANOMALY DETECTION"
+        title="Screening Pipeline"
+        subtitle="Dynamic anomaly detection and degradation screening across component burn-in and environmental stress telemetry."
+      />
 
-        {/* View Mode Switcher */}
-        <div style={{ display: "flex", gap: "10px", marginTop: "14px", flexWrap: "wrap" }}>
-          <button
-            className={`btn btn-sm ${viewMode === "flowchart" ? "btn-primary" : "btn-outline"}`}
-            onClick={() => setViewMode("flowchart")}
-          >
-            📊 Interactive Architecture Blueprint
-          </button>
-          <button
-            className={`btn btn-sm ${viewMode === "specs" ? "btn-primary" : "btn-outline"}`}
-            onClick={() => setViewMode("specs")}
-          >
-            🔬 8-Stage Detailed Engineering Specs
-          </button>
-          <button
-            className={`btn btn-sm ${viewMode === "ml_registry" ? "btn-primary" : "btn-outline"}`}
-            onClick={() => setViewMode("ml_registry")}
-          >
-            🤖 Active ML Models & Algorithms Registry
-          </button>
-        </div>
+      {/* View Mode Switcher */}
+      <div style={{ display: "flex", gap: "10px", marginBottom: "16px", flexWrap: "wrap" }}>
+        <button
+          className={`btn btn-sm ${viewMode === "flowchart" ? "btn-primary" : "btn-outline"}`}
+          onClick={() => setViewMode("flowchart")}
+        >
+          📊 Interactive Architecture Blueprint
+        </button>
+        <button
+          className={`btn btn-sm ${viewMode === "specs" ? "btn-primary" : "btn-outline"}`}
+          onClick={() => setViewMode("specs")}
+        >
+          🔬 8-Stage Detailed Engineering Specs
+        </button>
+        <button
+          className={`btn btn-sm ${viewMode === "ml_registry" ? "btn-primary" : "btn-outline"}`}
+          onClick={() => setViewMode("ml_registry")}
+        >
+          🤖 Active ML Models & Algorithms Registry
+        </button>
       </div>
 
       {/* 2. Top KPI Metrics Row */}

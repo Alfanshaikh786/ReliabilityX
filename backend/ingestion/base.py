@@ -39,6 +39,7 @@ class TelemetryPacket(BaseModel):
     channel_id: Optional[str] = Field(default=None, description="ATE instrument channel identifier")
     instrument_id: Optional[str] = Field(default=None, description="Calibrated instrument serial/model")
     calibration_metadata: Optional[Dict[str, Any]] = Field(default=None, description="Calibration provenance and expiration metadata")
+    provenance_metadata: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Server-controlled source provenance verification metadata")
     quality: str = Field("GOOD", description="Quality code: GOOD, SUSPECT_SPIKE, STUCK, LIMIT_BREACH, MISSING")
     extra: Optional[Dict[str, Any]] = Field(default=None, description="Optional metadata or raw packet payload")
 
@@ -249,6 +250,7 @@ def validate_raw_packet(raw: Any) -> ValidationResult:
             channel_id=raw.get("channel_id"),
             instrument_id=raw.get("instrument_id"),
             calibration_metadata=raw.get("calibration_metadata"),
+            provenance_metadata=raw.get("provenance_metadata") or {},
             quality=quality,
             extra=raw.get("extra")
         )

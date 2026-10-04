@@ -8,8 +8,6 @@ import ReactDOM from "react-dom";
 
 import { TabType, ToastInfo, LiveStreamStatus, LiveTelemetryPoint, LiveAlertItem, LiveLotHealth, API_BASE } from "./types";
 import { Sidebar } from "./components/Sidebar";
-import { Topbar } from "./components/Topbar";
-import { SafetyNotice } from "./components/SafetyNotice";
 import { DashboardTab } from "./components/DashboardTab";
 import { LiveScreeningTab } from "./components/LiveScreeningTab";
 import { ScreeningPipelineTab } from "./components/ScreeningPipelineTab";
@@ -23,6 +21,7 @@ import { ComponentDetailModal } from "./components/ComponentDetailModal";
 import { DatasetModal } from "./components/DatasetModal";
 import { MobileBottomNav } from "./components/MobileBottomNav";
 import { AboutSection } from "./components/AboutSection";
+import { HardwareConnectivityTab } from "./components/HardwareConnectivityTab";
 
 export function ReliabilityXApp() {
   const getInitialTab = (): TabType => {
@@ -32,6 +31,7 @@ export function ReliabilityXApp() {
         "dashboard",
         "screening",
         "live_telemetry",
+        "hardware_connectivity",
         "components",
         "lots",
         "predictions",
@@ -95,6 +95,7 @@ export function ReliabilityXApp() {
         "dashboard",
         "screening",
         "live_telemetry",
+        "hardware_connectivity",
         "components",
         "lots",
         "predictions",
@@ -520,10 +521,14 @@ export function ReliabilityXApp() {
             });
             setLiveStatus((prev) => prev ? {
               ...prev,
-              messages_count: prev.messages_count + 1,
+              messages_count: (prev.messages_count ?? 0) + 1,
+              messages_processed: (prev.messages_processed ?? 0) + 1,
               last_update: pt.timestamp,
-              last_latency_ms: 28 + Math.random() * 15
+              last_latency_ms: (pt as any).latency_ms ?? prev.last_latency_ms
             } : null);
+            if ((pt as any).lot_health) {
+              setLiveLotHealth((pt as any).lot_health);
+            }
           } else if (msg.type === "NEW_ALERT") {
             const al: LiveAlertItem = msg.data;
             setLiveAlerts((prev) => {
@@ -738,23 +743,6 @@ export function ReliabilityXApp() {
           <div className="rx-floating-grid-mesh" />
         </div>
 
-        {/* Top Utility Bar */}
-        <Topbar
-          activeTab={activeTab}
-          globalSearch={globalSearch}
-          onSearchChange={setGlobalSearch}
-          onSearchSubmit={handleSearchSubmit}
-          activeDataset={activeDataset}
-          onOpenDatasetModal={() => setIsDatasetModalOpen(true)}
-          liveStatus={liveStatus}
-          onNavigateToLive={() => setActiveTab("live_telemetry")}
-          onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
-          onReloadDemo={handleReloadDemo}
-        />
-
-        {/* Safety Notice Banner */}
-        <SafetyNotice />
-
         {/* Dynamic Page Content */}
         <main className="app-content">
           {activeTab === "dashboard" && (
@@ -773,6 +761,14 @@ export function ReliabilityXApp() {
               onChangeSimDrift={setHeroSimulatedDrift}
               onOpenInspectModal={(id: string) => setSelectedCompId(id)}
               onNavigateTab={setActiveTab}
+              globalSearch={globalSearch}
+              onSearchChange={setGlobalSearch}
+              onSearchSubmit={handleSearchSubmit}
+              activeDataset={activeDataset}
+              onOpenDatasetModal={() => setIsDatasetModalOpen(true)}
+              liveStatus={liveStatus}
+              onNavigateToLive={() => setActiveTab("live_telemetry")}
+              onReloadDemo={handleReloadDemo}
             />
           )}
 
@@ -788,6 +784,15 @@ export function ReliabilityXApp() {
               onResumeStream={handleResumeStream}
               onStopStream={handleStopStream}
               onClearPoints={() => setLivePoints([])}
+              componentsList={componentsList}
+            />
+          )}
+
+          {activeTab === "hardware_connectivity" && (
+            <HardwareConnectivityTab 
+              onInspectComp={(id: string) => setSelectedCompId(id)} 
+              livePoints={livePoints}
+              liveStatus={liveStatus?.connection_status || "DISCONNECTED"}
             />
           )}
 

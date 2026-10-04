@@ -7,6 +7,7 @@ import { TabType, API_BASE } from "../types";
 import {
   IconDashboard,
   IconLivePulse,
+  IconHardware,
   IconPipeline,
   IconComponents,
   IconLots,
@@ -84,11 +85,20 @@ export function Sidebar({ activeTab, onSelectTab, collapsed, onToggleCollapse, m
               onClick={() => handleItemClick("live_telemetry")}
               title="Live Screening & Simulator"
             >
-            <IconLivePulse />
-            <span className="sidebar-item-label">Live Screening</span>
-            {!collapsed && <span className="live-sidebar-pill">LIVE</span>}
-          </button>
-        </div>
+              <IconLivePulse />
+              <span className="sidebar-item-label">Live Screening</span>
+              {!collapsed && <span className="live-sidebar-pill">LIVE</span>}
+            </button>
+            <button
+              className={`sidebar-item ${activeTab === "hardware_connectivity" ? "active" : ""}`}
+              onClick={() => handleItemClick("hardware_connectivity")}
+              title="Hardware Connectivity & Live Test-Cell Integration"
+            >
+              <IconHardware />
+              <span className="sidebar-item-label">Hardware Connectivity</span>
+              {!collapsed && <span className="hardware-sidebar-pill">ATE</span>}
+            </button>
+          </div>
 
         {/* GROUP 2: SCREENING */}
         <div className="sidebar-nav-group">

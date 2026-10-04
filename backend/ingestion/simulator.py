@@ -7,7 +7,7 @@ from __future__ import annotations
 import asyncio
 import math
 import random
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Optional, Tuple
 from backend.ingestion.base import TelemetrySource, TelemetryPacket
 from backend.core.config import DEFAULT_PARAMETER_SPECS
@@ -48,8 +48,9 @@ class LiveSimulatorAdapter(TelemetrySource):
     def __init__(self, source_name: str = "SIMULATED_ATE_01"):
         super().__init__(source_name=source_name)
         self.sampling_rate_sec: float = 1.0
+        self.sampling_rate_hz: float = 1.0
         self.selected_component: str = "C-01008"
-        self.selected_lot: str = "LOT-2411C"
+        self.selected_lot: str = "LOT-2411A"
         self.selected_parameter: str = "leakage_current_uA"
         self.scenario: str = "ACCELERATING_RUNAWAY"
         
@@ -62,8 +63,24 @@ class LiveSimulatorAdapter(TelemetrySource):
         self._stuck_value: Optional[float] = None
         self._spike_counter: int = 0
         self._step_count: int = 0
-        self._sub_components = ["C-01008", "C-01009", "C-01010", "C-01011", "C-01012"]
+        self._sub_components = self._load_lot_components(self.selected_lot)
         self._comp_index = 0
+
+    def _load_lot_components(self, lot_id: str) -> List[str]:
+        """Loads available components for the target lot from database."""
+        try:
+            import sqlite3
+            from backend.core.config import CONFIG
+            conn = sqlite3.connect(CONFIG.db_path)
+            c = conn.cursor()
+            c.execute("SELECT DISTINCT component_id FROM components WHERE lot_id = ? ORDER BY component_id", (lot_id,))
+            comps = [r[0] for r in c.fetchall()]
+            conn.close()
+            if comps:
+                return comps
+        except Exception:
+            pass
+        return ["C-01008", "C-01009", "C-01010", "C-01011", "C-01012"]
 
     async def connect(self, config: Optional[Dict[str, Any]] = None) -> bool:
         """Configures and starts the background generator loop."""
@@ -81,11 +98,13 @@ class LiveSimulatorAdapter(TelemetrySource):
     def configure(self, config: Dict[str, Any]) -> None:
         """Updates simulation parameters dynamically without resetting state."""
         if "sampling_rate" in config:
-            self.sampling_rate_sec = max(0.1, min(10.0, float(config["sampling_rate"])))
+            self.sampling_rate_sec = max(0.05, min(10.0, float(config["sampling_rate"])))
+            self.sampling_rate_hz = 1.0 / self.sampling_rate_sec
         if "component_id" in config and config["component_id"]:
             self.selected_component = str(config["component_id"])
         if "lot_id" in config and config["lot_id"]:
             self.selected_lot = str(config["lot_id"])
+            self._sub_components = self._load_lot_components(self.selected_lot)
         if "parameter" in config and config["parameter"]:
             self.selected_parameter = str(config["parameter"])
         if "scenario" in config and config["scenario"] in self.SCENARIOS:
@@ -94,6 +113,7 @@ class LiveSimulatorAdapter(TelemetrySource):
             self.sim_hour = 0.0
             self._step_count = 0
             self._stuck_value = None
+            self._base_start_time = None
 
     async def pause(self) -> None:
         """Temporarily pauses packet emission."""
@@ -260,16 +280,23 @@ class LiveSimulatorAdapter(TelemetrySource):
         elif abs(t - 168.0) < 3.0:
             stage = "168h"
 
+        # Advance sample timestamp cleanly per step
+        if not hasattr(self, "_base_start_time") or self._base_start_time is None:
+            self._base_start_time = datetime.now(timezone.utc).replace(microsecond=0)
+        sample_dt = self._base_start_time + timedelta(seconds=float(self._step_count * self.sampling_rate_sec))
+        sample_time_iso = sample_dt.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
         packet = TelemetryPacket(
             component_id=active_comp,
             lot_id=self.selected_lot,
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=sample_time_iso,
             timestamp_hours=round(self.sim_hour, 1),
             test_stage=stage,
             parameter=self.selected_parameter,
             value=0.0 if math.isnan(val) else val,
             unit=unit,
             source=self.source_name,
+            source_type="SIMULATED",
             quality=quality,
             extra={
                 "scenario": self.scenario,

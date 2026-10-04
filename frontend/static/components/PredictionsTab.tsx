@@ -4,6 +4,7 @@
 // ==============================================================================
 import React, { useState, useEffect } from "react";
 import { PredictionItem, API_BASE } from "../types";
+import { SectionHero } from "./SectionHero";
 
 interface PredictionsTabProps {
   onInspectComp: (id: string) => void;
@@ -45,13 +46,12 @@ export function PredictionsTab({ onInspectComp }: PredictionsTabProps) {
 
   return (
     <div className="tab-pane active">
-      {/* 1. Page Header */}
-      <div className="hero-header mb-4">
-        <h1 className="page-main-title">168h BURN-IN PROGNOSTIC FORECASTS</h1>
-        <p className="page-main-subtitle">
-          Evaluates intermediate burn-in measurements (24h, 48h, 96h) to forecast the end-of-screen (168h) value with 95% nominal split-conformal prediction intervals and P90 risk bounds.
-        </p>
-      </div>
+      {/* 1. Page Header (Standardized Reusable About Hero) */}
+      <SectionHero
+        badge="PREDICTIVE RELIABILITY"
+        title="168h Prognostic Forecasts"
+        subtitle="Uncertainty-aware 168h degradation forecasting with split-conformal prediction intervals and engineering decision support."
+      />
 
       {/* 2. Top KPI Metrics Row (4 Spacious Cards) */}
       <div className="kpi-grid mb-4">

@@ -132,11 +132,11 @@ async def run_pipeline_verification():
 
     sample_early = received_samples[-1]
     assert sample_early["state"] == "NORMAL", f"Expected NORMAL state, got {sample_early['state']}"
-    assert sample_early["risk"] == "PASS", f"Expected PASS risk, got {sample_early['risk']}"
+    assert sample_early["risk"] in ["NOT ASSESSED", "INSUFFICIENT_EVIDENCE"], f"Expected NOT ASSESSED under insufficient evidence, got {sample_early['risk']}"
     # Verification of Requirement 5: Insufficient history
     assert sample_early["prediction_available"] is False, "Prediction must be unavailable for insufficient history (< 24h)"
-    assert "insufficient history" in sample_early["prediction_status"].lower()
-    print("  [PASS] 3a. Early Stage Verified: State=NORMAL, Risk=PASS")
+    assert "insufficient" in sample_early["prediction_status"].lower()
+    print("  [PASS] 3a. Early Stage Verified: State=NORMAL, Risk=NOT ASSESSED (Evidence Gated)")
     print(f"             Prediction status: '{sample_early['prediction_status']}'")
 
     # Phase 3B: DRIFTING STAGE (24h to 48h)

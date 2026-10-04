@@ -164,6 +164,9 @@ python backend/tests/verify_security_upload.py
 
 # 5. Run Production Parity Cold-Start Verification
 python backend/tests/verify_production_pipeline.py
+
+# 6. Run Hardware Connectivity & Integration Suite (20/20 tests)
+python backend/tests/test_hardware_connectivity.py
 ```
 
 Detailed metrics, per-lot confusion matrices, and scientific disclosures are documented in [`REPORT X.md`](REPORT%20X.md).
@@ -171,7 +174,41 @@ Detailed metrics, per-lot confusion matrices, and scientific disclosures are doc
 
 ---
 
-## 6. Project Architecture
+## 6. Hardware Connectivity & Live Test-Cell Integration
+
+> **Formal Architectural & Hardware Readiness Notice**
+> "ReliabilityX is architected to ingest telemetry from compatible test-cell instrumentation through a hardware adapter/gateway layer. Physical hardware validation remains pending until genuine ATE/chamber equipment is connected and calibrated."
+
+### Operational Status Breakdown
+- **Current Operational Modes**:
+  - `SIMULATED`: Multi-channel virtual Source Measure Unit (SMU) bench generating high-fidelity aerospace parametric burn-in telemetry with configurable drift, thermal noise, acceleration, and sensor failure modes.
+  - `REPLAY`: Standard Test Data Format (STDF) and CSV historical screening replay.
+- **Hardware-Ready Protocols & Adapters**:
+  - **SCPI over Ethernet / LXI**: IEEE-488.2 ASCII command syntax, HiSLIP (port 4880), and raw socket (port 5025) connection routines for Keithley 2602B and Keysight B2901B SMUs.
+  - **GPIB / IEEE-488**: IEEE-488.1 3-wire handshake parallel instrument bus interface with primary addressing (0–30) for thermal chambers (e.g. Thermotron SE-Series).
+  - **USBTMC**: USB Test & Measurement Class endpoint communication.
+  - **MQTT / SEMI E183 RITdb**: Containerized real-time pub-sub streaming telemetry bridge aligning with SEMI E183 and SEMI A4 TEMS (Tester Event Messaging for Semiconductors).
+  - **STDF Ingestion**: Parametric Test Record (PTR) parsing to canonical `TelemetryPacket` events.
+- **Future Physical Validation**:
+  - Physical Automated Test Equipment (ATE) and thermal burn-in chamber live on-wafer/packaged component validation.
+
+### Strict Source Provenance Invariance
+ReliabilityX enforces strict provenance classification on every measurement packet:
+- `SIMULATED`
+- `REPLAY`
+- `LIVE_HARDWARE`
+
+Simulated or replay telemetry can **never** masquerade as `LIVE_HARDWARE`. Genuine live hardware status is only granted upon verified physical socket handshake, `*IDN?` serial verification, and unexpired NIST-traceable calibration metadata.
+
+### Read-Only Safety Boundary
+Version 1 operates as a strictly **READ-ONLY** telemetry observer and prognostic intelligence system.
+- ReliabilityX may: read telemetry, analyze multi-checkpoint drift, compute conformal prediction intervals, evaluate lot-systemic risk, display triage status, and generate engineering alerts.
+- ReliabilityX will **NOT** automatically: alter chamber temperature, change compliance voltage, adjust bias currents, stop burn-in screening runs, modify ATE test programs, or power off equipment.
+- All hardware actuation and disposition authority remains exclusively with certified human QA and reliability engineering personnel.
+
+---
+
+## 7. Project Architecture
 
 ```
 ReliabilityX/

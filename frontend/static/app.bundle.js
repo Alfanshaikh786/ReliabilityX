@@ -1,4 +1,4 @@
-// ReliabilityX Bundled Application (2026-10-04T07:34:18.787Z)
+// ReliabilityX Bundled Application (2026-10-04T19:06:27.268Z)
 (function() {
   if (typeof window !== 'undefined') {
     if (window.React && !window.React.default) window.React.default = window.React;
@@ -63,8 +63,6 @@ var _react = _interopRequireWildcard(require("react"));
 var _reactDom = _interopRequireDefault(require("react-dom"));
 var _types = require("./types");
 var _Sidebar = require("./components/Sidebar");
-var _Topbar = require("./components/Topbar");
-var _SafetyNotice = require("./components/SafetyNotice");
 var _DashboardTab = require("./components/DashboardTab");
 var _LiveScreeningTab = require("./components/LiveScreeningTab");
 var _ScreeningPipelineTab = require("./components/ScreeningPipelineTab");
@@ -78,6 +76,7 @@ var _ComponentDetailModal = require("./components/ComponentDetailModal");
 var _DatasetModal = require("./components/DatasetModal");
 var _MobileBottomNav = require("./components/MobileBottomNav");
 var _AboutSection = require("./components/AboutSection");
+var _HardwareConnectivityTab = require("./components/HardwareConnectivityTab");
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
 function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
@@ -91,7 +90,7 @@ function ReliabilityXApp() {
   const getInitialTab = () => {
     try {
       const hash = window.location.hash.replace("#", "");
-      const validTabs = ["dashboard", "screening", "live_telemetry", "components", "lots", "predictions", "inspection", "reports", "engineering", "audit", "about"];
+      const validTabs = ["dashboard", "screening", "live_telemetry", "hardware_connectivity", "components", "lots", "predictions", "inspection", "reports", "engineering", "audit", "about"];
       if (validTabs.includes(hash)) return hash;
     } catch {}
     return "dashboard";
@@ -143,7 +142,7 @@ function ReliabilityXApp() {
   (0, _react.useEffect)(() => {
     const handleHash = () => {
       const hash = window.location.hash.replace("#", "");
-      const validTabs = ["dashboard", "screening", "live_telemetry", "components", "lots", "predictions", "inspection", "reports", "engineering", "audit", "about"];
+      const validTabs = ["dashboard", "screening", "live_telemetry", "hardware_connectivity", "components", "lots", "predictions", "inspection", "reports", "engineering", "audit", "about"];
       if (validTabs.includes(hash)) {
         setActiveTabState(hash);
         smoothScrollToTop();
@@ -492,10 +491,14 @@ function ReliabilityXApp() {
             });
             setLiveStatus(prev => prev ? {
               ...prev,
-              messages_count: prev.messages_count + 1,
+              messages_count: (prev.messages_count ?? 0) + 1,
+              messages_processed: (prev.messages_processed ?? 0) + 1,
               last_update: pt.timestamp,
-              last_latency_ms: 28 + Math.random() * 15
+              last_latency_ms: pt.latency_ms ?? prev.last_latency_ms
             } : null);
+            if (pt.lot_health) {
+              setLiveLotHealth(pt.lot_health);
+            }
           } else if (msg.type === "NEW_ALERT") {
             const al = msg.data;
             setLiveAlerts(prev => {
@@ -714,18 +717,7 @@ function ReliabilityXApp() {
     className: "rx-floating-orb rx-orb-3"
   }), /*#__PURE__*/_react.default.createElement("div", {
     className: "rx-floating-grid-mesh"
-  })), /*#__PURE__*/_react.default.createElement(_Topbar.Topbar, {
-    activeTab: activeTab,
-    globalSearch: globalSearch,
-    onSearchChange: setGlobalSearch,
-    onSearchSubmit: handleSearchSubmit,
-    activeDataset: activeDataset,
-    onOpenDatasetModal: () => setIsDatasetModalOpen(true),
-    liveStatus: liveStatus,
-    onNavigateToLive: () => setActiveTab("live_telemetry"),
-    onToggleMobileMenu: () => setMobileMenuOpen(!mobileMenuOpen),
-    onReloadDemo: handleReloadDemo
-  }), /*#__PURE__*/_react.default.createElement(_SafetyNotice.SafetyNotice, null), /*#__PURE__*/_react.default.createElement("main", {
+  })), /*#__PURE__*/_react.default.createElement("main", {
     className: "app-content"
   }, activeTab === "dashboard" && /*#__PURE__*/_react.default.createElement(_DashboardTab.DashboardTab, {
     overview: overview,
@@ -741,7 +733,15 @@ function ReliabilityXApp() {
     onSelectHeroParam: setHeroParam,
     onChangeSimDrift: setHeroSimulatedDrift,
     onOpenInspectModal: id => setSelectedCompId(id),
-    onNavigateTab: setActiveTab
+    onNavigateTab: setActiveTab,
+    globalSearch: globalSearch,
+    onSearchChange: setGlobalSearch,
+    onSearchSubmit: handleSearchSubmit,
+    activeDataset: activeDataset,
+    onOpenDatasetModal: () => setIsDatasetModalOpen(true),
+    liveStatus: liveStatus,
+    onNavigateToLive: () => setActiveTab("live_telemetry"),
+    onReloadDemo: handleReloadDemo
   }), activeTab === "live_telemetry" && /*#__PURE__*/_react.default.createElement(_LiveScreeningTab.LiveScreeningTab, {
     onInspectComp: id => setSelectedCompId(id),
     liveStatus: liveStatus,
@@ -752,7 +752,12 @@ function ReliabilityXApp() {
     onPauseStream: handlePauseStream,
     onResumeStream: handleResumeStream,
     onStopStream: handleStopStream,
-    onClearPoints: () => setLivePoints([])
+    onClearPoints: () => setLivePoints([]),
+    componentsList: componentsList
+  }), activeTab === "hardware_connectivity" && /*#__PURE__*/_react.default.createElement(_HardwareConnectivityTab.HardwareConnectivityTab, {
+    onInspectComp: id => setSelectedCompId(id),
+    livePoints: livePoints,
+    liveStatus: liveStatus?.connection_status || "DISCONNECTED"
   }), activeTab === "screening" && /*#__PURE__*/_react.default.createElement(_ScreeningPipelineTab.ScreeningPipelineTab, {
     onInspectComp: id => setSelectedCompId(id)
   }), activeTab === "components" && /*#__PURE__*/_react.default.createElement(_ComponentsTab.ComponentsTab, {
@@ -830,6 +835,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.AboutSection = AboutSection;
 var _react = _interopRequireWildcard(require("react"));
+var _SectionHero = require("./SectionHero");
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
 function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); } // ==============================================================================
@@ -1269,31 +1275,16 @@ function AboutSection() {
     ref: sectionRef,
     className: "about-section-container mb-4",
     "aria-labelledby": "about-main-heading"
-  }, /*#__PURE__*/_react.default.createElement("div", {
-    className: "card about-hero-intro mb-4 rx-about-fade"
-  }, /*#__PURE__*/_react.default.createElement("div", {
-    className: "about-hero-eyebrow"
-  }, /*#__PURE__*/_react.default.createElement("span", {
-    className: "about-hero-eyebrow-dot"
-  }), "ABOUT RELIABILITYX"), /*#__PURE__*/_react.default.createElement("h1", {
-    id: "about-main-heading",
-    className: "about-hero-title"
-  }, "About Reliability", /*#__PURE__*/_react.default.createElement("span", {
-    style: {
-      color: "var(--accent-blue)"
-    }
-  }, "X")), /*#__PURE__*/_react.default.createElement("div", {
-    className: "about-hero-divider",
-    "aria-hidden": "true"
-  }, /*#__PURE__*/_react.default.createElement("span", {
-    className: "about-divider-line line-left"
-  }), /*#__PURE__*/_react.default.createElement("span", {
-    className: "about-divider-accent"
-  }), /*#__PURE__*/_react.default.createElement("span", {
-    className: "about-divider-line line-right"
-  })), /*#__PURE__*/_react.default.createElement("p", {
-    className: "about-hero-tagline"
-  }, "AI-assisted reliability intelligence for high-reliability component screening and space applications.")), /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react.default.createElement(_SectionHero.SectionHero, {
+    badge: "ABOUT RELIABILITYX",
+    title: /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, "About Reliability", /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        color: "var(--accent-blue)"
+      }
+    }, "X")),
+    titleId: "about-main-heading",
+    subtitle: "AI-assisted reliability intelligence for high-reliability component screening and space applications."
+  }), /*#__PURE__*/_react.default.createElement("div", {
     className: "card mb-4 rx-about-fade"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "card-header about-section-inner-header"
@@ -2671,6 +2662,7 @@ exports.ComponentsTab = ComponentsTab;
 var _react = _interopRequireWildcard(require("react"));
 var _types = require("../types");
 var _Badges = require("./Badges");
+var _SectionHero = require("./SectionHero");
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
 function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
 // ==============================================================================
@@ -2720,13 +2712,11 @@ function ComponentsTab({
   const riskCount = components.filter(c => c.risk_level === "HIGH RISK").length;
   return /*#__PURE__*/_react.default.createElement("div", {
     className: "tab-pane active"
-  }, /*#__PURE__*/_react.default.createElement("div", {
-    className: "page-header mb-4"
-  }, /*#__PURE__*/_react.default.createElement("h1", {
-    className: "page-main-title"
-  }, "Component Telemetry & Screening Directory"), /*#__PURE__*/_react.default.createElement("p", {
-    className: "page-main-subtitle"
-  }, "Comprehensive screening component directory with multi-channel telemetry tracking, DPAT dynamic part testing, and real-time degradation status.")), /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react.default.createElement(_SectionHero.SectionHero, {
+    badge: "DOSSIER",
+    title: "Components Directory",
+    subtitle: "Component-level reliability profiles, screening history, telemetry evidence, and engineering diagnostics."
+  }), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-grid mb-4"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-card"
@@ -2972,10 +2962,14 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.DashboardTab = DashboardTab;
-var _react = _interopRequireDefault(require("react"));
+var _react = _interopRequireWildcard(require("react"));
 var _Badges = require("./Badges");
 var _TrajectorySvgChart = require("./TrajectorySvgChart");
-function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+var _SectionHero = require("./SectionHero");
+var _Icons = require("./Icons");
+var _types = require("../types");
+function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
+function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
 // ==============================================================================
 // ReliabilityX — Hero Dashboard Tab Component
 // Overview & Screening Intelligence with Trajectory and Real-Time What-If
@@ -2995,8 +2989,17 @@ function DashboardTab({
   onSelectHeroParam,
   onChangeSimDrift,
   onOpenInspectModal,
-  onNavigateTab
+  onNavigateTab,
+  globalSearch = "",
+  onSearchChange,
+  onSearchSubmit,
+  activeDataset,
+  onOpenDatasetModal,
+  liveStatus,
+  onNavigateToLive,
+  onReloadDemo
 }) {
+  const [noticeDismissed, setNoticeDismissed] = (0, _react.useState)(false);
   const riskDist = overview?.risk_distribution || {};
   const lotsList = overview?.lots_summary || overview?.lot_summary || [];
   const prioritiesList = overview?.top_priorities || overview?.inspection_priority || [];
@@ -3062,16 +3065,108 @@ function DashboardTab({
     limit: 2.60
   }];
   const currentParamObj = paramsList.find(p => p.id === heroParam) || paramsList[0];
+  const isPhysicallyConnected = Boolean((liveStatus?.data_source === "LIVE HARDWARE" || liveStatus?.source_type === "LIVE_HARDWARE") && liveStatus?.physical_hardware_connected);
+  const isReplay = liveStatus?.source_type === "csv_replay" || liveStatus?.data_source === "REPLAY";
+  const dataSourceLabel = isPhysicallyConnected ? "LIVE HARDWARE" : isReplay ? "REPLAY" : "SIMULATION";
+  const connStatus = liveStatus?.connection_status || "DISCONNECTED";
+  const sourceName = liveStatus?.source_name || "LIVE TELEMETRY SIMULATOR";
+  const handleGoToLive = () => {
+    if (onNavigateToLive) onNavigateToLive();else if (onNavigateTab) onNavigateTab("live_telemetry");
+  };
   return /*#__PURE__*/_react.default.createElement("div", {
     className: "tab-pane active"
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react.default.createElement(_SectionHero.SectionHero, {
     id: "section-overview-header",
-    className: "hero-header mb-4"
-  }, /*#__PURE__*/_react.default.createElement("h1", {
-    className: "page-main-title"
-  }, "RELIABILITY OVERVIEW & SCREENING INTELLIGENCE"), /*#__PURE__*/_react.default.createElement("p", {
-    className: "page-main-subtitle"
-  }, "Early detection of non-linear component degradation during Burn-In and Environmental Stress Screening (ESS). Anticipates latent wearout and limits prior to physical test failures.")), !loading && !overview && /*#__PURE__*/_react.default.createElement("div", {
+    className: "dashboard-hero-spacious",
+    badge: "DASHBOARD",
+    title: "Dashboard Overview",
+    subtitle: "AI-assisted reliability intelligence for component screening, anomaly detection, and engineering decision support."
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    className: "dashboard-status-row"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "dashboard-data-source-pill",
+    title: "Strict Telemetry Source Provenance (SIMULATION vs LIVE HARDWARE)"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "source-label-prefix"
+  }, "DATA SOURCE:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "source-dot"
+  }, "\u25CF"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "source-name-bold"
+  }, dataSourceLabel)), /*#__PURE__*/_react.default.createElement("div", {
+    className: `dashboard-connection-pill status-${connStatus.toLowerCase()}`,
+    onClick: handleGoToLive,
+    role: "button",
+    tabIndex: 0,
+    onKeyDown: e => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleGoToLive();
+      }
+    },
+    title: "Click to open Live Screening view",
+    "aria-label": `Connection status: ${connStatus}. Data source: ${sourceName}`
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "status-dot"
+  }, "\u25CF"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "status-label"
+  }, connStatus), /*#__PURE__*/_react.default.createElement("span", {
+    className: "source-text"
+  }, sourceName), /*#__PURE__*/_react.default.createElement("span", {
+    className: "standby-text"
+  }, "Standby"))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "dashboard-control-row"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "dashboard-search-benchmark-group"
+  }, /*#__PURE__*/_react.default.createElement("form", {
+    onSubmit: onSearchSubmit || (e => e.preventDefault()),
+    className: "dashboard-search-container"
+  }, /*#__PURE__*/_react.default.createElement(_Icons.IconSearch, null), /*#__PURE__*/_react.default.createElement("input", {
+    type: "text",
+    placeholder: "Search components (e.g. C-01008)...",
+    value: globalSearch,
+    onChange: e => onSearchChange?.(e.target.value),
+    "aria-label": "Search components"
+  })), /*#__PURE__*/_react.default.createElement("div", {
+    className: "dashboard-dataset-pill"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "dataset-dot"
+  }), /*#__PURE__*/_react.default.createElement("span", {
+    className: "dataset-name"
+  }, !activeDataset?.dataset_id || activeDataset.dataset_id.startsWith("demo") ? "Demo Benchmark" : activeDataset?.name || "User Dataset"), /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "dataset-change-btn",
+    onClick: onOpenDatasetModal
+  }, "Change"))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "dashboard-actions-group"
+  }, /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "dashboard-btn-export",
+    onClick: () => window.location.href = `${_types.API_BASE}/reports/export-csv`
+  }, "Export CSV"), /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "dashboard-btn-reload",
+    onClick: onReloadDemo
+  }, "Reload Demo"))), !noticeDismissed && /*#__PURE__*/_react.default.createElement("div", {
+    className: "dashboard-engineering-notice",
+    role: "alert"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "dashboard-notice-content"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "dashboard-notice-icon",
+    "aria-hidden": "true"
+  }, "\u26A0\uFE0F"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "dashboard-notice-text-wrap"
+  }, /*#__PURE__*/_react.default.createElement("strong", {
+    className: "dashboard-notice-title"
+  }, "ENGINEERING DECISION-SUPPORT NOTICE:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "dashboard-notice-text"
+  }, "AI screening provides statistical early warnings and degradation forecasts. Official specifications and QA review remain authoritative."))), /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "dashboard-notice-close-btn",
+    onClick: () => setNoticeDismissed(true),
+    title: "Dismiss notice",
+    "aria-label": "Dismiss banner"
+  }, "\xD7")), !loading && !overview && /*#__PURE__*/_react.default.createElement("div", {
     className: "alert alert-warning mb-4",
     style: {
       background: "rgba(239, 68, 68, 0.12)",
@@ -3138,7 +3233,7 @@ function DashboardTab({
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "card",
     style: {
-      padding: "18px"
+      padding: "22px"
     }
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "card-header trajectory-card-header"
@@ -3686,6 +3781,7 @@ Object.defineProperty(exports, "__esModule", {
 exports.EngineeringSuiteTab = EngineeringSuiteTab;
 var _react = _interopRequireWildcard(require("react"));
 var _types = require("../types");
+var _SectionHero = require("./SectionHero");
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
 function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
 // ==============================================================================
@@ -3734,13 +3830,11 @@ function EngineeringSuiteTab({
   };
   return /*#__PURE__*/_react.default.createElement("div", {
     className: "tab-pane active"
-  }, /*#__PURE__*/_react.default.createElement("div", {
-    className: "hero-header mb-4"
-  }, /*#__PURE__*/_react.default.createElement("h1", {
-    className: "page-main-title"
-  }, "ADVANCED ENGINEERING & AUDIT SUITE"), /*#__PURE__*/_react.default.createElement("p", {
-    className: "page-main-subtitle"
-  }, "Configure AEC-Q001 DPAT statistical limits, evaluate multi-model prognostic benchmarks, and inspect the tamper-evident SHA-256 audit ledger.")), /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react.default.createElement(_SectionHero.SectionHero, {
+    badge: "ENGINEERING & AUDIT",
+    title: "Advanced Engineering & Audit Suite",
+    subtitle: "Configure AEC-Q001-referenced statistical screening limits, evaluate prognostic benchmarks, and inspect the tamper-evident SHA-256 audit ledger."
+  }), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-grid mb-4"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-card"
@@ -3916,6 +4010,1210 @@ function EngineeringSuiteTab({
 }
   });
 
+  // Module: components/HardwareConnectivityTab.tsx
+  define("components/HardwareConnectivityTab.tsx", function(module, exports, require) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.HardwareConnectivityTab = HardwareConnectivityTab;
+var _react = _interopRequireWildcard(require("react"));
+var _types = require("../types");
+var _SectionHero = require("./SectionHero");
+function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
+function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
+// ==============================================================================
+// ReliabilityX — Hardware Connectivity & Live Test-Cell Integration Console
+// Professional Engineering Grade Test Bench & ATE Gateway Interface
+// Strict Provenance & Read-Only Safety Boundary
+// ==============================================================================
+
+function HardwareConnectivityTab({
+  onInspectComp,
+  livePoints,
+  liveStatus
+}) {
+  const [devices, setDevices] = (0, _react.useState)([]);
+  const [selectedDeviceId, setSelectedDeviceId] = (0, _react.useState)("DEV-SMU-KEITHLEY-01");
+  const [hardwareStatus, setHardwareStatus] = (0, _react.useState)(null);
+  const [loading, setLoading] = (0, _react.useState)(false);
+  const [actionMessage, setActionMessage] = (0, _react.useState)(null);
+  const [testResult, setTestResult] = (0, _react.useState)(null);
+  const [showTechnicalDetails, setShowTechnicalDetails] = (0, _react.useState)(false);
+  const [recentTelemetry, setRecentTelemetry] = (0, _react.useState)([]);
+
+  // Fetch initial hardware status and device registry
+  const refreshStatus = async () => {
+    try {
+      const res = await fetch(`${_types.API_BASE}/hardware/status`);
+      if (res.ok) {
+        const data = await res.json();
+        setHardwareStatus(data);
+      }
+    } catch (err) {
+      console.error("Failed to load hardware status:", err);
+    }
+  };
+  const refreshDevices = async () => {
+    try {
+      const res = await fetch(`${_types.API_BASE}/hardware/devices`);
+      if (res.ok) {
+        const data = await res.json();
+        setDevices(data.devices || []);
+        if (data.active_device_id) {
+          setSelectedDeviceId(data.active_device_id);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch registered devices:", err);
+    }
+  };
+  const refreshRawTelemetry = async () => {
+    try {
+      const res = await fetch(`${_types.API_BASE}/stream/raw-history?limit=10`);
+      if (res.ok) {
+        const data = await res.json();
+        setRecentTelemetry(data.records || []);
+      }
+    } catch {}
+  };
+  (0, _react.useEffect)(() => {
+    refreshStatus();
+    refreshDevices();
+    refreshRawTelemetry();
+    const interval = setInterval(() => {
+      refreshStatus();
+      refreshRawTelemetry();
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Action Handlers
+  const handleDiscoverDevices = async () => {
+    setLoading(true);
+    setActionMessage({
+      text: "Scanning test bench bus interfaces (LXI, GPIB, USBTMC, MQTT)...",
+      type: "info"
+    });
+    try {
+      const res = await fetch(`${_types.API_BASE}/hardware/discover`, {
+        method: "POST"
+      });
+      const data = await res.json();
+      setDevices(data.discovered_devices || []);
+      setActionMessage({
+        text: `Discovery complete: ${data.count} test instruments registered. Physical hardware: ${data.physical_hardware_detected ? "DETECTED" : "NONE PRESENT (STANDBY)"}`,
+        type: "success"
+      });
+      await refreshStatus();
+    } catch (err) {
+      setActionMessage({
+        text: `Discovery error: ${err.message}`,
+        type: "error"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleTestConnection = async () => {
+    if (!selectedDeviceId) return;
+    setLoading(true);
+    setActionMessage({
+      text: `Testing connection for ${selectedDeviceId}...`,
+      type: "info"
+    });
+    setTestResult(null);
+    setShowTechnicalDetails(false);
+    try {
+      const res = await fetch(`${_types.API_BASE}/hardware/test-connection`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          device_id: selectedDeviceId
+        })
+      });
+      const data = await res.json();
+      setTestResult(data);
+      if (data.success) {
+        setActionMessage({
+          text: data.message || (selectedDevice?.source_type === "SIMULATED" ? "Simulation connection test passed — virtual test bench responded successfully." : selectedDevice?.source_type === "REPLAY" ? "Replay source verified." : "Physical hardware connection verified."),
+          type: "success"
+        });
+      } else {
+        setActionMessage({
+          text: data.message || "Hardware connection test failed. No physical hardware connection could be verified. Live telemetry remains unavailable.",
+          type: "error"
+        });
+      }
+      await refreshStatus();
+    } catch (err) {
+      setActionMessage({
+        text: `Connection test fault: ${err.message}`,
+        type: "error"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleConnect = async () => {
+    if (!selectedDeviceId) return;
+    setLoading(true);
+    setActionMessage({
+      text: `Binding ${selectedDeviceId} as active test equipment...`,
+      type: "info"
+    });
+    try {
+      const res = await fetch(`${_types.API_BASE}/hardware/connect`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          device_id: selectedDeviceId
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setActionMessage({
+          text: `Successfully bound to ${selectedDeviceId}. Stream ready.`,
+          type: "success"
+        });
+      } else {
+        setActionMessage({
+          text: data.message || "Target device configured, but physical hardware is not connected.",
+          type: "warning"
+        });
+      }
+      await refreshStatus();
+      await refreshDevices();
+    } catch (err) {
+      setActionMessage({
+        text: `Connection fault: ${err.message}`,
+        type: "error"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleDisconnect = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${_types.API_BASE}/hardware/disconnect`, {
+        method: "POST"
+      });
+      const data = await res.json();
+      setActionMessage({
+        text: "Hardware interface disconnected safely.",
+        type: "info"
+      });
+      await refreshStatus();
+      await refreshDevices();
+    } catch (err) {
+      setActionMessage({
+        text: `Disconnect fault: ${err.message}`,
+        type: "error"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleStartLiveStream = async () => {
+    const isLiveHwTarget = selectedDevice?.source_type === "LIVE_HARDWARE";
+    const isHwVerified = Boolean(hardwareStatus?.live_hardware_verified && hardwareStatus?.hardware_connected);
+    if (isLiveHwTarget && !isHwVerified) {
+      setActionMessage({
+        text: "Live hardware stream cannot start. Physical hardware connection has not been verified. Run Test Connection successfully before starting LIVE_HARDWARE telemetry.",
+        type: "error"
+      });
+      return;
+    }
+    setLoading(true);
+    setActionMessage({
+      text: "Starting telemetry acquisition pipeline...",
+      type: "info"
+    });
+    try {
+      const res = await fetch(`${_types.API_BASE}/hardware/stream/start`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          device_id: selectedDeviceId
+        })
+      });
+      const data = await res.json();
+      if (data.success === false || data.status?.success === false) {
+        setActionMessage({
+          text: data.message || data.status?.message || "Live hardware stream cannot start. Physical hardware connection has not been verified. Run Test Connection successfully before starting LIVE_HARDWARE telemetry.",
+          type: "error"
+        });
+      } else {
+        const streamMsg = isLiveHwTarget ? "Live hardware telemetry stream started." : selectedDevice?.source_type === "REPLAY" ? "Replay telemetry stream started." : "Simulation telemetry stream started.";
+        setActionMessage({
+          text: data.message || data.status?.message || streamMsg,
+          type: "success"
+        });
+      }
+      await refreshStatus();
+    } catch (err) {
+      setActionMessage({
+        text: `Stream error: ${err.message}`,
+        type: "error"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleStopLiveStream = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${_types.API_BASE}/hardware/stream/stop`, {
+        method: "POST"
+      });
+      const data = await res.json();
+      const isLiveHw = dataSource === "LIVE HARDWARE" || selectedDevice?.source_type === "LIVE_HARDWARE";
+      const stopMsg = isLiveHw ? "Live hardware telemetry stream stopped." : dataSource === "REPLAY" || selectedDevice?.source_type === "REPLAY" ? "Replay telemetry stream stopped." : "Simulation telemetry stream stopped.";
+      setActionMessage({
+        text: data?.status?.message || stopMsg,
+        type: "info"
+      });
+      await refreshStatus();
+    } catch (err) {
+      setActionMessage({
+        text: `Stop error: ${err.message}`,
+        type: "error"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleOpenSimulatorBench = async () => {
+    setSelectedDeviceId("DEV-SIM-ATE-MOCK");
+    setLoading(true);
+    setActionMessage({
+      text: "Switching to Virtual Test Bench simulator...",
+      type: "info"
+    });
+    try {
+      await fetch(`${_types.API_BASE}/hardware/connect`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          device_id: "DEV-SIM-ATE-MOCK"
+        })
+      });
+      await fetch(`${_types.API_BASE}/hardware/stream/start`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          device_id: "DEV-SIM-ATE-MOCK"
+        })
+      });
+      setActionMessage({
+        text: "Simulation telemetry stream started.",
+        type: "success"
+      });
+      await refreshStatus();
+      await refreshDevices();
+    } catch (err) {
+      setActionMessage({
+        text: `Simulator start error: ${err.message}`,
+        type: "error"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  const selectedDevice = devices.find(d => d.device_id === selectedDeviceId);
+  const connStatus = hardwareStatus?.connection_status || "DISCONNECTED";
+  const connHealth = hardwareStatus?.connection_health || "DISCONNECTED";
+  const dataSource = hardwareStatus?.data_source || "SIMULATION";
+  const isPhysicallyConnected = Boolean(hardwareStatus?.physical_hardware_connected);
+  const isCalValid = Boolean(hardwareStatus?.is_calibration_valid);
+  const simulatorActive = Boolean(hardwareStatus?.simulator_active || hardwareStatus?.simulator_status === "ACTIVE");
+
+  // Latest live point from stream or props for Section 7 (Live AI)
+  const latestLivePoint = livePoints && livePoints.length > 0 ? livePoints[livePoints.length - 1] : recentTelemetry.length > 0 ? recentTelemetry[0] : null;
+  const evidenceState = latestLivePoint?.evidence_state || (latestLivePoint ? "EARLY_EVIDENCE" : "INSUFFICIENT_EVIDENCE");
+  const modelStatus = latestLivePoint?.model_status || (evidenceState === "INSUFFICIENT_EVIDENCE" ? "MODEL_NOT_READY" : "MODEL_APPLICABLE");
+  const isPredictionAvailable = Boolean(latestLivePoint && latestLivePoint.predicted_168h !== undefined && latestLivePoint.predicted_168h !== null && evidenceState !== "INSUFFICIENT_EVIDENCE" && latestLivePoint.evidence_status !== "INSUFFICIENT_EVIDENCE");
+  const getDiagStateClass = val => {
+    if (!val) return "state-neutral";
+    const v = val.toUpperCase().trim();
+    if (v === "PASS" || v === "ACTIVE") return "state-pass";
+    if (v === "FAIL") return "state-fail";
+    if (v.includes("NOT VERIFIED") || v.includes("NOT_VERIFIED") || v.includes("NOT ACTIVE") || v.includes("NOT_ACTIVE")) return "state-warning";
+    if (v.includes("SIMULATION") || v.includes("REPLAY") || v.includes("LIVE HARDWARE")) return "state-info";
+    return "state-neutral";
+  };
+  const formatTelemetryTimestamp = (ts, idx = 0, total = 1) => {
+    if (!ts) return "--:--:--";
+    try {
+      if (ts.includes("T")) {
+        const timePart = ts.split("T")[1].replace("Z", "");
+        if (timePart.includes(".")) {
+          const [hms, ms] = timePart.split(".");
+          return `${hms.slice(0, 8)}.${ms.slice(0, 3).padEnd(3, "0")}`;
+        }
+        return `${timePart.slice(0, 8)}.000`;
+      }
+      return ts.slice(0, 12);
+    } catch {
+      return String(ts).slice(0, 12);
+    }
+  };
+  return /*#__PURE__*/_react.default.createElement("div", {
+    className: "tab-pane hardware-connectivity-pane active"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-console-container"
+  }, /*#__PURE__*/_react.default.createElement(_SectionHero.SectionHero, {
+    badge: "HARDWARE CONNECTIVITY",
+    title: "Hardware Connectivity",
+    subtitle: "Hardware-ready telemetry ingestion and engineering decision support for compatible test-cell instrumentation."
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-header-badges-bar mb-3",
+    style: {
+      display: "flex",
+      justifyContent: "flex-end",
+      flexWrap: "wrap",
+      gap: "8px"
+    }
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: `hw-status-pill hw-source-${dataSource === "LIVE HARDWARE" ? "live" : dataSource === "REPLAY" ? "replay" : "sim"}`
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-pill-dot"
+  }, "\u25CF"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-pill-label"
+  }, "DATA SOURCE:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-pill-val"
+  }, dataSource)), /*#__PURE__*/_react.default.createElement("div", {
+    className: `hw-status-pill hw-health-${isPhysicallyConnected ? "connected" : "disconnected"}`
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-pill-dot"
+  }, "\u25CF"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-pill-label"
+  }, "HARDWARE:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-pill-val"
+  }, dataSource === "LIVE HARDWARE" ? isPhysicallyConnected ? "CONNECTED" : "NOT VERIFIED" : "DISCONNECTED")), dataSource === "SIMULATION" && /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-status-pill hw-source-sim"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-pill-dot"
+  }, "\u25CF"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-pill-label"
+  }, "SIMULATOR:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-pill-val"
+  }, hardwareStatus?.simulator_status || "ACTIVE")), dataSource === "REPLAY" && /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-status-pill hw-source-replay"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-pill-dot"
+  }, "\u25CF"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-pill-label"
+  }, "REPLAY:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-pill-val"
+  }, hardwareStatus?.replay_status || "ACTIVE")), dataSource === "LIVE HARDWARE" && /*#__PURE__*/_react.default.createElement("div", {
+    className: `hw-status-pill ${isPhysicallyConnected ? "hw-source-live" : "hw-health-disconnected"}`
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-pill-dot"
+  }, "\u25CF"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-pill-label"
+  }, "TELEMETRY:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-pill-val"
+  }, isPhysicallyConnected ? "LIVE" : "STOPPED"))), actionMessage && /*#__PURE__*/_react.default.createElement("div", {
+    className: `hw-feedback-banner feedback-${actionMessage.type} hw-card-reveal`
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-feedback-content"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-feedback-icon"
+  }, actionMessage.type === "success" ? "✓" : actionMessage.type === "error" ? "✕" : "ℹ"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-feedback-text"
+  }, actionMessage.text)), /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "hw-feedback-close",
+    onClick: () => setActionMessage(null),
+    "aria-label": "Dismiss message"
+  }, "\u2715")), /*#__PURE__*/_react.default.createElement("section", {
+    className: "hw-section hw-card-reveal"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-card hw-readiness-card"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-card-header"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-card-title-group"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-card-eyebrow"
+  }, "SYSTEM VERIFICATION & INTEGRATION TAXONOMY"), /*#__PURE__*/_react.default.createElement("h2", {
+    className: "hw-card-title"
+  }, "Hardware Integration Status")), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-badge-unvalidated"
+  }, "UNVALIDATED HARDWARE STATUS")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-readiness-content-grid"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-readiness-matrix"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-matrix-row"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-matrix-label"
+  }, "Interface Layer"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-matrix-badge badge-pass"
+  }, "\u2713 IMPLEMENTED")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-matrix-row"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-matrix-label"
+  }, "Virtual Test Bench"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-matrix-badge badge-pass"
+  }, "\u2713 VALIDATED")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-matrix-row"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-matrix-label"
+  }, "Replay Pipeline"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-matrix-badge badge-pass"
+  }, "\u2713 VALIDATED")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-matrix-row"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-matrix-label"
+  }, "Physical Connection"), /*#__PURE__*/_react.default.createElement("span", {
+    className: `hw-matrix-badge ${isPhysicallyConnected ? "badge-pass" : "badge-pending"}`
+  }, isPhysicallyConnected ? "✓ CONNECTED" : "○ NOT CONNECTED")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-matrix-row"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-matrix-label"
+  }, "Calibration Validation"), /*#__PURE__*/_react.default.createElement("span", {
+    className: `hw-matrix-badge ${isPhysicallyConnected && isCalValid ? "badge-pass" : "badge-unperformed"}`
+  }, isPhysicallyConnected && isCalValid ? "✓ VALIDATED" : "○ NOT PERFORMED")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-matrix-row"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-matrix-label"
+  }, "Live Hardware Validation"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-matrix-badge badge-unperformed"
+  }, "\u25CB NOT PERFORMED"))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-readiness-notice-col"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-notice-box"
+  }, /*#__PURE__*/_react.default.createElement("p", {
+    className: "hw-notice-text"
+  }, /*#__PURE__*/_react.default.createElement("strong", null, "Physical hardware validation remains pending"), " until genuine ATE/chamber equipment is connected and calibrated."), /*#__PURE__*/_react.default.createElement("p", {
+    className: "hw-notice-subtext"
+  }, "ReliabilityX is architected to ingest telemetry from compatible test-cell instrumentation through a hardware adapter/gateway layer. Supported interfaces include SCPI over Ethernet/LXI, IEEE-488.2 GPIB, USBTMC, and SEMI E183 RITdb-aligned telemetry architecture."), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-safety-boundary-tag"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-shield-icon"
+  }, "\uD83D\uDEE1"), /*#__PURE__*/_react.default.createElement("span", null, "READ-ONLY SAFETY ACTIVE: Version 1 is strictly read-only; autonomous chamber actuation is prohibited."))))))), /*#__PURE__*/_react.default.createElement("section", {
+    className: "hw-section hw-card-reveal"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-overview-grid"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-overview-card hw-float-subtle"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-overview-label"
+  }, "HARDWARE CONNECTION"), /*#__PURE__*/_react.default.createElement("div", {
+    className: `hw-overview-val ${isPhysicallyConnected ? "val-success" : "val-danger"}`
+  }, isPhysicallyConnected ? "CONNECTED" : "DISCONNECTED"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-overview-sub"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: `hw-indicator-dot dot-${isPhysicallyConnected ? "connected" : "disconnected"}`
+  }, "\u25CF"), /*#__PURE__*/_react.default.createElement("span", null, isPhysicallyConnected ? "Live Hardware Bus" : dataSource === "SIMULATION" ? "Simulator: Active" : "Replay Pipeline"))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-overview-card hw-float-subtle"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-overview-label"
+  }, "DATA SOURCE"), /*#__PURE__*/_react.default.createElement("div", {
+    className: `hw-overview-val ${dataSource === "LIVE HARDWARE" ? "val-live" : "val-accent"}`
+  }, dataSource), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-overview-sub"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-indicator-dot dot-cyan"
+  }, "\u25CF"), /*#__PURE__*/_react.default.createElement("span", null, isPhysicallyConnected ? "Live Hardware Bus" : dataSource === "REPLAY" ? "Historical Replay" : "Virtual Bench"))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-overview-card hw-float-subtle"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-overview-label"
+  }, "INTERFACE"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-overview-val font-mono"
+  }, hardwareStatus?.interface || selectedDevice?.interface_type || "SCPI_LXI"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-overview-sub font-mono"
+  }, selectedDevice?.host ? `${selectedDevice.host}:${selectedDevice.port}` : "TCP / 5025")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-overview-card hw-float-subtle"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-overview-label"
+  }, "STATION"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-overview-val font-mono"
+  }, hardwareStatus?.station_id || selectedDevice?.station_id || "ATE-01"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-overview-sub font-mono"
+  }, "ATE Burn-In Cell 01")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-overview-card hw-float-subtle"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-overview-label"
+  }, "CHANNEL"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-overview-val font-mono"
+  }, hardwareStatus?.channel || selectedDevice?.channel_id || "CH1"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-overview-sub font-mono"
+  }, isPhysicallyConnected && hardwareStatus?.is_calibration_valid ? "Calibration Valid" : dataSource === "SIMULATION" ? "Simulation Profile" : dataSource === "REPLAY" ? "Replay Metadata" : "Not Physically Verified")))), /*#__PURE__*/_react.default.createElement("section", {
+    className: "hw-section hw-card-reveal"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-card hw-control-card"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-card-header"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-card-title-group"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-card-eyebrow"
+  }, "INSTRUMENT SELECTION & INTERROGATION"), /*#__PURE__*/_react.default.createElement("h2", {
+    className: "hw-card-title"
+  }, "Test Bench Control Center"), /*#__PURE__*/_react.default.createElement("p", {
+    className: "hw-card-subtitle"
+  }, "Select and interrogate a compatible test-cell instrument."))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-control-body"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-field-group"
+  }, /*#__PURE__*/_react.default.createElement("label", {
+    className: "hw-field-label",
+    htmlFor: "device-selector"
+  }, "TARGET DEVICE (FIXTURE CONFIGURATION)"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-selector-wrap"
+  }, /*#__PURE__*/_react.default.createElement("select", {
+    id: "device-selector",
+    className: "hw-device-select",
+    value: selectedDeviceId,
+    onChange: e => setSelectedDeviceId(e.target.value),
+    disabled: loading
+  }, devices.map(d => /*#__PURE__*/_react.default.createElement("option", {
+    key: d.device_id,
+    value: d.device_id
+  }, "[", d.source_type, "] ", d.manufacturer, " ", d.model, " \u2014 ", d.interface_type, " (", d.device_id, ")")))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-target-reconciliation-row",
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginTop: "6px",
+      fontSize: "11px",
+      color: "#94a3b8"
+    }
+  }, /*#__PURE__*/_react.default.createElement("span", null, "TARGET DEVICE: ", /*#__PURE__*/_react.default.createElement("strong", {
+    style: {
+      color: "#f8fafc"
+    }
+  }, "[", selectedDevice?.source_type || "SIMULATED", "] ", selectedDevice?.manufacturer, " ", selectedDevice?.model)), /*#__PURE__*/_react.default.createElement("span", null, "ACTIVE DATA SOURCE: ", /*#__PURE__*/_react.default.createElement("strong", {
+    style: {
+      color: isPhysicallyConnected ? "#10b981" : "#06b6d4"
+    }
+  }, dataSource))), selectedDevice?.source_type === "LIVE_HARDWARE" && !isPhysicallyConnected && /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-target-disclaimer-note",
+    style: {
+      marginTop: "4px",
+      fontSize: "11px",
+      color: "#f59e0b",
+      display: "flex",
+      alignItems: "center",
+      gap: "6px"
+    }
+  }, /*#__PURE__*/_react.default.createElement("span", null, "\u2139"), /*#__PURE__*/_react.default.createElement("span", null, "Target device configured, but physical hardware is not connected."))), selectedDevice && /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-metadata-panel"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-meta-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-meta-k"
+  }, "Manufacturer:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-meta-v font-bold"
+  }, selectedDevice.manufacturer)), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-meta-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-meta-k"
+  }, "Model:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-meta-v font-mono"
+  }, selectedDevice.model)), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-meta-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-meta-k"
+  }, "Serial Number:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-meta-v font-mono"
+  }, selectedDevice.serial_number)), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-meta-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-meta-k"
+  }, "Station ID:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-meta-v font-mono"
+  }, selectedDevice.station_id)), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-meta-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-meta-k"
+  }, "Channel:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-meta-v font-mono"
+  }, selectedDevice.channel_id)), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-meta-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-meta-k"
+  }, "Interface:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-meta-v font-mono"
+  }, selectedDevice.interface_type)), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-meta-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-meta-k"
+  }, "Target Address:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-meta-v font-mono"
+  }, selectedDevice.host ? `${selectedDevice.host}:${selectedDevice.port}` : selectedDevice.gpib_address !== null ? `GPIB::${selectedDevice.gpib_address}::INSTR` : "127.0.0.1 (Loopback)")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-meta-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-meta-k"
+  }, "Calibration:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-meta-v"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-cal-pill"
+  }, isPhysicallyConnected && hardwareStatus?.is_calibration_valid ? selectedDevice.calibration_status : dataSource === "SIMULATION" ? "SIMULATION PROFILE" : dataSource === "REPLAY" ? "REPLAY METADATA" : "NOT PHYSICALLY VERIFIED"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-cal-note"
+  }, "(", isPhysicallyConnected ? selectedDevice.calibration_id : "N/A — SIMULATED", ")")))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-actions-matrix"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-btn-group-primary"
+  }, /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "hw-btn hw-btn-primary",
+    onClick: handleTestConnection,
+    disabled: loading,
+    title: "Sends *IDN? interrogation query to verify bus communication"
+  }, "TEST CONNECTION")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-btn-group-secondary"
+  }, /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "hw-btn hw-btn-secondary",
+    onClick: handleDiscoverDevices,
+    disabled: loading,
+    title: "Scans the network and bus interfaces for available instruments"
+  }, "DISCOVER DEVICES"), /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "hw-btn hw-btn-secondary",
+    onClick: handleConnect,
+    disabled: loading || connStatus === "CONNECTED",
+    title: "Establishes active communication session"
+  }, "CONNECT"), /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "hw-btn hw-btn-secondary",
+    onClick: handleDisconnect,
+    disabled: loading || connStatus === "DISCONNECTED",
+    title: "Closes active instrument session"
+  }, "DISCONNECT")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-btn-group-stream"
+  }, (() => {
+    const isLiveHwTarget = selectedDevice?.source_type === "LIVE_HARDWARE";
+    const isHwVerified = Boolean(hardwareStatus?.live_hardware_verified && hardwareStatus?.hardware_connected);
+    const isStartDisabled = loading || isLiveHwTarget && !isHwVerified;
+    return /*#__PURE__*/_react.default.createElement("button", {
+      type: "button",
+      className: "hw-btn hw-btn-stream-start",
+      onClick: handleStartLiveStream,
+      disabled: isStartDisabled,
+      title: isLiveHwTarget && !isHwVerified ? "Physical hardware connection must be verified first." : "Starts telemetry ingestion and AI prognostic processing"
+    }, "START STREAM");
+  })(), /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "hw-btn hw-btn-stream-stop",
+    onClick: handleStopLiveStream,
+    disabled: loading,
+    title: "Halts active telemetry stream"
+  }, "STOP STREAM")))))), /*#__PURE__*/_react.default.createElement("section", {
+    className: "hw-section hw-card-reveal"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-card hw-diagnostics-card"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-card-header"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-card-title-group"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-card-eyebrow"
+  }, "CONNECTION DIAGNOSTICS & SAFETY CONTROLS"), /*#__PURE__*/_react.default.createElement("h2", {
+    className: "hw-card-title"
+  }, "Connection Diagnostics")), /*#__PURE__*/_react.default.createElement("span", {
+    className: `hw-diag-badge ${isPhysicallyConnected ? "diag-pass" : "diag-standby"}`
+  }, isPhysicallyConnected ? "TRANSPORT ACTIVE" : "STANDBY / SIMULATION READY")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-diagnostics-body"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-diagnostics-grid"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-diag-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-diag-name"
+  }, "Transport"), (() => {
+    const val = testResult ? testResult?.diagnostics?.transport || "FAIL" : hardwareStatus?.diagnostics?.transport || (isPhysicallyConnected ? "PASS" : "NOT VERIFIED");
+    return /*#__PURE__*/_react.default.createElement("span", {
+      className: `hw-diag-state ${getDiagStateClass(val)}`
+    }, val);
+  })()), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-diag-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-diag-name"
+  }, "Device Identity"), (() => {
+    const val = testResult ? testResult?.diagnostics?.device_identity || "NOT VERIFIED" : hardwareStatus?.diagnostics?.device_identity || (isPhysicallyConnected ? "PASS" : "NOT VERIFIED");
+    return /*#__PURE__*/_react.default.createElement("span", {
+      className: `hw-diag-state ${getDiagStateClass(val)}`
+    }, val);
+  })()), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-diag-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-diag-name"
+  }, "Serial Verification"), (() => {
+    const val = testResult ? testResult?.diagnostics?.serial_verification || "NOT VERIFIED" : hardwareStatus?.diagnostics?.serial_verification || (isPhysicallyConnected ? "PASS" : "NOT VERIFIED");
+    return /*#__PURE__*/_react.default.createElement("span", {
+      className: `hw-diag-state ${getDiagStateClass(val)}`
+    }, val);
+  })()), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-diag-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-diag-name"
+  }, "Calibration State"), (() => {
+    const val = isPhysicallyConnected ? testResult?.diagnostics?.calibration_state || hardwareStatus?.diagnostics?.calibration_state || "PASS" : dataSource === "SIMULATION" ? "SIMULATION PROFILE" : dataSource === "REPLAY" ? "REPLAY METADATA" : "NOT PHYSICALLY VERIFIED";
+    return /*#__PURE__*/_react.default.createElement("span", {
+      className: `hw-diag-state ${getDiagStateClass(val)}`
+    }, val);
+  })()), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-diag-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-diag-name"
+  }, "Telemetry Channel"), (() => {
+    const val = testResult ? testResult?.diagnostics?.telemetry_channel || (isPhysicallyConnected ? "PASS" : "NOT ACTIVE") : hardwareStatus?.diagnostics?.telemetry_channel || (isPhysicallyConnected ? "PASS" : simulatorActive ? "SIMULATION STREAM" : "NOT ACTIVE");
+    return /*#__PURE__*/_react.default.createElement("span", {
+      className: `hw-diag-state ${getDiagStateClass(val)}`
+    }, val);
+  })()), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-diag-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-diag-name"
+  }, "Read-Only Policy"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-diag-state state-pass"
+  }, "ACTIVE")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-diag-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-diag-name"
+  }, "Source Provenance"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-diag-state state-info font-bold"
+  }, dataSource))), !isPhysicallyConnected && /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-no-hardware-banner"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-no-hw-badge"
+  }, "NO LIVE HARDWARE CONNECTED"), /*#__PURE__*/_react.default.createElement("p", {
+    className: "hw-no-hw-text"
+  }, "No physical instrument responded at ", selectedDevice?.host || "192.168.1.120", ":", selectedDevice?.port || 5025, ". Physical hardware validation remains pending."), /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "hw-btn-inline-toggle",
+    onClick: () => setShowTechnicalDetails(!showTechnicalDetails)
+  }, showTechnicalDetails ? "▲ Hide Technical Response" : "▼ Show Technical Response (*IDN?)")), showTechnicalDetails && /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-technical-response-box"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-tech-title"
+  }, "Technical Handshake Response:"), /*#__PURE__*/_react.default.createElement("pre", {
+    className: "hw-tech-pre"
+  }, JSON.stringify(testResult?.technical_response || testResult?.idn || {
+    target_address: `${selectedDevice?.host || "192.168.1.120"}:${selectedDevice?.port || 5025}`,
+    bus_status: "SOCKET_TIMEOUT (1500ms)",
+    reason: "No physical instrument replied on raw SCPI socket port 5025.",
+    sim_fallback: "SIMULATION / REPLAY MODE AVAILABLE"
+  }, null, 2)))))), /*#__PURE__*/_react.default.createElement("section", {
+    className: "hw-section hw-card-reveal"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-card hw-telemetry-card"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-card-header"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-card-title-group"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-card-eyebrow"
+  }, "REAL-TIME MULTI-CHANNEL BUFFER"), /*#__PURE__*/_react.default.createElement("h2", {
+    className: "hw-card-title"
+  }, dataSource === "LIVE HARDWARE" ? "LIVE HARDWARE TELEMETRY" : dataSource === "REPLAY" ? "REPLAY TELEMETRY" : "REAL-TIME SIMULATED TELEMETRY")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-telemetry-header-right"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: `hw-source-pill-compact ${dataSource === "LIVE HARDWARE" ? "is-live" : dataSource === "REPLAY" ? "is-replay" : "is-sim"}`
+  }, "\u25CF ", dataSource))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-telemetry-stats-bar"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-stat-pill"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-stat-k"
+  }, "Last Packet:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-stat-v font-mono"
+  }, hardwareStatus?.last_telemetry !== "None" ? `${hardwareStatus?.last_telemetry?.slice(11, 19)} UTC (${hardwareStatus?.seconds_since_last_telemetry ?? 0}s ago)` : "Standby")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-stat-pill"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-stat-k"
+  }, "Sampling Rate:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-stat-v font-mono"
+  }, hardwareStatus?.sampling_rate_display || (hardwareStatus?.sampling_rate_hz ? `${hardwareStatus.sampling_rate_hz.toFixed(1)} Hz` : "1.0 Hz"))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-stat-pill"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-stat-k"
+  }, "Channel:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-stat-v font-mono"
+  }, selectedDevice?.channel_id || "CH1_SMU_A")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-stat-pill"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-stat-k"
+  }, "Station:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-stat-v font-mono"
+  }, selectedDevice?.station_id || "ATE-01")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-stat-pill"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-stat-k"
+  }, "Quality:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-stat-v text-success font-bold"
+  }, "GOOD")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-stat-pill"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-stat-k"
+  }, "Latency:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-stat-v font-mono"
+  }, "~28ms"))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-table-container"
+  }, /*#__PURE__*/_react.default.createElement("table", {
+    className: "hw-table"
+  }, /*#__PURE__*/_react.default.createElement("thead", null, /*#__PURE__*/_react.default.createElement("tr", null, /*#__PURE__*/_react.default.createElement("th", null, "TIMESTAMP"), /*#__PURE__*/_react.default.createElement("th", null, "COMPONENT"), /*#__PURE__*/_react.default.createElement("th", null, "LOT"), /*#__PURE__*/_react.default.createElement("th", null, "STAGE"), /*#__PURE__*/_react.default.createElement("th", null, "PARAMETER"), /*#__PURE__*/_react.default.createElement("th", null, "VALUE"), /*#__PURE__*/_react.default.createElement("th", null, "SOURCE"), /*#__PURE__*/_react.default.createElement("th", null, "STATION"), /*#__PURE__*/_react.default.createElement("th", null, "CHANNEL"), /*#__PURE__*/_react.default.createElement("th", null, "QUALITY"))), /*#__PURE__*/_react.default.createElement("tbody", null, recentTelemetry.length === 0 ? /*#__PURE__*/_react.default.createElement("tr", null, /*#__PURE__*/_react.default.createElement("td", {
+    colSpan: 10,
+    className: "hw-table-empty"
+  }, "No telemetry packets in buffer. Click ", /*#__PURE__*/_react.default.createElement("strong", null, "[ START LIVE STREAM ]"), " or switch to ", /*#__PURE__*/_react.default.createElement("strong", null, "Virtual Test Bench"), " to initiate real-time screening.")) : recentTelemetry.map((r, idx) => /*#__PURE__*/_react.default.createElement("tr", {
+    key: r.id || `${r.component_id}-${r.timestamp}-${idx}`
+  }, /*#__PURE__*/_react.default.createElement("td", {
+    className: "font-mono text-muted"
+  }, formatTelemetryTimestamp(r.timestamp, idx, recentTelemetry.length)), /*#__PURE__*/_react.default.createElement("td", {
+    className: "font-bold text-accent"
+  }, onInspectComp ? /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "hw-link-btn",
+    onClick: () => onInspectComp(r.component_id)
+  }, r.component_id) : r.component_id), /*#__PURE__*/_react.default.createElement("td", {
+    className: "font-mono"
+  }, r.lot_id), /*#__PURE__*/_react.default.createElement("td", null, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-stage-tag"
+  }, r.test_stage)), /*#__PURE__*/_react.default.createElement("td", {
+    className: "font-mono text-xs"
+  }, r.parameter_name || r.parameter), /*#__PURE__*/_react.default.createElement("td", {
+    className: "font-mono font-bold text-light"
+  }, Number(r.value).toFixed(3), " ", r.unit), /*#__PURE__*/_react.default.createElement("td", null, /*#__PURE__*/_react.default.createElement("span", {
+    className: `hw-prov-pill ${r.source_type === "LIVE_HARDWARE" ? "prov-live" : "prov-sim"}`
+  }, r.source_type || "SIMULATED")), /*#__PURE__*/_react.default.createElement("td", {
+    className: "font-mono text-xs text-muted"
+  }, r.test_station_id || "ATE-01"), /*#__PURE__*/_react.default.createElement("td", {
+    className: "font-mono text-xs text-muted"
+  }, r.channel_id || "CH1"), /*#__PURE__*/_react.default.createElement("td", null, /*#__PURE__*/_react.default.createElement("span", {
+    className: `hw-q-pill q-${(r.quality || "GOOD").toLowerCase()}`
+  }, r.quality || "GOOD"))))))))), /*#__PURE__*/_react.default.createElement("section", {
+    className: "hw-section hw-card-reveal"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-card hw-ai-card"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-card-header"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-card-title-group"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-card-eyebrow"
+  }, "PHYSICS-INFORMED PROGNOSTICS & CONFORMAL GATING"), /*#__PURE__*/_react.default.createElement("h2", {
+    className: "hw-card-title"
+  }, "Live Reliability Analysis")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-evidence-badge-group"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: `hw-evidence-pill ${evidenceState === "INSUFFICIENT_EVIDENCE" ? "evidence-insufficient" : "evidence-valid"}`
+  }, "EVIDENCE: ", evidenceState.replace("_", " ")), /*#__PURE__*/_react.default.createElement("span", {
+    className: `hw-model-pill ${modelStatus === "MODEL_APPLICABLE" ? "model-active" : "model-standby"}`
+  }, modelStatus.replace("_", " ")))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-pipeline-flow-bar"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-flow-step step-active"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-step-dot"
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-step-title"
+  }, "TELEMETRY")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-flow-connector connector-active"
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-flow-step step-active"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-step-dot"
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-step-title"
+  }, "DATA QUALITY")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-flow-connector connector-active"
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-flow-step step-active"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-step-dot"
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-step-title"
+  }, "ANOMALY DETECTION")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-flow-connector connector-active"
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    className: `hw-flow-step ${isPredictionAvailable ? "step-active" : "step-gated"}`
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-step-dot"
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-step-title"
+  }, "168h PROGNOSTIC")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-flow-connector"
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    className: `hw-flow-step ${isPredictionAvailable ? "step-active" : "step-gated"}`
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-step-dot"
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-step-title"
+  }, "CONFORMAL INTERVAL")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-flow-connector"
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-flow-step step-active"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-step-dot"
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-step-title"
+  }, "RISK STATE"))), !isPredictionAvailable && /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-evidence-gating-callout"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-gating-title"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-gating-icon"
+  }, "\u26A0"), "INSUFFICIENT EVIDENCE \u2014 MODEL APPLICABILITY GATE ACTIVE"), /*#__PURE__*/_react.default.createElement("p", {
+    className: "hw-gating-desc"
+  }, "ReliabilityX strictly prohibits fabricating premature prognostic predictions. A minimum of 24h burn-in telemetry history across multiple temporal checkpoints is required before computing the ", /*#__PURE__*/_react.default.createElement("strong", null, "168h prognostic forecast (Value_168h)"), ".")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-ai-kpi-grid"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-kpi-box"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-kpi-label"
+  }, "Data Quality"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-kpi-val text-success"
+  }, latestLivePoint?.quality || "GOOD"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-kpi-sub"
+  }, "Sensor Integrity Check")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-kpi-box"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-kpi-label"
+  }, "Drift Rate"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-kpi-val font-mono"
+  }, latestLivePoint && latestLivePoint.drift_rate !== undefined ? `${latestLivePoint.drift_rate >= 0 ? "+" : ""}${Number(latestLivePoint.drift_rate).toFixed(4)}/h` : "+0.0000/h"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-kpi-sub"
+  }, "First Derivative")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-kpi-box"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-kpi-label"
+  }, "Acceleration"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-kpi-val font-mono"
+  }, latestLivePoint && (latestLivePoint.drift_acceleration !== undefined || latestLivePoint.accel !== undefined) ? `${(latestLivePoint.drift_acceleration ?? latestLivePoint.accel ?? 0) >= 0 ? "+" : ""}${Number(latestLivePoint.drift_acceleration ?? latestLivePoint.accel).toFixed(5)}/h²` : "+0.00000/h²"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-kpi-sub"
+  }, "Second Derivative")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-kpi-box highlight-kpi"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-kpi-label"
+  }, "Predicted 168h (Value_168h)"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-kpi-val text-cyan font-mono font-bold"
+  }, isPredictionAvailable ? `${Number(latestLivePoint?.predicted_168h).toFixed(3)} ${latestLivePoint?.unit || "µA"}` : "INSUFFICIENT EVIDENCE"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-kpi-sub"
+  }, "Primary Forecast Target (Strict 168h)")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-kpi-box"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-kpi-label"
+  }, "95% Split-Conformal Interval"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-kpi-val font-mono text-sm"
+  }, isPredictionAvailable && latestLivePoint?.estimated_prediction_interval ? `[${Number(latestLivePoint.estimated_prediction_interval[0]).toFixed(2)}, ${Number(latestLivePoint.estimated_prediction_interval[1]).toFixed(2)}]` : "Awaiting 24h Checkpoint"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-kpi-sub"
+  }, "95% Nominal Split-Conformal Prediction Interval")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-kpi-box"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-kpi-label"
+  }, "Breach Probability"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-kpi-val font-mono"
+  }, isPredictionAvailable && latestLivePoint?.probability_of_breach_pct !== undefined && latestLivePoint.probability_of_breach_pct !== null ? `${latestLivePoint.probability_of_breach_pct}%` : "NOT AVAILABLE"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-kpi-sub"
+  }, isPredictionAvailable ? "P(Value > Limit at 168h)" : "Awaiting 24h checkpoint")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-kpi-box"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-kpi-label"
+  }, "Time-to-Breach"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-kpi-val font-mono text-xs"
+  }, isPredictionAvailable ? latestLivePoint?.estimated_time_to_breach || "NOT AVAILABLE" : "NOT AVAILABLE"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-kpi-sub"
+  }, isPredictionAvailable ? "Estimated Degradation Window" : "Awaiting 24h checkpoint")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-kpi-box"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-kpi-label"
+  }, "Risk State"), /*#__PURE__*/_react.default.createElement("div", {
+    className: `hw-kpi-val ${!isPredictionAvailable || latestLivePoint?.risk === "NOT ASSESSED" ? "text-muted" : latestLivePoint?.risk === "REVIEW" || latestLivePoint?.risk === "HIGH RISK" ? "text-danger" : latestLivePoint?.risk === "WATCH" ? "text-warning" : "text-success"}`
+  }, isPredictionAvailable ? latestLivePoint?.risk || "PASS" : "NOT ASSESSED"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-kpi-sub"
+  }, isPredictionAvailable ? "Tri-State Disposition" : "Insufficient evidence"))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-conformal-note-footer"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-note-label"
+  }, "Conformal Prediction Note:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-note-text"
+  }, "ReliabilityX uses a 95% Nominal Split-Conformal Prediction Interval. Empirical coverage depends on the adopted calibration protocol and exchangeability assumptions; live hardware distribution shift may affect nominal coverage. (Synthetic LOLO benchmark: 95.96% \xB1 1.05% across 5 seeds).")))), /*#__PURE__*/_react.default.createElement("section", {
+    className: "hw-section hw-card-reveal"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-card hw-provenance-card"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-card-header"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-card-title-group"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-card-eyebrow"
+  }, "VERIFIED DATA INTEGRITY & AUDIT PROVENANCE"), /*#__PURE__*/_react.default.createElement("h2", {
+    className: "hw-card-title"
+  }, "Telemetry Provenance & Audit Trail"), /*#__PURE__*/_react.default.createElement("p", {
+    className: "hw-card-subtitle"
+  }, "Server-controlled cryptographic verification details and instrument traceability metadata."))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-provenance-grid"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-prov-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-prov-k"
+  }, "Source Type:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-prov-v font-bold"
+  }, hardwareStatus?.data_source || "SIMULATION")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-prov-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-prov-k"
+  }, "Adapter Session ID:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-prov-v font-mono"
+  }, hardwareStatus?.provenance_metadata?.adapter_session_id || "SES-LXI-2602B-01")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-prov-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-prov-k"
+  }, "Instrument ID:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-prov-v font-mono"
+  }, selectedDevice?.instrument_id || "SMU-KEITHLEY-2602B")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-prov-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-prov-k"
+  }, "Serial Number:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-prov-v font-mono"
+  }, selectedDevice?.serial_number || "4102941")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-prov-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-prov-k"
+  }, "Calibration ID:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-prov-v font-mono"
+  }, isPhysicallyConnected ? selectedDevice?.calibration_id || "CAL-NIST-2026-0881" : dataSource === "SIMULATION" ? "DEMO CALIBRATION METADATA (SIMULATION PROFILE)" : "REPLAY METADATA")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-prov-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-prov-k"
+  }, "Verification Time:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-prov-v font-mono text-xs"
+  }, hardwareStatus?.provenance_metadata?.source_verified_at || "2026-10-04T13:40:00Z")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-prov-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-prov-k"
+  }, "Verification Method:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-prov-v font-mono text-xs"
+  }, hardwareStatus?.provenance_metadata?.verification_method_display || (isPhysicallyConnected ? "Server-verified 7-point hardware gateway check" : "Server-verified simulation gateway check"))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-prov-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-prov-k"
+  }, "Traceability:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-prov-v"
+  }, isPhysicallyConnected ? selectedDevice?.calibration_traceability || "NIST-traceable calibration metadata, where applicable" : dataSource === "SIMULATION" ? "Simulated Calibration Profile — Physical Calibration Not Verified" : "Replay Benchmark Metadata")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-prov-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-prov-k"
+  }, "Test Station ID:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-prov-v font-mono"
+  }, selectedDevice?.station_id || "ATE-BURNIN-STATION-01")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-prov-item"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-prov-k"
+  }, "Active Channel:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-prov-v font-mono"
+  }, selectedDevice?.channel_id || "CH1_SMU_A"))))), /*#__PURE__*/_react.default.createElement("section", {
+    className: "hw-section hw-card-reveal"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-card hw-architecture-card"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-card-header"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-card-title-group"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-card-eyebrow"
+  }, "INDUSTRY TEST-CELL INTEGRATION STANDARDS"), /*#__PURE__*/_react.default.createElement("h2", {
+    className: "hw-card-title"
+  }, "Test-Cell Integration Architecture"))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-architecture-grid"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-arch-card"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-arch-badge badge-supported"
+  }, "SUPPORTED ARCHITECTURE"), /*#__PURE__*/_react.default.createElement("h3", {
+    className: "hw-arch-title"
+  }, "SCPI / IEEE-488.2"), /*#__PURE__*/_react.default.createElement("p", {
+    className: "hw-arch-desc"
+  }, "Standard Commands for Programmable Instruments. Hierarchical ASCII query trees with strict read-only profile allowlists for Keithley and Keysight Source Measure Units."), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-arch-role"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-role-label"
+  }, "Role in ReliabilityX:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-role-val"
+  }, "Read-Only Interrogation & Parameter Extraction"))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-arch-card"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-arch-badge badge-supported"
+  }, "SUPPORTED ARCHITECTURE"), /*#__PURE__*/_react.default.createElement("h3", {
+    className: "hw-arch-title"
+  }, "Ethernet / LXI / HiSLIP"), /*#__PURE__*/_react.default.createElement("p", {
+    className: "hw-arch-desc"
+  }, "LAN eXtensions for Instrumentation with IVI HiSLIP low-latency TCP communication over port 4880 and raw port 5025 socket streaming."), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-arch-role"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-role-label"
+  }, "Role in ReliabilityX:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-role-val"
+  }, "Low-Latency Network Socket Bus Bridge"))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-arch-card"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-arch-badge badge-supported"
+  }, "SUPPORTED ARCHITECTURE"), /*#__PURE__*/_react.default.createElement("h3", {
+    className: "hw-arch-title"
+  }, "GPIB / USBTMC"), /*#__PURE__*/_react.default.createElement("p", {
+    className: "hw-arch-desc"
+  }, "IEEE-488.1 3-wire handshake parallel bus and USB Test & Measurement Class endpoints for legacy environmental chambers and thermal controllers."), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-arch-role"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-role-label"
+  }, "Intended Role:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-role-val"
+  }, "Thermal Chamber Telemetry / Monitoring"))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-arch-card"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-arch-badge badge-aligned"
+  }, "ALIGNED ARCHITECTURE"), /*#__PURE__*/_react.default.createElement("h3", {
+    className: "hw-arch-title"
+  }, "MQTT / RITdb-Aligned Telemetry"), /*#__PURE__*/_react.default.createElement("p", {
+    className: "hw-arch-desc"
+  }, "MQTT-based telemetry architecture aligned with SEMI E183 RITdb real-time test-data exchange and SEMI A4 TEMS concepts for Smart Manufacturing test-cells."), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-arch-role"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-role-label"
+  }, "Role in ReliabilityX:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "hw-role-val"
+  }, "SEMI E183-Inspired Streaming Telemetry Gateway")))))), /*#__PURE__*/_react.default.createElement("section", {
+    className: "hw-section hw-card-reveal"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-card hw-virtual-bench-card"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-vb-left"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-vb-badge"
+  }, "SOURCE: SIMULATED"), /*#__PURE__*/_react.default.createElement("h2", {
+    className: "hw-vb-title"
+  }, "Virtual Test Bench"), /*#__PURE__*/_react.default.createElement("p", {
+    className: "hw-vb-desc"
+  }, "Evaluate the complete hardware-to-AI pipeline without physical equipment. Generates multi-channel semiconductor parametric burn-in telemetry with configurable drift, thermal noise, and anomaly injection scenarios.")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "hw-vb-right"
+  }, /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "hw-btn hw-btn-simulator-open",
+    onClick: handleOpenSimulatorBench,
+    disabled: loading
+  }, "[ OPEN SIMULATOR BENCH ]"))))));
+}
+  });
+
   // Module: components/Icons.tsx
   define("components/Icons.tsx", function(module, exports, require) {
 "use strict";
@@ -3933,6 +5231,7 @@ exports.IconDashboard = IconDashboard;
 exports.IconEngineering = IconEngineering;
 exports.IconExpand = IconExpand;
 exports.IconFloating = IconFloating;
+exports.IconHardware = IconHardware;
 exports.IconInspection = IconInspection;
 exports.IconLivePulse = IconLivePulse;
 exports.IconLots = IconLots;
@@ -4546,6 +5845,68 @@ function IconFloating({
     d: "M2 12l10 5 10-5"
   }));
 }
+function IconHardware({
+  className = "sidebar-icon",
+  size = 18
+}) {
+  return /*#__PURE__*/_react.default.createElement("svg", {
+    className: className,
+    width: size,
+    height: size,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/_react.default.createElement("rect", {
+    x: "2",
+    y: "2",
+    width: "20",
+    height: "8",
+    rx: "2"
+  }), /*#__PURE__*/_react.default.createElement("rect", {
+    x: "2",
+    y: "14",
+    width: "20",
+    height: "8",
+    rx: "2"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "6",
+    y1: "6",
+    x2: "6.01",
+    y2: "6",
+    strokeWidth: "2.5"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "10",
+    y1: "6",
+    x2: "10.01",
+    y2: "6",
+    strokeWidth: "2.5"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "6",
+    y1: "18",
+    x2: "6.01",
+    y2: "18",
+    strokeWidth: "2.5"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "10",
+    y1: "18",
+    x2: "10.01",
+    y2: "18",
+    strokeWidth: "2.5"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "15",
+    y1: "6",
+    x2: "19",
+    y2: "6"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "15",
+    y1: "18",
+    x2: "19",
+    y2: "18"
+  }));
+}
   });
 
   // Module: components/InspectionTriageTab.tsx
@@ -4559,6 +5920,7 @@ exports.InspectionTriageTab = InspectionTriageTab;
 var _react = _interopRequireWildcard(require("react"));
 var _types = require("../types");
 var _Badges = require("./Badges");
+var _SectionHero = require("./SectionHero");
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
 function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
 // ==============================================================================
@@ -4591,13 +5953,11 @@ function InspectionTriageTab({
   const watchUnits = queue.filter(i => i.risk_level === "WATCH").length;
   return /*#__PURE__*/_react.default.createElement("div", {
     className: "tab-pane active"
-  }, /*#__PURE__*/_react.default.createElement("div", {
-    className: "page-header mb-4"
-  }, /*#__PURE__*/_react.default.createElement("h1", {
-    className: "page-main-title"
-  }, "Inspection Priority Triage Queue"), /*#__PURE__*/_react.default.createElement("p", {
-    className: "page-main-subtitle"
-  }, "Prioritized triage of screening units requiring authoritative physical QA / reliability engineer verification prior to lot sign-off.")), /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react.default.createElement(_SectionHero.SectionHero, {
+    badge: "INSPECTION PRIORITY",
+    title: "Inspection Priority Triage Queue",
+    subtitle: "Prioritized triage of screening units requiring authoritative physical QA / reliability engineer verification prior to lot sign-off."
+  }), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-grid mb-4"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-card"
@@ -4761,6 +6121,7 @@ var _react = _interopRequireWildcard(require("react"));
 var _types = require("../types");
 var _Badges = require("./Badges");
 var _Icons = require("./Icons");
+var _SectionHero = require("./SectionHero");
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
 function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
 // ==============================================================================
@@ -4779,20 +6140,139 @@ function LiveScreeningTab({
   onPauseStream,
   onResumeStream,
   onStopStream,
-  onClearPoints
+  onClearPoints,
+  componentsList
 }) {
   // Simulator & Ingestion Controls
   const [sourceType, setSourceType] = (0, _react.useState)("simulator");
   const [scenario, setScenario] = (0, _react.useState)("ACCELERATING_RUNAWAY");
   const [selectedComp, setSelectedComp] = (0, _react.useState)("C-01008");
-  const [selectedLot, setSelectedLot] = (0, _react.useState)("LOT-2411C");
+  const [selectedLot, setSelectedLot] = (0, _react.useState)("LOT-2411A");
   const [selectedParam, setSelectedParam] = (0, _react.useState)("leakage_current_uA");
-  const [samplingRate, setSamplingRate] = (0, _react.useState)(0.8);
+  const [samplingRate, setSamplingRate] = (0, _react.useState)(1.0);
   const [rawDrawerOpen, setRawDrawerOpen] = (0, _react.useState)(false);
   const [rawRecords, setRawRecords] = (0, _react.useState)([]);
+
+  // Dynamically populated components list from underlying dataset
+  const [availableComps, setAvailableComps] = (0, _react.useState)(componentsList || []);
+  (0, _react.useEffect)(() => {
+    if (componentsList && componentsList.length > 0) {
+      setAvailableComps(componentsList);
+    } else {
+      fetch(`${_types.API_BASE}/components?limit=500`).then(r => r.json()).then(d => {
+        if (d.components && d.components.length > 0) {
+          setAvailableComps(d.components);
+        }
+      }).catch(() => {});
+    }
+  }, [componentsList]);
+
+  // Natural sort of components by component_id
+  const sortedComps = [...availableComps].sort((a, b) => (a.component_id || "").localeCompare(b.component_id || ""));
+
+  // Keep lot synchronized with selected component
+  (0, _react.useEffect)(() => {
+    if (availableComps.length > 0 && selectedComp) {
+      const match = availableComps.find(c => c.component_id === selectedComp);
+      if (match?.lot_id && match.lot_id !== selectedLot) {
+        setSelectedLot(match.lot_id);
+      }
+    }
+  }, [availableComps, selectedComp]);
   const isLive = liveStatus?.connection_status === "LIVE" || liveStatus?.connection_status === "CONNECTED";
   const isPaused = liveStatus?.connection_status === "PAUSED";
   const latestPoint = livePoints.length > 0 ? livePoints[livePoints.length - 1] : null;
+
+  // Handlers with dynamic reconfiguration & buffer reset
+  const handleComponentChange = async newCompId => {
+    setSelectedComp(newCompId);
+    const match = availableComps.find(c => c.component_id === newCompId);
+    const newLot = match?.lot_id || selectedLot;
+    if (match?.lot_id) {
+      setSelectedLot(match.lot_id);
+    }
+    onClearPoints();
+    if (isLive || isPaused) {
+      try {
+        await fetch(`${_types.API_BASE}/stream/config`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            component_id: newCompId,
+            lot_id: newLot,
+            reset_hours: true
+          })
+        });
+      } catch {}
+    }
+  };
+  const handleParamChange = async newParam => {
+    setSelectedParam(newParam);
+    onClearPoints();
+    if (isLive || isPaused) {
+      try {
+        await fetch(`${_types.API_BASE}/stream/config`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            parameter: newParam,
+            reset_hours: true
+          })
+        });
+      } catch {}
+    }
+  };
+  const handleScenarioChange = async newScenario => {
+    setScenario(newScenario);
+    if (isLive || isPaused) {
+      try {
+        await fetch(`${_types.API_BASE}/stream/config`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            scenario: newScenario,
+            reset_hours: false
+          })
+        });
+      } catch {}
+    }
+  };
+  const handleSamplingRateChange = async newRate => {
+    setSamplingRate(newRate);
+    if (isLive || isPaused) {
+      try {
+        await fetch(`${_types.API_BASE}/stream/config`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            sampling_rate: newRate
+          })
+        });
+      } catch {}
+    }
+  };
+  const getConnectionStatusDisplay = () => {
+    if (!liveStatus) return "DISCONNECTED";
+    const st = liveStatus.connection_status;
+    if (st === "PAUSED") return "CONNECTED / PAUSED";
+    if (st === "STALE") return "STALE";
+    if (st === "DISCONNECTED") return "DISCONNECTED";
+    if (st === "CONNECTED" || st === "LIVE") {
+      if (isLive && !isPaused && (livePoints.length > 0 || (liveStatus?.messages_count ?? 0) > 0)) {
+        return "CONNECTED / STREAMING";
+      }
+      return "CONNECTED / IDLE";
+    }
+    return st;
+  };
 
   // Fetch raw audit history when drawer is opened
   const loadRawHistory = async () => {
@@ -4883,7 +6363,11 @@ function LiveScreeningTab({
   }
   return /*#__PURE__*/_react.default.createElement("div", {
     className: "live-screening-container"
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react.default.createElement(_SectionHero.SectionHero, {
+    badge: "LIVE SCREENING",
+    title: "Live Screening Telemetry",
+    subtitle: "Real-time telemetry ingestion, streaming data-quality assessment, anomaly detection, and reliability monitoring."
+  }), /*#__PURE__*/_react.default.createElement("div", {
     className: "live-disclaimer-banner"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "disclaimer-badge"
@@ -4918,7 +6402,7 @@ function LiveScreeningTab({
     className: "control-group"
   }, /*#__PURE__*/_react.default.createElement("label", null, "Defect Scenario:"), /*#__PURE__*/_react.default.createElement("select", {
     value: scenario,
-    onChange: e => setScenario(e.target.value),
+    onChange: e => handleScenarioChange(e.target.value),
     className: "control-select"
   }, /*#__PURE__*/_react.default.createElement("option", {
     value: "ACCELERATING_RUNAWAY"
@@ -4950,23 +6434,18 @@ function LiveScreeningTab({
     className: "control-group"
   }, /*#__PURE__*/_react.default.createElement("label", null, "Component:"), /*#__PURE__*/_react.default.createElement("select", {
     value: selectedComp,
-    onChange: e => setSelectedComp(e.target.value),
+    onChange: e => handleComponentChange(e.target.value),
     className: "control-select-sm"
-  }, /*#__PURE__*/_react.default.createElement("option", {
-    value: "C-01008"
-  }, "C-01008"), /*#__PURE__*/_react.default.createElement("option", {
-    value: "C-01009"
-  }, "C-01009"), /*#__PURE__*/_react.default.createElement("option", {
-    value: "C-01010"
-  }, "C-01010"), /*#__PURE__*/_react.default.createElement("option", {
-    value: "C-01011"
-  }, "C-01011"), /*#__PURE__*/_react.default.createElement("option", {
-    value: "C-01012"
-  }, "C-01012"))), /*#__PURE__*/_react.default.createElement("div", {
+  }, sortedComps.length > 0 ? sortedComps.map(c => /*#__PURE__*/_react.default.createElement("option", {
+    key: c.component_id,
+    value: c.component_id
+  }, c.component_id, " (", c.lot_id || selectedLot, ")")) : /*#__PURE__*/_react.default.createElement("option", {
+    value: selectedComp
+  }, selectedComp, " (", selectedLot, ")"))), /*#__PURE__*/_react.default.createElement("div", {
     className: "control-group"
   }, /*#__PURE__*/_react.default.createElement("label", null, "Parameter:"), /*#__PURE__*/_react.default.createElement("select", {
     value: selectedParam,
-    onChange: e => setSelectedParam(e.target.value),
+    onChange: e => handleParamChange(e.target.value),
     className: "control-select"
   }, /*#__PURE__*/_react.default.createElement("option", {
     value: "leakage_current_uA"
@@ -4983,7 +6462,7 @@ function LiveScreeningTab({
   }, [0.25, 0.5, 1.0, 2.0].map(rate => /*#__PURE__*/_react.default.createElement("button", {
     key: rate,
     className: `btn-rate ${samplingRate === rate ? "active" : ""}`,
-    onClick: () => setSamplingRate(rate)
+    onClick: () => handleSamplingRateChange(rate)
   }, rate, "s"))))), /*#__PURE__*/_react.default.createElement("div", {
     className: "controls-row-bottom"
   }, /*#__PURE__*/_react.default.createElement("div", {
@@ -5096,11 +6575,11 @@ function LiveScreeningTab({
     className: `live-pulse-dot dot-${(liveStatus?.connection_status || "offline").toLowerCase()}`
   }), /*#__PURE__*/_react.default.createElement("span", {
     className: `kpi-value ${liveStatus?.connection_status === "STALE" ? "text-amber" : ""}`
-  }, liveStatus?.connection_status || "DISCONNECTED")), /*#__PURE__*/_react.default.createElement("span", {
+  }, getConnectionStatusDisplay())), /*#__PURE__*/_react.default.createElement("span", {
     className: "kpi-sub"
   }, liveStatus?.connection_status === "STALE" ? /*#__PURE__*/_react.default.createElement("span", {
     className: "text-amber"
-  }, "Last received: ", liveStatus?.seconds_since_last_packet || 5, "s ago") : /*#__PURE__*/_react.default.createElement("span", null, "Source: ", /*#__PURE__*/_react.default.createElement("strong", null, liveStatus?.source_name || "SIMULATOR")))), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Last received: ", liveStatus?.seconds_since_last_packet || 5, "s ago") : /*#__PURE__*/_react.default.createElement("span", null, "Source: ", /*#__PURE__*/_react.default.createElement("strong", null, liveStatus?.source_name || "LIVE TELEMETRY SIMULATOR")))), /*#__PURE__*/_react.default.createElement("div", {
     className: "live-kpi-card"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "kpi-label"
@@ -5108,7 +6587,7 @@ function LiveScreeningTab({
     className: "kpi-value-row"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "kpi-value"
-  }, liveStatus?.processing_rate ? `${liveStatus.processing_rate.toFixed(1)} samples/s` : `${(1.0 / samplingRate).toFixed(1)} samples/s`)), /*#__PURE__*/_react.default.createElement("span", {
+  }, livePoints.length > 0 || (liveStatus?.messages_count ?? 0) > 0 ? `${(liveStatus?.processing_rate ?? 1.0 / samplingRate).toFixed(1)} samples/s` : "0.0 samples/s")), /*#__PURE__*/_react.default.createElement("span", {
     className: "kpi-sub"
   }, "Sampling interval: ", samplingRate, "s")), /*#__PURE__*/_react.default.createElement("div", {
     className: "live-kpi-card"
@@ -5118,9 +6597,9 @@ function LiveScreeningTab({
     className: "kpi-value-row"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "kpi-value text-emerald"
-  }, liveStatus?.last_latency_ms ? `${Math.round(liveStatus.last_latency_ms)} ms` : "32 ms")), /*#__PURE__*/_react.default.createElement("span", {
+  }, livePoints.length > 0 || (liveStatus?.messages_count ?? 0) > 0 ? `${Math.round(liveStatus?.last_latency_ms ?? 32)} ms` : "N/A")), /*#__PURE__*/_react.default.createElement("span", {
     className: "kpi-sub"
-  }, "p95: ", liveStatus?.p95_latency_ms ?? 42, " ms \u2022 avg: ", liveStatus?.avg_latency_ms ?? 34, " ms")), /*#__PURE__*/_react.default.createElement("div", {
+  }, livePoints.length > 0 || (liveStatus?.messages_count ?? 0) > 0 ? `p95: ${liveStatus?.p95_latency_ms ?? 42} ms • avg: ${liveStatus?.avg_latency_ms ?? 34} ms` : "Awaiting stream packets")), /*#__PURE__*/_react.default.createElement("div", {
     className: "live-kpi-card"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "kpi-label"
@@ -5128,7 +6607,7 @@ function LiveScreeningTab({
     className: "kpi-value-row"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "kpi-value text-cyan"
-  }, (liveStatus?.messages_count ?? livePoints.length).toLocaleString())), /*#__PURE__*/_react.default.createElement("span", {
+  }, (liveStatus?.messages_processed ?? liveStatus?.messages_count ?? livePoints.length).toLocaleString())), /*#__PURE__*/_react.default.createElement("span", {
     className: "kpi-sub"
   }, "Queue depth: ", liveStatus?.queue_depth ?? 0)), /*#__PURE__*/_react.default.createElement("div", {
     className: "live-kpi-card"
@@ -5138,9 +6617,9 @@ function LiveScreeningTab({
     className: "kpi-value-row"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "kpi-value text-emerald"
-  }, "GOOD: ", liveStatus?.data_quality?.good_pct ?? 98.4, "%")), /*#__PURE__*/_react.default.createElement("span", {
+  }, livePoints.length > 0 || (liveStatus?.messages_count ?? 0) > 0 ? `GOOD: ${liveStatus?.data_quality?.good_pct ?? 100.0}%` : "PENDING (0 msgs)")), /*#__PURE__*/_react.default.createElement("span", {
     className: "kpi-sub"
-  }, "WARN: ", liveStatus?.data_quality?.warnings_pct ?? 1.2, "% \u2022 REJ: ", liveStatus?.data_quality?.rejected_pct ?? 0.4, "%"))), /*#__PURE__*/_react.default.createElement("div", {
+  }, livePoints.length > 0 || (liveStatus?.messages_count ?? 0) > 0 ? `WARN: ${liveStatus?.data_quality?.warnings_pct ?? 0.0}% • REJ: ${liveStatus?.data_quality?.rejected_pct ?? 0.0}%` : "Quality checks engage on first packet"))), /*#__PURE__*/_react.default.createElement("div", {
     className: "card mb-4"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "card-header live-trajectory-header"
@@ -5373,17 +6852,29 @@ function LiveScreeningTab({
     className: "hud-sub-card"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "sub-card-label"
-  }, "DRIFT RATE"), /*#__PURE__*/_react.default.createElement("span", {
-    className: `sub-card-val ${(latestPoint?.drift_rate ?? 0) > 0.03 ? "text-amber" : "text-slate"}`
-  }, latestPoint ? `${latestPoint.drift_rate > 0 ? "+" : ""}${latestPoint.drift_rate.toFixed(4)}` : "0.0000"), /*#__PURE__*/_react.default.createElement("span", {
+  }, "DRIFT RATE"), latestPoint && livePoints.length >= 2 ? /*#__PURE__*/_react.default.createElement("span", {
+    className: `sub-card-val ${latestPoint.drift_rate > 0.03 ? "text-amber" : "text-slate"}`
+  }, latestPoint.drift_rate > 0 ? "+" : "", latestPoint.drift_rate.toFixed(4)) : /*#__PURE__*/_react.default.createElement("span", {
+    className: "sub-card-val text-slate",
+    style: {
+      fontSize: "11px",
+      fontWeight: 600
+    }
+  }, "INSUFFICIENT HISTORY"), /*#__PURE__*/_react.default.createElement("span", {
     className: "sub-card-unit"
   }, "units/hr")), /*#__PURE__*/_react.default.createElement("div", {
     className: "hud-sub-card"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "sub-card-label"
-  }, "DRIFT ACCELERATION"), /*#__PURE__*/_react.default.createElement("span", {
-    className: `sub-card-val ${(latestPoint?.accel ?? 0) > 0.0003 ? "text-red" : "text-slate"}`
-  }, latestPoint ? `${latestPoint.accel > 0 ? "+" : ""}${latestPoint.accel.toFixed(5)}` : "0.0000"), /*#__PURE__*/_react.default.createElement("span", {
+  }, "DRIFT ACCELERATION"), latestPoint && livePoints.length >= 3 ? /*#__PURE__*/_react.default.createElement("span", {
+    className: `sub-card-val ${latestPoint.accel > 0.0003 ? "text-red" : "text-slate"}`
+  }, latestPoint.accel > 0 ? "+" : "", latestPoint.accel.toFixed(5)) : /*#__PURE__*/_react.default.createElement("span", {
+    className: "sub-card-val text-slate",
+    style: {
+      fontSize: "11px",
+      fontWeight: 600
+    }
+  }, "INSUFFICIENT HISTORY"), /*#__PURE__*/_react.default.createElement("span", {
     className: "sub-card-unit"
   }, "units/hr\xB2"))), latestPoint && /*#__PURE__*/_react.default.createElement("div", {
     style: {
@@ -5448,31 +6939,31 @@ function LiveScreeningTab({
     className: "stat-label"
   }, "LOT ANOMALY RATE"), /*#__PURE__*/_react.default.createElement("span", {
     className: "stat-val text-cyan"
-  }, liveLotHealth?.anomaly_percentage ? `${liveLotHealth.anomaly_percentage.toFixed(1)}%` : "0.0%")), /*#__PURE__*/_react.default.createElement("div", {
+  }, liveLotHealth?.anomaly_percentage !== undefined ? `${liveLotHealth.anomaly_percentage.toFixed(1)}%` : livePoints.length > 0 ? "0.0%" : "--")), /*#__PURE__*/_react.default.createElement("div", {
     className: "health-stat-box"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "stat-label"
   }, "DRIFTING UNITS"), /*#__PURE__*/_react.default.createElement("span", {
     className: "stat-val text-amber"
-  }, liveLotHealth?.drifting_count ?? 1)), /*#__PURE__*/_react.default.createElement("div", {
+  }, liveLotHealth?.drifting_count !== undefined ? liveLotHealth.drifting_count : livePoints.length > 0 && latestPoint?.state === "DRIFTING" ? 1 : 0)), /*#__PURE__*/_react.default.createElement("div", {
     className: "health-stat-box"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "stat-label"
   }, "ACCELERATING"), /*#__PURE__*/_react.default.createElement("span", {
     className: "stat-val text-red"
-  }, liveLotHealth?.accelerating_count ?? 1)), /*#__PURE__*/_react.default.createElement("div", {
+  }, liveLotHealth?.accelerating_count !== undefined ? liveLotHealth.accelerating_count : livePoints.length > 0 && latestPoint?.state === "ACCELERATING" ? 1 : 0)), /*#__PURE__*/_react.default.createElement("div", {
     className: "health-stat-box"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "stat-label"
   }, "HIGH RISK"), /*#__PURE__*/_react.default.createElement("span", {
     className: "stat-val text-red"
-  }, liveLotHealth?.high_risk_count ?? 0))), /*#__PURE__*/_react.default.createElement("div", {
+  }, liveLotHealth?.high_risk_count !== undefined ? liveLotHealth.high_risk_count : livePoints.length > 0 && latestPoint?.risk === "HIGH RISK" ? 1 : 0))), /*#__PURE__*/_react.default.createElement("div", {
     className: "lot-pattern-status-box"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "status-label"
   }, "Pattern Diagnostic:"), /*#__PURE__*/_react.default.createElement("span", {
     className: `status-text ${liveLotHealth?.is_lot_wide_pattern ? "text-red" : "text-emerald"}`
-  }, liveLotHealth?.is_lot_wide_pattern ? "Correlated multi-component wearout detected across wafer lot." : "Component wearout isolated. No systemic lot-wide failure mode observed."))), rawDrawerOpen && /*#__PURE__*/_react.default.createElement("div", {
+  }, livePoints.length === 0 && !liveLotHealth ? "Awaiting active stream telemetry — lot statistics gated." : liveLotHealth?.is_lot_wide_pattern ? "Correlated multi-component wearout detected across wafer lot." : "Component wearout isolated. No systemic lot-wide failure mode observed."))), rawDrawerOpen && /*#__PURE__*/_react.default.createElement("div", {
     className: "raw-stream-drawer"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "drawer-header"
@@ -5505,6 +6996,7 @@ Object.defineProperty(exports, "__esModule", {
 exports.LotsTab = LotsTab;
 var _react = _interopRequireWildcard(require("react"));
 var _types = require("../types");
+var _SectionHero = require("./SectionHero");
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
 function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
 // ==============================================================================
@@ -5530,13 +7022,11 @@ function LotsTab({
   const avgAnomaly = totalLots > 0 ? (lots.reduce((acc, l) => acc + (l.anomaly_percentage || 0), 0) / totalLots).toFixed(1) : "0.0";
   return /*#__PURE__*/_react.default.createElement("div", {
     className: "tab-pane active"
-  }, /*#__PURE__*/_react.default.createElement("div", {
-    className: "page-header mb-4"
-  }, /*#__PURE__*/_react.default.createElement("h1", {
-    className: "page-main-title"
-  }, "Lot Health & Batch Anomaly Detection"), /*#__PURE__*/_react.default.createElement("p", {
-    className: "page-main-subtitle"
-  }, "Evaluates lot-wide degradation distributions to distinguish isolated component wearout from wafer-level or batch-wide manufacturing flaws.")), /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react.default.createElement(_SectionHero.SectionHero, {
+    badge: "LOT HEALTH",
+    title: "Lot Health & Anomaly Triage",
+    subtitle: "Lot-relative anomaly detection, systemic shift analysis, and component-level screening risk assessment."
+  }), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-grid mb-4"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-card"
@@ -5778,6 +7268,7 @@ Object.defineProperty(exports, "__esModule", {
 exports.PredictionsTab = PredictionsTab;
 var _react = _interopRequireWildcard(require("react"));
 var _types = require("../types");
+var _SectionHero = require("./SectionHero");
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
 function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
 // ==============================================================================
@@ -5813,13 +7304,11 @@ function PredictionsTab({
   const withinSpec = totalForecasts - breachesCount;
   return /*#__PURE__*/_react.default.createElement("div", {
     className: "tab-pane active"
-  }, /*#__PURE__*/_react.default.createElement("div", {
-    className: "hero-header mb-4"
-  }, /*#__PURE__*/_react.default.createElement("h1", {
-    className: "page-main-title"
-  }, "168h BURN-IN PROGNOSTIC FORECASTS"), /*#__PURE__*/_react.default.createElement("p", {
-    className: "page-main-subtitle"
-  }, "Evaluates intermediate burn-in measurements (24h, 48h, 96h) to forecast the end-of-screen (168h) value with 95% nominal split-conformal prediction intervals and P90 risk bounds.")), /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react.default.createElement(_SectionHero.SectionHero, {
+    badge: "PREDICTIVE RELIABILITY",
+    title: "168h Prognostic Forecasts",
+    subtitle: "Uncertainty-aware 168h degradation forecasting with split-conformal prediction intervals and engineering decision support."
+  }), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-grid mb-4"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-card"
@@ -6020,6 +7509,7 @@ Object.defineProperty(exports, "__esModule", {
 exports.ReportsTab = ReportsTab;
 var _react = _interopRequireWildcard(require("react"));
 var _types = require("../types");
+var _SectionHero = require("./SectionHero");
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
 function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
 // ==============================================================================
@@ -6054,13 +7544,11 @@ function ReportsTab({
   }, []);
   return /*#__PURE__*/_react.default.createElement("div", {
     className: "tab-pane active"
-  }, /*#__PURE__*/_react.default.createElement("div", {
-    className: "hero-header mb-4"
-  }, /*#__PURE__*/_react.default.createElement("h1", {
-    className: "page-main-title"
-  }, "AI-ASSISTED SCREENING ANALYSIS REPORT"), /*#__PURE__*/_react.default.createElement("p", {
-    className: "page-main-subtitle"
-  }, "Parametric screening degradation analysis, 95% nominal split-conformal prediction intervals, and tamper-evident SHA-256 digital verification.")), /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react.default.createElement(_SectionHero.SectionHero, {
+    badge: "RELIABILITYX REPORTS",
+    title: "AI-Assisted Screening Analysis Report",
+    subtitle: "Parametric screening degradation analysis, 95% nominal split-conformal prediction intervals, and tamper-evident SHA-256 digital verification."
+  }), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-grid mb-4"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-card"
@@ -6235,9 +7723,13 @@ exports.SafetyNotice = SafetyNotice;
 var _react = _interopRequireWildcard(require("react"));
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
 function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
-function SafetyNotice() {
+function SafetyNotice({
+  activeTab
+} = {}) {
   const [dismissed, setDismissed] = (0, _react.useState)(false);
-  if (dismissed) return null;
+  if (dismissed || activeTab !== "dashboard") {
+    return null;
+  }
   return /*#__PURE__*/_react.default.createElement("div", {
     className: "safety-banner"
   }, /*#__PURE__*/_react.default.createElement("div", {
@@ -6265,6 +7757,7 @@ Object.defineProperty(exports, "__esModule", {
 exports.ScreeningPipelineTab = ScreeningPipelineTab;
 var _react = _interopRequireWildcard(require("react"));
 var _ArchitectureFlowchart = require("./ArchitectureFlowchart");
+var _SectionHero = require("./SectionHero");
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
 function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
 // ==============================================================================
@@ -6393,24 +7886,15 @@ function ScreeningPipelineTab({
   }];
   return /*#__PURE__*/_react.default.createElement("div", {
     className: "tab-pane active"
-  }, /*#__PURE__*/_react.default.createElement("div", {
-    className: "hero-header",
-    style: {
-      marginBottom: "16px",
-      borderRadius: "var(--radius-md)",
-      border: "1px solid var(--border-color)"
-    }
-  }, /*#__PURE__*/_react.default.createElement("div", {
-    className: "hero-brand-row"
-  }, /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("h1", {
-    className: "hero-title"
-  }, "SCREENING PIPELINE & AI ARCHITECTURE"), /*#__PURE__*/_react.default.createElement("p", {
-    className: "hero-subtitle"
-  }, "End-to-end 10-layer AI decision architecture combining Scikit-Learn machine learning, physics-informed Arrhenius models, and AEC-Q001-referenced statistical DPAT screening limits."))), /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react.default.createElement(_SectionHero.SectionHero, {
+    badge: "ANOMALY DETECTION",
+    title: "Screening Pipeline",
+    subtitle: "Dynamic anomaly detection and degradation screening across component burn-in and environmental stress telemetry."
+  }), /*#__PURE__*/_react.default.createElement("div", {
     style: {
       display: "flex",
       gap: "10px",
-      marginTop: "14px",
+      marginBottom: "16px",
       flexWrap: "wrap"
     }
   }, /*#__PURE__*/_react.default.createElement("button", {
@@ -6422,7 +7906,7 @@ function ScreeningPipelineTab({
   }, "\uD83D\uDD2C 8-Stage Detailed Engineering Specs"), /*#__PURE__*/_react.default.createElement("button", {
     className: `btn btn-sm ${viewMode === "ml_registry" ? "btn-primary" : "btn-outline"}`,
     onClick: () => setViewMode("ml_registry")
-  }, "\uD83E\uDD16 Active ML Models & Algorithms Registry"))), /*#__PURE__*/_react.default.createElement("div", {
+  }, "\uD83E\uDD16 Active ML Models & Algorithms Registry")), /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-grid mb-3"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "kpi-card"
@@ -6665,6 +8149,287 @@ function ScreeningPipelineTab({
 }
   });
 
+  // Module: components/SectionHeader.tsx
+  define("components/SectionHeader.tsx", function(module, exports, require) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.SECTION_HEADER_TABS = void 0;
+exports.SectionHeader = SectionHeader;
+var _react = _interopRequireDefault(require("react"));
+var _types = require("../types");
+var _Icons = require("./Icons");
+function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+// ==============================================================================
+// ReliabilityX — Dedicated Non-Sticky Section Header Component
+// Exclusively shared across the 7 screening & monitoring sections:
+// 1. Anomaly Detection / Screening Pipeline ("screening")
+// 2. Dossier / Components Directory ("components")
+// 3. Lots / Lot Health & Anomaly Triage ("lots")
+// 4. Predictions / 168h Prognostic Forecasts ("predictions")
+// 5. Dashboard / Dashboard Overview ("dashboard")
+// 6. Live Stream / Live Screening Telemetry ("live_telemetry")
+// 7. Hardware / Hardware Connectivity ("hardware_connectivity")
+//
+// NON-STICKY: Scrolls away naturally with the page content.
+// Identical height, padding, spacing, alignment, and typography across all 7 sections.
+// ==============================================================================
+
+const SECTION_HEADER_TABS = exports.SECTION_HEADER_TABS = ["dashboard"];
+function SectionHeader({
+  activeTab,
+  globalSearch,
+  onSearchChange,
+  onSearchSubmit,
+  activeDataset,
+  onOpenDatasetModal,
+  onReloadDemo,
+  liveStatus,
+  onNavigateToLive,
+  onToggleMobileMenu
+}) {
+  // Render ONLY for the 7 designated screening/monitoring sections
+  if (!SECTION_HEADER_TABS.includes(activeTab)) {
+    return null;
+  }
+  const getSectionTitle = () => {
+    switch (activeTab) {
+      case "screening":
+        return "Screening Pipeline";
+      case "components":
+        return "Components Directory";
+      case "lots":
+        return "Lot Health & Anomaly Triage";
+      case "predictions":
+        return "168h Prognostic Forecasts";
+      case "dashboard":
+        return "Dashboard Overview";
+      case "live_telemetry":
+        return "Live Screening Telemetry";
+      case "hardware_connectivity":
+        return "Hardware Connectivity";
+      default:
+        return "ReliabilityX Suite";
+    }
+  };
+  const getSectionBreadcrumb = () => {
+    switch (activeTab) {
+      case "screening":
+        return "RELIABILITYX / ANOMALY DETECTION";
+      case "components":
+        return "RELIABILITYX / DOSSIER";
+      case "lots":
+        return "RELIABILITYX / LOTS";
+      case "predictions":
+        return "RELIABILITYX / PREDICTIONS";
+      case "dashboard":
+        return "RELIABILITYX / DASHBOARD";
+      case "live_telemetry":
+        return "RELIABILITYX / LIVE STREAM";
+      case "hardware_connectivity":
+        return "RELIABILITYX / HARDWARE";
+      default:
+        return `RELIABILITYX / ${activeTab.toUpperCase()}`;
+    }
+  };
+  const status = liveStatus?.connection_status || "OFFLINE";
+  const isPhysicallyConnected = Boolean((liveStatus?.data_source === "LIVE HARDWARE" || liveStatus?.source_type === "LIVE_HARDWARE") && liveStatus?.physical_hardware_connected);
+  const isReplay = liveStatus?.source_type === "csv_replay" || liveStatus?.data_source === "REPLAY";
+  const dataSourceLabel = isPhysicallyConnected ? "LIVE HARDWARE" : isReplay ? "REPLAY" : "SIMULATION";
+  const dataSourceClass = isPhysicallyConnected ? "source-live" : isReplay ? "source-replay" : "source-sim";
+  const sourceName = liveStatus?.source_name || "VIRTUAL TEST BENCH (SIMULATED)";
+  const latencyDisplay = liveStatus?.last_latency_ms ? `${Math.round(liveStatus.last_latency_ms)}ms` : "35ms";
+  const msgsDisplay = `${(liveStatus?.messages_count ?? 0).toLocaleString()} msgs`;
+  return /*#__PURE__*/_react.default.createElement("header", {
+    className: "section-header",
+    "aria-label": `${getSectionTitle()} Header`
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "section-header-row-primary"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "section-header-left"
+  }, onToggleMobileMenu && /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "section-header-menu-btn",
+    onClick: onToggleMobileMenu,
+    "aria-label": "Toggle navigation menu",
+    title: "Navigation Menu"
+  }, /*#__PURE__*/_react.default.createElement("svg", {
+    width: "20",
+    height: "20",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2.2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/_react.default.createElement("line", {
+    x1: "3",
+    y1: "6",
+    x2: "21",
+    y2: "6"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "3",
+    y1: "12",
+    x2: "21",
+    y2: "12"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "3",
+    y1: "18",
+    x2: "21",
+    y2: "18"
+  }))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "section-header-titles-group"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "section-header-breadcrumb"
+  }, getSectionBreadcrumb()), /*#__PURE__*/_react.default.createElement("h1", {
+    className: "section-header-title"
+  }, getSectionTitle()))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "section-header-status-group"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: `data-source-provenance-pill ${dataSourceClass}`,
+    title: "Strict Telemetry Source Provenance (SIMULATION vs LIVE HARDWARE)"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "source-label-prefix"
+  }, "DATA SOURCE:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "source-dot"
+  }, "\u25CF"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "source-name-bold"
+  }, dataSourceLabel)), /*#__PURE__*/_react.default.createElement("div", {
+    className: `live-topbar-pill status-${status.toLowerCase()}`,
+    onClick: onNavigateToLive,
+    role: "button",
+    tabIndex: 0,
+    onKeyDown: e => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onNavigateToLive?.();
+      }
+    },
+    title: "Click to open Live Screening view",
+    "aria-label": `Connection status: ${status}. Data source: ${sourceName}`
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "live-pill-status-row"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: `live-pulse-dot dot-${status.toLowerCase()}`
+  }), /*#__PURE__*/_react.default.createElement("span", {
+    className: "live-status-label"
+  }, status)), /*#__PURE__*/_react.default.createElement("span", {
+    className: "live-pill-source"
+  }, sourceName), status === "LIVE" || status === "CONNECTED" ? /*#__PURE__*/_react.default.createElement("div", {
+    className: "live-pill-metrics"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "metric-tag"
+  }, latencyDisplay), /*#__PURE__*/_react.default.createElement("span", {
+    className: "metric-dot"
+  }, "\u2022"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "metric-tag"
+  }, msgsDisplay)) : /*#__PURE__*/_react.default.createElement("span", {
+    className: "live-pill-metrics text-muted"
+  }, "Standby")))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "section-header-row-secondary"
+  }, /*#__PURE__*/_react.default.createElement("form", {
+    onSubmit: onSearchSubmit,
+    className: "section-header-search-box"
+  }, /*#__PURE__*/_react.default.createElement(_Icons.IconSearch, null), /*#__PURE__*/_react.default.createElement("input", {
+    type: "text",
+    placeholder: "Search components (e.g. C-01008)...",
+    value: globalSearch,
+    onChange: e => onSearchChange(e.target.value),
+    "aria-label": "Search components"
+  })), /*#__PURE__*/_react.default.createElement("div", {
+    className: "dataset-pill"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "pill-dot"
+  }), /*#__PURE__*/_react.default.createElement("span", {
+    className: "dataset-pill-name"
+  }, !activeDataset?.dataset_id || activeDataset.dataset_id.startsWith("demo") ? "Demo Benchmark" : activeDataset?.name || "User Dataset"), /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "pill-action-btn",
+    onClick: onOpenDatasetModal
+  }, "Change")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "section-header-actions"
+  }, /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "btn btn-secondary btn-sm",
+    onClick: () => window.location.href = `${_types.API_BASE}/reports/export-csv`
+  }, "Export CSV"), /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
+    className: "btn btn-primary btn-sm",
+    onClick: onReloadDemo
+  }, "Reload Demo"))));
+}
+  });
+
+  // Module: components/SectionHero.tsx
+  define("components/SectionHero.tsx", function(module, exports, require) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.SectionHero = SectionHero;
+var _react = _interopRequireWildcard(require("react"));
+function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
+function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
+// ==============================================================================
+// ReliabilityX — Master Reusable Section Hero Component
+// Directly replicates the exact design, structure, styles, and animation
+// of the Master "About ReliabilityX" Hero Section across all major sections.
+// ==============================================================================
+
+function SectionHero({
+  badge,
+  title,
+  subtitle,
+  id,
+  className = "",
+  titleId
+}) {
+  const heroRef = (0, _react.useRef)(null);
+  (0, _react.useEffect)(() => {
+    const el = heroRef.current;
+    if (!el) return;
+
+    // Immediately trigger smooth CSS entrance animation on mount
+    const raf = requestAnimationFrame(() => {
+      el.classList.add("rx-settled-in");
+    });
+    const timer = setTimeout(() => {
+      el.classList.add("rx-settled-in");
+    }, 50);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+    };
+  }, []);
+  return /*#__PURE__*/_react.default.createElement("div", {
+    id: id,
+    ref: heroRef,
+    className: `card about-hero-intro mb-4 rx-about-fade ${className}`.trim()
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "about-hero-eyebrow"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "about-hero-eyebrow-dot"
+  }), badge), /*#__PURE__*/_react.default.createElement("h1", {
+    id: titleId,
+    className: "about-hero-title"
+  }, title), /*#__PURE__*/_react.default.createElement("div", {
+    className: "about-hero-divider",
+    "aria-hidden": "true"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "about-divider-line line-left"
+  }), /*#__PURE__*/_react.default.createElement("span", {
+    className: "about-divider-accent"
+  }), /*#__PURE__*/_react.default.createElement("span", {
+    className: "about-divider-line line-right"
+  })), /*#__PURE__*/_react.default.createElement("p", {
+    className: "about-hero-tagline"
+  }, subtitle));
+}
+  });
+
   // Module: components/Sidebar.tsx
   define("components/Sidebar.tsx", function(module, exports, require) {
 "use strict";
@@ -6738,7 +8503,15 @@ function Sidebar({
     className: "sidebar-item-label"
   }, "Live Screening"), !collapsed && /*#__PURE__*/_react.default.createElement("span", {
     className: "live-sidebar-pill"
-  }, "LIVE"))), /*#__PURE__*/_react.default.createElement("div", {
+  }, "LIVE")), /*#__PURE__*/_react.default.createElement("button", {
+    className: `sidebar-item ${activeTab === "hardware_connectivity" ? "active" : ""}`,
+    onClick: () => handleItemClick("hardware_connectivity"),
+    title: "Hardware Connectivity & Live Test-Cell Integration"
+  }, /*#__PURE__*/_react.default.createElement(_Icons.IconHardware, null), /*#__PURE__*/_react.default.createElement("span", {
+    className: "sidebar-item-label"
+  }, "Hardware Connectivity"), !collapsed && /*#__PURE__*/_react.default.createElement("span", {
+    className: "hardware-sidebar-pill"
+  }, "ATE"))), /*#__PURE__*/_react.default.createElement("div", {
     className: "sidebar-nav-group"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "sidebar-group-title"
@@ -6864,12 +8637,18 @@ function Topbar({
   onNavigateToLive,
   onToggleMobileMenu
 }) {
+  // Completely exclude global Topbar from sections that do not need it
+  if (activeTab === "reports" || activeTab === "about" || activeTab === "audit" || activeTab === "engineering") {
+    return null;
+  }
   const getTabTitle = () => {
     switch (activeTab) {
       case "dashboard":
         return "Dashboard Overview";
       case "live_telemetry":
         return "Live Screening Telemetry";
+      case "hardware_connectivity":
+        return "Hardware Connectivity";
       case "screening":
         return "Screening Pipeline";
       case "components":
@@ -6892,9 +8671,47 @@ function Topbar({
         return "ReliabilityX Suite";
     }
   };
+  const getTabBreadcrumb = () => {
+    switch (activeTab) {
+      case "live_telemetry":
+        return "RELIABILITYX / LIVE STREAM";
+      case "hardware_connectivity":
+        return "RELIABILITYX / HARDWARE";
+      case "screening":
+        return "RELIABILITYX / ANOMALY DETECTION";
+      case "components":
+        return "RELIABILITYX / DOSSIER";
+      case "predictions":
+        return "RELIABILITYX / PREDICTIONS";
+      case "reports":
+        return "RELIABILITYX / REPORTS";
+      case "about":
+        return "RELIABILITYX / ABOUT";
+      case "audit":
+        return "RELIABILITYX / AUDIT";
+      case "lots":
+        return "RELIABILITYX / LOTS";
+      case "inspection":
+        return "RELIABILITYX / INSPECTION";
+      case "engineering":
+        return "RELIABILITYX / ENGINEERING";
+      case "dashboard":
+      default:
+        return `RELIABILITYX / ${activeTab.toUpperCase()}`;
+    }
+  };
   const status = liveStatus?.connection_status || "OFFLINE";
+  const isPhysicallyConnected = Boolean((liveStatus?.data_source === "LIVE HARDWARE" || liveStatus?.source_type === "LIVE_HARDWARE") && liveStatus?.physical_hardware_connected);
+  const isReplay = liveStatus?.source_type === "csv_replay" || liveStatus?.data_source === "REPLAY";
+  const dataSourceLabel = isPhysicallyConnected ? "LIVE HARDWARE" : isReplay ? "REPLAY" : "SIMULATION";
+  const dataSourceClass = isPhysicallyConnected ? "source-live" : isReplay ? "source-replay" : "source-sim";
+  const sourceName = liveStatus?.source_name || "VIRTUAL TEST BENCH (SIMULATED)";
+  const latencyDisplay = liveStatus?.last_latency_ms ? `${Math.round(liveStatus.last_latency_ms)}ms` : "35ms";
+  const msgsDisplay = `${(liveStatus?.messages_count ?? 0).toLocaleString()} msgs`;
   return /*#__PURE__*/_react.default.createElement("header", {
     className: "app-topbar"
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "topbar-row-primary"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "topbar-left"
   }, onToggleMobileMenu && /*#__PURE__*/_react.default.createElement("button", {
@@ -6931,51 +8748,79 @@ function Topbar({
     className: "topbar-titles-group"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "topbar-breadcrumb"
-  }, "RELIABILITYX / ", activeTab === "live_telemetry" ? "LIVE STREAM" : activeTab === "audit" ? "AUDIT" : activeTab.toUpperCase()), /*#__PURE__*/_react.default.createElement("h1", {
+  }, getTabBreadcrumb()), /*#__PURE__*/_react.default.createElement("h1", {
     className: "topbar-title"
   }, getTabTitle()))), /*#__PURE__*/_react.default.createElement("div", {
-    className: "topbar-right"
+    className: "topbar-status-group"
   }, /*#__PURE__*/_react.default.createElement("div", {
+    className: `data-source-provenance-pill ${dataSourceClass}`,
+    title: "Strict Telemetry Source Provenance (SIMULATION vs LIVE HARDWARE)"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "source-label-prefix"
+  }, "DATA SOURCE:"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "source-dot"
+  }, "\u25CF"), /*#__PURE__*/_react.default.createElement("span", {
+    className: "source-name-bold"
+  }, dataSourceLabel)), /*#__PURE__*/_react.default.createElement("div", {
     className: `live-topbar-pill status-${status.toLowerCase()}`,
     onClick: onNavigateToLive,
-    title: "Click to open Live Screening view"
+    role: "button",
+    tabIndex: 0,
+    onKeyDown: e => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onNavigateToLive?.();
+      }
+    },
+    title: "Click to open Live Screening view",
+    "aria-label": `Connection status: ${status}. Data source: ${sourceName}`
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "live-pill-status-row"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: `live-pulse-dot dot-${status.toLowerCase()}`
   }), /*#__PURE__*/_react.default.createElement("span", {
     className: "live-status-label"
-  }, status), /*#__PURE__*/_react.default.createElement("span", {
-    className: "live-pill-source d-desktop-only"
-  }, liveStatus?.source_name || "SIMULATED ATE-01"), status === "LIVE" || status === "CONNECTED" ? /*#__PURE__*/_react.default.createElement("div", {
-    className: "live-pill-metrics d-desktop-only"
+  }, status)), /*#__PURE__*/_react.default.createElement("span", {
+    className: "live-pill-source"
+  }, sourceName), status === "LIVE" || status === "CONNECTED" ? /*#__PURE__*/_react.default.createElement("div", {
+    className: "live-pill-metrics"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "metric-tag"
-  }, liveStatus?.last_latency_ms ? `${Math.round(liveStatus.last_latency_ms)}ms` : "18ms"), /*#__PURE__*/_react.default.createElement("span", {
+  }, latencyDisplay), /*#__PURE__*/_react.default.createElement("span", {
     className: "metric-dot"
   }, "\u2022"), /*#__PURE__*/_react.default.createElement("span", {
     className: "metric-tag"
-  }, (liveStatus?.messages_count ?? 1145).toLocaleString(), " msgs")) : /*#__PURE__*/_react.default.createElement("span", {
-    className: "live-pill-metrics text-muted d-desktop-only"
-  }, "Standby")), /*#__PURE__*/_react.default.createElement("form", {
+  }, msgsDisplay)) : /*#__PURE__*/_react.default.createElement("span", {
+    className: "live-pill-metrics text-muted"
+  }, "Standby")))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "topbar-row-secondary"
+  }, /*#__PURE__*/_react.default.createElement("form", {
     onSubmit: onSearchSubmit,
-    className: "topbar-search-box d-desktop-only"
+    className: "topbar-search-box"
   }, /*#__PURE__*/_react.default.createElement(_Icons.IconSearch, null), /*#__PURE__*/_react.default.createElement("input", {
     type: "text",
-    placeholder: "Search component (e.g. C-01008)...",
+    placeholder: "Search components (e.g. C-01008)...",
     value: globalSearch,
-    onChange: e => onSearchChange(e.target.value)
+    onChange: e => onSearchChange(e.target.value),
+    "aria-label": "Search components"
   })), /*#__PURE__*/_react.default.createElement("div", {
-    className: "dataset-pill d-desktop-only"
+    className: "dataset-pill"
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "pill-dot"
-  }), /*#__PURE__*/_react.default.createElement("span", null, !activeDataset?.dataset_id || activeDataset.dataset_id.startsWith("demo") ? "Demo Benchmark" : activeDataset?.name || "User Dataset"), /*#__PURE__*/_react.default.createElement("button", {
+  }), /*#__PURE__*/_react.default.createElement("span", {
+    className: "dataset-pill-name"
+  }, !activeDataset?.dataset_id || activeDataset.dataset_id.startsWith("demo") ? "Demo Benchmark" : activeDataset?.name || "User Dataset"), /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
     className: "pill-action-btn",
     onClick: onOpenDatasetModal
   }, "Change")), /*#__PURE__*/_react.default.createElement("div", {
-    className: "topbar-actions d-desktop-only"
+    className: "topbar-actions"
   }, /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
     className: "btn btn-secondary btn-sm",
     onClick: () => window.location.href = `${_types.API_BASE}/reports/export-csv`
   }, "Export CSV"), /*#__PURE__*/_react.default.createElement("button", {
+    type: "button",
     className: "btn btn-primary btn-sm",
     onClick: onReloadDemo
   }, "Reload Demo"))));

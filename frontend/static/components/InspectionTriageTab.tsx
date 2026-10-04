@@ -5,6 +5,7 @@
 import React, { useState, useEffect } from "react";
 import { API_BASE } from "../types";
 import { StateBadge, RiskBadge } from "./Badges";
+import { SectionHero } from "./SectionHero";
 
 interface InspectionTriageTabProps {
   onInspectComp: (id: string) => void;
@@ -42,13 +43,12 @@ export function InspectionTriageTab({ onInspectComp }: InspectionTriageTabProps)
 
   return (
     <div className="tab-pane active">
-      {/* 1. Page Header */}
-      <div className="page-header mb-4">
-        <h1 className="page-main-title">Inspection Priority Triage Queue</h1>
-        <p className="page-main-subtitle">
-          Prioritized triage of screening units requiring authoritative physical QA / reliability engineer verification prior to lot sign-off.
-        </p>
-      </div>
+      {/* 1. Page Header (Standardized Reusable About Hero) */}
+      <SectionHero
+        badge="INSPECTION PRIORITY"
+        title="Inspection Priority Triage Queue"
+        subtitle="Prioritized triage of screening units requiring authoritative physical QA / reliability engineer verification prior to lot sign-off."
+      />
 
       {/* 2. Top KPI Metrics Row (4 equal-width cards) */}
       <div className="kpi-grid mb-4">

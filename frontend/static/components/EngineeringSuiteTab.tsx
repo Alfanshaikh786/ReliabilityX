@@ -4,6 +4,7 @@
 // ==============================================================================
 import React, { useState, useEffect } from "react";
 import { API_BASE } from "../types";
+import { SectionHero } from "./SectionHero";
 
 interface EngineeringSuiteTabProps {
   onSaved: () => void;
@@ -61,13 +62,12 @@ export function EngineeringSuiteTab({ onSaved, initialSubTab = "benchmarks" }: E
 
   return (
     <div className="tab-pane active">
-      {/* 1. Page Header */}
-      <div className="hero-header mb-4">
-        <h1 className="page-main-title">ADVANCED ENGINEERING & AUDIT SUITE</h1>
-        <p className="page-main-subtitle">
-          Configure AEC-Q001 DPAT statistical limits, evaluate multi-model prognostic benchmarks, and inspect the tamper-evident SHA-256 audit ledger.
-        </p>
-      </div>
+      {/* 1. Page Header (Standardized Reusable About Hero) */}
+      <SectionHero
+        badge="ENGINEERING & AUDIT"
+        title="Advanced Engineering & Audit Suite"
+        subtitle="Configure AEC-Q001-referenced statistical screening limits, evaluate prognostic benchmarks, and inspect the tamper-evident SHA-256 audit ledger."
+      />
 
       {/* 2. Top KPI Metrics Row (4 Spacious Cards) */}
       <div className="kpi-grid mb-4">

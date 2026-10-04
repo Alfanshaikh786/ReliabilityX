@@ -7,6 +7,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { LiveStreamStatus, LiveTelemetryPoint, LiveAlertItem, LiveLotHealth, RawMeasurementRecord, API_BASE } from "../types";
 import { StateBadge, RiskBadge } from "./Badges";
 import { IconPlay, IconPause, IconStop, IconRadioWave, IconAlertTriangle } from "./Icons";
+import { SectionHero } from "./SectionHero";
 
 interface LiveScreeningTabProps {
   onInspectComp: (componentId: string) => void;
@@ -19,6 +20,7 @@ interface LiveScreeningTabProps {
   onResumeStream: () => Promise<void>;
   onStopStream: () => Promise<void>;
   onClearPoints: () => void;
+  componentsList?: any[];
 }
 
 export function LiveScreeningTab({
@@ -31,21 +33,140 @@ export function LiveScreeningTab({
   onPauseStream,
   onResumeStream,
   onStopStream,
-  onClearPoints
+  onClearPoints,
+  componentsList
 }: LiveScreeningTabProps) {
   // Simulator & Ingestion Controls
   const [sourceType, setSourceType] = useState<string>("simulator");
   const [scenario, setScenario] = useState<string>("ACCELERATING_RUNAWAY");
   const [selectedComp, setSelectedComp] = useState<string>("C-01008");
-  const [selectedLot, setSelectedLot] = useState<string>("LOT-2411C");
+  const [selectedLot, setSelectedLot] = useState<string>("LOT-2411A");
   const [selectedParam, setSelectedParam] = useState<string>("leakage_current_uA");
-  const [samplingRate, setSamplingRate] = useState<number>(0.8);
+  const [samplingRate, setSamplingRate] = useState<number>(1.0);
   const [rawDrawerOpen, setRawDrawerOpen] = useState<boolean>(false);
   const [rawRecords, setRawRecords] = useState<RawMeasurementRecord[]>([]);
+
+  // Dynamically populated components list from underlying dataset
+  const [availableComps, setAvailableComps] = useState<any[]>(componentsList || []);
+
+  useEffect(() => {
+    if (componentsList && componentsList.length > 0) {
+      setAvailableComps(componentsList);
+    } else {
+      fetch(`${API_BASE}/components?limit=500`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.components && d.components.length > 0) {
+            setAvailableComps(d.components);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [componentsList]);
+
+  // Natural sort of components by component_id
+  const sortedComps = [...availableComps].sort((a, b) => (a.component_id || "").localeCompare(b.component_id || ""));
+
+  // Keep lot synchronized with selected component
+  useEffect(() => {
+    if (availableComps.length > 0 && selectedComp) {
+      const match = availableComps.find((c) => c.component_id === selectedComp);
+      if (match?.lot_id && match.lot_id !== selectedLot) {
+        setSelectedLot(match.lot_id);
+      }
+    }
+  }, [availableComps, selectedComp]);
 
   const isLive = liveStatus?.connection_status === "LIVE" || liveStatus?.connection_status === "CONNECTED";
   const isPaused = liveStatus?.connection_status === "PAUSED";
   const latestPoint = livePoints.length > 0 ? livePoints[livePoints.length - 1] : null;
+
+  // Handlers with dynamic reconfiguration & buffer reset
+  const handleComponentChange = async (newCompId: string) => {
+    setSelectedComp(newCompId);
+    const match = availableComps.find((c) => c.component_id === newCompId);
+    const newLot = match?.lot_id || selectedLot;
+    if (match?.lot_id) {
+      setSelectedLot(match.lot_id);
+    }
+    onClearPoints();
+    if (isLive || isPaused) {
+      try {
+        await fetch(`${API_BASE}/stream/config`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            component_id: newCompId,
+            lot_id: newLot,
+            reset_hours: true
+          })
+        });
+      } catch {}
+    }
+  };
+
+  const handleParamChange = async (newParam: string) => {
+    setSelectedParam(newParam);
+    onClearPoints();
+    if (isLive || isPaused) {
+      try {
+        await fetch(`${API_BASE}/stream/config`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            parameter: newParam,
+            reset_hours: true
+          })
+        });
+      } catch {}
+    }
+  };
+
+  const handleScenarioChange = async (newScenario: string) => {
+    setScenario(newScenario);
+    if (isLive || isPaused) {
+      try {
+        await fetch(`${API_BASE}/stream/config`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            scenario: newScenario,
+            reset_hours: false
+          })
+        });
+      } catch {}
+    }
+  };
+
+  const handleSamplingRateChange = async (newRate: number) => {
+    setSamplingRate(newRate);
+    if (isLive || isPaused) {
+      try {
+        await fetch(`${API_BASE}/stream/config`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sampling_rate: newRate
+          })
+        });
+      } catch {}
+    }
+  };
+
+  const getConnectionStatusDisplay = () => {
+    if (!liveStatus) return "DISCONNECTED";
+    const st = liveStatus.connection_status;
+    if (st === "PAUSED") return "CONNECTED / PAUSED";
+    if (st === "STALE") return "STALE";
+    if (st === "DISCONNECTED") return "DISCONNECTED";
+    if (st === "CONNECTED" || st === "LIVE") {
+      if (isLive && !isPaused && (livePoints.length > 0 || (liveStatus?.messages_count ?? 0) > 0)) {
+        return "CONNECTED / STREAMING";
+      }
+      return "CONNECTED / IDLE";
+    }
+    return st;
+  };
 
   // Fetch raw audit history when drawer is opened
   const loadRawHistory = async () => {
@@ -139,7 +260,14 @@ export function LiveScreeningTab({
 
   return (
     <div className="live-screening-container">
-      {/* 1. AEROSPACE INTEGRITY & SIMULATOR NOTICE */}
+      {/* 1. Page Header (Standardized Reusable About Hero) */}
+      <SectionHero
+        badge="LIVE SCREENING"
+        title="Live Screening Telemetry"
+        subtitle="Real-time telemetry ingestion, streaming data-quality assessment, anomaly detection, and reliability monitoring."
+      />
+
+      {/* 2. AEROSPACE INTEGRITY & SIMULATOR NOTICE */}
       <div className="live-disclaimer-banner">
         <div className="disclaimer-badge">
           <span className="disclaimer-dot"></span>
@@ -185,7 +313,7 @@ export function LiveScreeningTab({
               <label>Defect Scenario:</label>
               <select
                 value={scenario}
-                onChange={(e) => setScenario(e.target.value)}
+                onChange={(e) => handleScenarioChange(e.target.value)}
                 className="control-select"
               >
                 <option value="ACCELERATING_RUNAWAY">Accelerating Runaway (Arrhenius Wearout)</option>
@@ -210,14 +338,18 @@ export function LiveScreeningTab({
             <label>Component:</label>
             <select
               value={selectedComp}
-              onChange={(e) => setSelectedComp(e.target.value)}
+              onChange={(e) => handleComponentChange(e.target.value)}
               className="control-select-sm"
             >
-              <option value="C-01008">C-01008</option>
-              <option value="C-01009">C-01009</option>
-              <option value="C-01010">C-01010</option>
-              <option value="C-01011">C-01011</option>
-              <option value="C-01012">C-01012</option>
+              {sortedComps.length > 0 ? (
+                sortedComps.map((c: any) => (
+                  <option key={c.component_id} value={c.component_id}>
+                    {c.component_id} ({c.lot_id || selectedLot})
+                  </option>
+                ))
+              ) : (
+                <option value={selectedComp}>{selectedComp} ({selectedLot})</option>
+              )}
             </select>
           </div>
 
@@ -225,7 +357,7 @@ export function LiveScreeningTab({
             <label>Parameter:</label>
             <select
               value={selectedParam}
-              onChange={(e) => setSelectedParam(e.target.value)}
+              onChange={(e) => handleParamChange(e.target.value)}
               className="control-select"
             >
               <option value="leakage_current_uA">Leakage Current (I_leak)</option>
@@ -243,7 +375,7 @@ export function LiveScreeningTab({
                 <button
                   key={rate}
                   className={`btn-rate ${samplingRate === rate ? "active" : ""}`}
-                  onClick={() => setSamplingRate(rate)}
+                  onClick={() => handleSamplingRateChange(rate)}
                 >
                   {rate}s
                 </button>
@@ -346,14 +478,14 @@ export function LiveScreeningTab({
           <div className="kpi-value-row">
             <span className={`live-pulse-dot dot-${(liveStatus?.connection_status || "offline").toLowerCase()}`}></span>
             <span className={`kpi-value ${liveStatus?.connection_status === "STALE" ? "text-amber" : ""}`}>
-              {liveStatus?.connection_status || "DISCONNECTED"}
+              {getConnectionStatusDisplay()}
             </span>
           </div>
           <span className="kpi-sub">
             {liveStatus?.connection_status === "STALE" ? (
               <span className="text-amber">Last received: {liveStatus?.seconds_since_last_packet || 5}s ago</span>
             ) : (
-              <span>Source: <strong>{liveStatus?.source_name || "SIMULATOR"}</strong></span>
+              <span>Source: <strong>{liveStatus?.source_name || "LIVE TELEMETRY SIMULATOR"}</strong></span>
             )}
           </span>
         </div>
@@ -362,7 +494,9 @@ export function LiveScreeningTab({
           <span className="kpi-label">STREAM THROUGHPUT</span>
           <div className="kpi-value-row">
             <span className="kpi-value">
-              {liveStatus?.processing_rate ? `${liveStatus.processing_rate.toFixed(1)} samples/s` : `${(1.0 / samplingRate).toFixed(1)} samples/s`}
+              {livePoints.length > 0 || (liveStatus?.messages_count ?? 0) > 0
+                ? `${(liveStatus?.processing_rate ?? (1.0 / samplingRate)).toFixed(1)} samples/s`
+                : "0.0 samples/s"}
             </span>
           </div>
           <span className="kpi-sub">Sampling interval: {samplingRate}s</span>
@@ -372,17 +506,23 @@ export function LiveScreeningTab({
           <span className="kpi-label">STREAM LATENCY</span>
           <div className="kpi-value-row">
             <span className="kpi-value text-emerald">
-              {liveStatus?.last_latency_ms ? `${Math.round(liveStatus.last_latency_ms)} ms` : "32 ms"}
+              {livePoints.length > 0 || (liveStatus?.messages_count ?? 0) > 0
+                ? `${Math.round(liveStatus?.last_latency_ms ?? 32)} ms`
+                : "N/A"}
             </span>
           </div>
-          <span className="kpi-sub">p95: {liveStatus?.p95_latency_ms ?? 42} ms • avg: {liveStatus?.avg_latency_ms ?? 34} ms</span>
+          <span className="kpi-sub">
+            {livePoints.length > 0 || (liveStatus?.messages_count ?? 0) > 0
+              ? `p95: ${liveStatus?.p95_latency_ms ?? 42} ms • avg: ${liveStatus?.avg_latency_ms ?? 34} ms`
+              : "Awaiting stream packets"}
+          </span>
         </div>
 
         <div className="live-kpi-card">
           <span className="kpi-label">MESSAGES PROCESSED</span>
           <div className="kpi-value-row">
             <span className="kpi-value text-cyan">
-              {(liveStatus?.messages_count ?? livePoints.length).toLocaleString()}
+              {((liveStatus?.messages_processed ?? liveStatus?.messages_count) ?? livePoints.length).toLocaleString()}
             </span>
           </div>
           <span className="kpi-sub">Queue depth: {liveStatus?.queue_depth ?? 0}</span>
@@ -392,11 +532,15 @@ export function LiveScreeningTab({
           <span className="kpi-label">DATA QUALITY ENGINE</span>
           <div className="kpi-value-row">
             <span className="kpi-value text-emerald">
-              GOOD: {liveStatus?.data_quality?.good_pct ?? 98.4}%
+              {livePoints.length > 0 || (liveStatus?.messages_count ?? 0) > 0
+                ? `GOOD: ${liveStatus?.data_quality?.good_pct ?? 100.0}%`
+                : "PENDING (0 msgs)"}
             </span>
           </div>
           <span className="kpi-sub">
-            WARN: {liveStatus?.data_quality?.warnings_pct ?? 1.2}% • REJ: {liveStatus?.data_quality?.rejected_pct ?? 0.4}%
+            {livePoints.length > 0 || (liveStatus?.messages_count ?? 0) > 0
+              ? `WARN: ${liveStatus?.data_quality?.warnings_pct ?? 0.0}% • REJ: ${liveStatus?.data_quality?.rejected_pct ?? 0.0}%`
+              : "Quality checks engage on first packet"}
           </span>
         </div>
       </div>
@@ -631,17 +775,29 @@ export function LiveScreeningTab({
             <div className="hud-stats-grid">
               <div className="hud-sub-card">
                 <span className="sub-card-label">DRIFT RATE</span>
-                <span className={`sub-card-val ${(latestPoint?.drift_rate ?? 0) > 0.03 ? "text-amber" : "text-slate"}`}>
-                  {latestPoint ? `${latestPoint.drift_rate > 0 ? "+" : ""}${latestPoint.drift_rate.toFixed(4)}` : "0.0000"}
-                </span>
+                {latestPoint && livePoints.length >= 2 ? (
+                  <span className={`sub-card-val ${latestPoint.drift_rate > 0.03 ? "text-amber" : "text-slate"}`}>
+                    {latestPoint.drift_rate > 0 ? "+" : ""}{latestPoint.drift_rate.toFixed(4)}
+                  </span>
+                ) : (
+                  <span className="sub-card-val text-slate" style={{ fontSize: "11px", fontWeight: 600 }}>
+                    INSUFFICIENT HISTORY
+                  </span>
+                )}
                 <span className="sub-card-unit">units/hr</span>
               </div>
 
               <div className="hud-sub-card">
                 <span className="sub-card-label">DRIFT ACCELERATION</span>
-                <span className={`sub-card-val ${(latestPoint?.accel ?? 0) > 0.0003 ? "text-red" : "text-slate"}`}>
-                  {latestPoint ? `${latestPoint.accel > 0 ? "+" : ""}${latestPoint.accel.toFixed(5)}` : "0.0000"}
-                </span>
+                {latestPoint && livePoints.length >= 3 ? (
+                  <span className={`sub-card-val ${latestPoint.accel > 0.0003 ? "text-red" : "text-slate"}`}>
+                    {latestPoint.accel > 0 ? "+" : ""}{latestPoint.accel.toFixed(5)}
+                  </span>
+                ) : (
+                  <span className="sub-card-val text-slate" style={{ fontSize: "11px", fontWeight: 600 }}>
+                    INSUFFICIENT HISTORY
+                  </span>
+                )}
                 <span className="sub-card-unit">units/hr²</span>
               </div>
             </div>
@@ -715,25 +871,33 @@ export function LiveScreeningTab({
           <div className="health-stat-box">
             <span className="stat-label">LOT ANOMALY RATE</span>
             <span className="stat-val text-cyan">
-              {liveLotHealth?.anomaly_percentage ? `${liveLotHealth.anomaly_percentage.toFixed(1)}%` : "0.0%"}
+              {liveLotHealth?.anomaly_percentage !== undefined
+                ? `${liveLotHealth.anomaly_percentage.toFixed(1)}%`
+                : livePoints.length > 0 ? "0.0%" : "--"}
             </span>
           </div>
           <div className="health-stat-box">
             <span className="stat-label">DRIFTING UNITS</span>
             <span className="stat-val text-amber">
-              {liveLotHealth?.drifting_count ?? 1}
+              {liveLotHealth?.drifting_count !== undefined
+                ? liveLotHealth.drifting_count
+                : (livePoints.length > 0 && latestPoint?.state === "DRIFTING" ? 1 : 0)}
             </span>
           </div>
           <div className="health-stat-box">
             <span className="stat-label">ACCELERATING</span>
             <span className="stat-val text-red">
-              {liveLotHealth?.accelerating_count ?? 1}
+              {liveLotHealth?.accelerating_count !== undefined
+                ? liveLotHealth.accelerating_count
+                : (livePoints.length > 0 && latestPoint?.state === "ACCELERATING" ? 1 : 0)}
             </span>
           </div>
           <div className="health-stat-box">
             <span className="stat-label">HIGH RISK</span>
             <span className="stat-val text-red">
-              {liveLotHealth?.high_risk_count ?? 0}
+              {liveLotHealth?.high_risk_count !== undefined
+                ? liveLotHealth.high_risk_count
+                : (livePoints.length > 0 && latestPoint?.risk === "HIGH RISK" ? 1 : 0)}
             </span>
           </div>
         </div>
@@ -741,7 +905,9 @@ export function LiveScreeningTab({
         <div className="lot-pattern-status-box">
           <span className="status-label">Pattern Diagnostic:</span>
           <span className={`status-text ${liveLotHealth?.is_lot_wide_pattern ? "text-red" : "text-emerald"}`}>
-            {liveLotHealth?.is_lot_wide_pattern
+            {livePoints.length === 0 && !liveLotHealth
+              ? "Awaiting active stream telemetry — lot statistics gated."
+              : liveLotHealth?.is_lot_wide_pattern
               ? "Correlated multi-component wearout detected across wafer lot."
               : "Component wearout isolated. No systemic lot-wide failure mode observed."}
           </span>

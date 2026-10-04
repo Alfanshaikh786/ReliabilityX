@@ -38,13 +38,18 @@ def test_full_pipeline():
     from backend.core.config import CONFIG
     CONFIG.db_path = test_db
 
-    # Test entrypoint (api.index or backend.main)
+    # Test entrypoint (backend.main, main, or dynamic api.index)
     try:
-        import api.index as vercel_entry
-        app = vercel_entry.app
-    except ImportError:
         import backend.main as vercel_entry
         app = vercel_entry.app
+    except ImportError:
+        try:
+            import main as vercel_entry
+            app = vercel_entry.app
+        except ImportError:
+            import importlib
+            vercel_entry = importlib.import_module("api.index")
+            app = vercel_entry.app
 
     from fastapi.testclient import TestClient
     client = TestClient(app)

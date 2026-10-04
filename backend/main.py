@@ -541,6 +541,135 @@ def get_raw_telemetry_history(limit: int = 50, component_id: Optional[str] = Non
 
 
 # ==============================================================================
+# HARDWARE CONNECTIVITY & TEST-CELL INTEGRATION ENDPOINTS (Sections 1-5, 8-10)
+# ==============================================================================
+
+@app.get("/api/hardware/status")
+def get_hardware_status():
+    """
+    Returns current hardware connectivity, interface status, calibration metadata,
+    and health indicator (CONNECTED, DISCONNECTED, CONNECTING, ERROR, STALE_TELEMETRY,
+    CALIBRATION_WARNING, IDENTITY_MISMATCH).
+    """
+    return get_ingestion_manager().get_hardware_status()
+
+
+@app.get("/api/hardware/devices")
+def get_hardware_devices():
+    """Returns all registered semiconductor test equipment and instruments in the device registry."""
+    from backend.ingestion.device_registry import DEVICE_REGISTRY
+    devices = [d.to_dict() for d in DEVICE_REGISTRY.list_all()]
+    mgr = get_ingestion_manager()
+    active_dev_id = mgr.active_hardware_device.device_id if mgr.active_hardware_device else None
+    return {
+        "devices": devices,
+        "count": len(devices),
+        "active_device_id": active_dev_id,
+        "hardware_connection_status": mgr.get_hardware_health_status()
+    }
+
+
+@app.post("/api/hardware/discover")
+async def discover_hardware_devices():
+    """
+    Scans the test bench interfaces (Ethernet/LXI, GPIB, USBTMC, MQTT)
+    and queries device registry for available test equipment.
+    """
+    devices = await get_ingestion_manager().discover_hardware_devices()
+    return {
+        "discovered_devices": devices,
+        "count": len(devices),
+        "discovery_timestamp": datetime.utcnow().isoformat(),
+        "physical_hardware_detected": any(d.get("source_type") == "LIVE_HARDWARE" and d.get("is_active") for d in devices)
+    }
+
+
+@app.post("/api/hardware/test-connection")
+async def test_hardware_connection(payload: Dict[str, Any]):
+    """
+    Interrogates target device (*IDN? query) and verifies communication handshake
+    without modifying screening test state or commanding actuators.
+    """
+    device_id = payload.get("device_id")
+    if not device_id:
+        raise HTTPException(status_code=400, detail="Missing device_id parameter")
+    result = await get_ingestion_manager().test_hardware_connection(device_id)
+    return result
+
+
+@app.post("/api/hardware/connect")
+async def connect_hardware_device(payload: Dict[str, Any]):
+    """
+    Connects to the specified instrument and binds it as active telemetry source.
+    If no physical instrument is attached, honestly reports NO LIVE HARDWARE CONNECTED.
+    """
+    device_id = payload.get("device_id")
+    if not device_id:
+        raise HTTPException(status_code=400, detail="Missing device_id parameter")
+    config = payload.get("config", {})
+    result = await get_ingestion_manager().connect_hardware(device_id, config)
+    return result
+
+
+@app.post("/api/hardware/disconnect")
+async def disconnect_hardware_device():
+    """Safely closes communication session with hardware test equipment."""
+    return await get_ingestion_manager().disconnect_hardware()
+
+
+@app.post("/api/hardware/stream/start")
+async def start_hardware_stream(payload: Optional[Dict[str, Any]] = None):
+    """Starts live telemetry stream from currently active or specified hardware adapter."""
+    payload = payload or {}
+    device_id = payload.get("device_id")
+    mgr = get_ingestion_manager()
+    if device_id:
+        conn_res = await mgr.connect_hardware(device_id, payload.get("config"))
+        if not conn_res.get("success"):
+            return {
+                "success": False,
+                "message": conn_res.get("message", "Hardware connection failed."),
+                "status": conn_res,
+                "hardware_status": mgr.get_hardware_status()
+            }
+    source_type = "hardware_mock" if (mgr.active_hardware_device and mgr.active_hardware_device.source_type == "SIMULATED") else "scpi_lxi"
+    status = await mgr.start_stream(source_type=source_type, config=payload.get("config"))
+    return {
+        "success": status.get("success", False),
+        "message": status.get("message", ""),
+        "status": status,
+        "hardware_status": mgr.get_hardware_status()
+    }
+
+
+@app.post("/api/hardware/stream/stop")
+async def stop_hardware_stream():
+    """Halts active hardware telemetry streaming."""
+    mgr = get_ingestion_manager()
+    status = await mgr.stop_stream()
+    return {
+        "status": status,
+        "hardware_status": mgr.get_hardware_status()
+    }
+
+
+@app.post("/api/hardware/telemetry/normalize")
+def normalize_hardware_telemetry(payload: Dict[str, Any]):
+    """
+    Telemetry Normalizer API endpoint:
+    Validates and normalizes raw instrument measurements into canonical TelemetryPacket schema.
+    """
+    mgr = get_ingestion_manager()
+    val_res = mgr.normalize_telemetry(payload)
+    return {
+        "is_valid": val_res.is_valid,
+        "status": val_res.status,
+        "reason": val_res.reason,
+        "packet": val_res.packet.to_dict() if val_res.packet else None
+    }
+
+
+# ==============================================================================
 # DASHBOARD OVERVIEW & ANALYTICS
 # ==============================================================================
 

@@ -4,6 +4,7 @@
 // ==============================================================================
 import React, { useState, useEffect } from "react";
 import { API_BASE } from "../types";
+import { SectionHero } from "./SectionHero";
 
 interface ReportsTabProps {
   onInspectComp: (id: string) => void;
@@ -40,13 +41,12 @@ export function ReportsTab({ onInspectComp }: ReportsTabProps) {
 
   return (
     <div className="tab-pane active">
-      {/* 1. Page Header */}
-      <div className="hero-header mb-4">
-        <h1 className="page-main-title">AI-ASSISTED SCREENING ANALYSIS REPORT</h1>
-        <p className="page-main-subtitle">
-          Parametric screening degradation analysis, 95% nominal split-conformal prediction intervals, and tamper-evident SHA-256 digital verification.
-        </p>
-      </div>
+      {/* 1. Page Header (Standardized Reusable About Hero) */}
+      <SectionHero
+        badge="RELIABILITYX REPORTS"
+        title="AI-Assisted Screening Analysis Report"
+        subtitle="Parametric screening degradation analysis, 95% nominal split-conformal prediction intervals, and tamper-evident SHA-256 digital verification."
+      />
 
       {/* 2. Top KPI Metrics Row (4 Spacious Cards) */}
       <div className="kpi-grid mb-4">

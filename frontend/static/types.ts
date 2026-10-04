@@ -7,6 +7,7 @@ export type TabType =
   | "dashboard"
   | "screening"
   | "live_telemetry"
+  | "hardware_connectivity"
   | "components"
   | "lots"
   | "predictions"
@@ -69,6 +70,7 @@ export interface LiveTelemetryPoint {
   risk: "PASS" | "WATCH" | "REVIEW" | "HIGH RISK" | string;
   alert?: LiveAlertItem;
   predicted_168h?: number | null;
+  predicted_168h_value?: number | null;
   estimated_prediction_interval?: [number, number] | null;
   conformal_radius?: number | null;
   interval_method?: string;
@@ -78,7 +80,22 @@ export interface LiveTelemetryPoint {
   uncertainty_std?: number | null;
   prediction_status?: string;
   prediction_available?: boolean;
+  prediction_confidence?: string;
   p90_tooltip?: string;
+  drift_acceleration?: number;
+  evidence_state?: string;
+  evidence_status?: string;
+  model_status?: string;
+  model_applicability?: string;
+  interval_type?: string;
+  conformal_engineering_note?: string;
+  probability_of_limit_breach?: number | null;
+  probability_of_breach_pct?: number | string | null;
+  estimated_time_to_breach?: string | null;
+  test_system_status?: string;
+  source_type?: string;
+  test_station_id?: string;
+  channel_id?: string;
   pipeline_status?: {
     telemetry: boolean;
     quality: boolean;
@@ -90,6 +107,7 @@ export interface LiveTelemetryPoint {
     risk: boolean;
     status_string: string;
   };
+  [key: string]: any;
 }
 
 export interface LiveAlertItem {

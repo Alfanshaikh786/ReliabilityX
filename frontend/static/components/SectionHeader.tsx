@@ -1,8 +1,26 @@
+// ==============================================================================
+// ReliabilityX — Dedicated Non-Sticky Section Header Component
+// Exclusively shared across the 7 screening & monitoring sections:
+// 1. Anomaly Detection / Screening Pipeline ("screening")
+// 2. Dossier / Components Directory ("components")
+// 3. Lots / Lot Health & Anomaly Triage ("lots")
+// 4. Predictions / 168h Prognostic Forecasts ("predictions")
+// 5. Dashboard / Dashboard Overview ("dashboard")
+// 6. Live Stream / Live Screening Telemetry ("live_telemetry")
+// 7. Hardware / Hardware Connectivity ("hardware_connectivity")
+//
+// NON-STICKY: Scrolls away naturally with the page content.
+// Identical height, padding, spacing, alignment, and typography across all 7 sections.
+// ==============================================================================
 import React from "react";
 import { TabType, LiveStreamStatus, API_BASE } from "../types";
 import { IconSearch } from "./Icons";
 
-interface TopbarProps {
+export const SECTION_HEADER_TABS: TabType[] = [
+  "dashboard",
+];
+
+interface SectionHeaderProps {
   activeTab: TabType;
   globalSearch: string;
   onSearchChange: (val: string) => void;
@@ -15,7 +33,7 @@ interface TopbarProps {
   onToggleMobileMenu?: () => void;
 }
 
-export function Topbar({
+export function SectionHeader({
   activeTab,
   globalSearch,
   onSearchChange,
@@ -25,26 +43,15 @@ export function Topbar({
   onReloadDemo,
   liveStatus,
   onNavigateToLive,
-  onToggleMobileMenu
-}: TopbarProps) {
-  // Completely exclude global Topbar from sections that do not need it
-  if (
-    activeTab === "reports" ||
-    activeTab === "about" ||
-    activeTab === "audit" ||
-    activeTab === "engineering"
-  ) {
+  onToggleMobileMenu,
+}: SectionHeaderProps) {
+  // Render ONLY for the 7 designated screening/monitoring sections
+  if (!SECTION_HEADER_TABS.includes(activeTab)) {
     return null;
   }
 
-  const getTabTitle = () => {
+  const getSectionTitle = () => {
     switch (activeTab) {
-      case "dashboard":
-        return "Dashboard Overview";
-      case "live_telemetry":
-        return "Live Screening Telemetry";
-      case "hardware_connectivity":
-        return "Hardware Connectivity";
       case "screening":
         return "Screening Pipeline";
       case "components":
@@ -53,46 +60,33 @@ export function Topbar({
         return "Lot Health & Anomaly Triage";
       case "predictions":
         return "168h Prognostic Forecasts";
-      case "inspection":
-        return "Inspection Priority Queue";
-      case "reports":
-        return "AI-Assisted Screening Reports & Analysis";
-      case "engineering":
-        return "Engineering Suite";
-      case "audit":
-        return "Audit & Traceability Ledger";
-      case "about":
-        return "About ReliabilityX & Team Brigebytes";
+      case "dashboard":
+        return "Dashboard Overview";
+      case "live_telemetry":
+        return "Live Screening Telemetry";
+      case "hardware_connectivity":
+        return "Hardware Connectivity";
       default:
         return "ReliabilityX Suite";
     }
   };
 
-  const getTabBreadcrumb = () => {
+  const getSectionBreadcrumb = () => {
     switch (activeTab) {
-      case "live_telemetry":
-        return "RELIABILITYX / LIVE STREAM";
-      case "hardware_connectivity":
-        return "RELIABILITYX / HARDWARE";
       case "screening":
         return "RELIABILITYX / ANOMALY DETECTION";
       case "components":
         return "RELIABILITYX / DOSSIER";
-      case "predictions":
-        return "RELIABILITYX / PREDICTIONS";
-      case "reports":
-        return "RELIABILITYX / REPORTS";
-      case "about":
-        return "RELIABILITYX / ABOUT";
-      case "audit":
-        return "RELIABILITYX / AUDIT";
       case "lots":
         return "RELIABILITYX / LOTS";
-      case "inspection":
-        return "RELIABILITYX / INSPECTION";
-      case "engineering":
-        return "RELIABILITYX / ENGINEERING";
+      case "predictions":
+        return "RELIABILITYX / PREDICTIONS";
       case "dashboard":
+        return "RELIABILITYX / DASHBOARD";
+      case "live_telemetry":
+        return "RELIABILITYX / LIVE STREAM";
+      case "hardware_connectivity":
+        return "RELIABILITYX / HARDWARE";
       default:
         return `RELIABILITYX / ${activeTab.toUpperCase()}`;
     }
@@ -111,14 +105,14 @@ export function Topbar({
   const msgsDisplay = `${(liveStatus?.messages_count ?? 0).toLocaleString()} msgs`;
 
   return (
-    <header className="app-topbar">
+    <header className="section-header" aria-label={`${getSectionTitle()} Header`}>
       {/* ROW 1: Identity & Real-Time Status Cards */}
-      <div className="topbar-row-primary">
-        <div className="topbar-left">
+      <div className="section-header-row-primary">
+        <div className="section-header-left">
           {onToggleMobileMenu && (
             <button
               type="button"
-              className="mobile-menu-toggle-btn"
+              className="section-header-menu-btn"
               onClick={onToggleMobileMenu}
               aria-label="Toggle navigation menu"
               title="Navigation Menu"
@@ -130,13 +124,13 @@ export function Topbar({
               </svg>
             </button>
           )}
-          <div className="topbar-titles-group">
-            <span className="topbar-breadcrumb">{getTabBreadcrumb()}</span>
-            <h1 className="topbar-title">{getTabTitle()}</h1>
+          <div className="section-header-titles-group">
+            <span className="section-header-breadcrumb">{getSectionBreadcrumb()}</span>
+            <h1 className="section-header-title">{getSectionTitle()}</h1>
           </div>
         </div>
 
-        <div className="topbar-status-group">
+        <div className="section-header-status-group">
           {/* Strict Data Source Provenance Indicator */}
           <div
             className={`data-source-provenance-pill ${dataSourceClass}`}
@@ -181,9 +175,9 @@ export function Topbar({
       </div>
 
       {/* ROW 2: Utility Controls (Search, Benchmark Selector, Actions) */}
-      <div className="topbar-row-secondary">
+      <div className="section-header-row-secondary">
         {/* Quick Search Input */}
-        <form onSubmit={onSearchSubmit} className="topbar-search-box">
+        <form onSubmit={onSearchSubmit} className="section-header-search-box">
           <IconSearch />
           <input
             type="text"
@@ -208,7 +202,7 @@ export function Topbar({
         </div>
 
         {/* Action Buttons */}
-        <div className="topbar-actions">
+        <div className="section-header-actions">
           <button
             type="button"
             className="btn btn-secondary btn-sm"

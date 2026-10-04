@@ -2,9 +2,12 @@
 // ReliabilityX — Hero Dashboard Tab Component
 // Overview & Screening Intelligence with Trajectory and Real-Time What-If
 // ==============================================================================
-import React from "react";
+import React, { useState } from "react";
 import { StateBadge, RiskBadge } from "./Badges";
 import { TrajectorySvgChart } from "./TrajectorySvgChart";
+import { SectionHero } from "./SectionHero";
+import { IconSearch } from "./Icons";
+import { API_BASE } from "../types";
 
 interface DashboardTabProps {
   overview: any;
@@ -21,6 +24,15 @@ interface DashboardTabProps {
   onChangeSimDrift: (drift: number) => void;
   onOpenInspectModal: (id: string) => void;
   onNavigateTab: (tab: any) => void;
+  // Dashboard Header Controls (matching exact reference image)
+  globalSearch?: string;
+  onSearchChange?: (val: string) => void;
+  onSearchSubmit?: (e: React.FormEvent) => void;
+  activeDataset?: any;
+  onOpenDatasetModal?: () => void;
+  liveStatus?: any;
+  onNavigateToLive?: () => void;
+  onReloadDemo?: () => void;
 }
 
 export function DashboardTab({
@@ -37,8 +49,17 @@ export function DashboardTab({
   onSelectHeroParam,
   onChangeSimDrift,
   onOpenInspectModal,
-  onNavigateTab
+  onNavigateTab,
+  globalSearch = "",
+  onSearchChange,
+  onSearchSubmit,
+  activeDataset,
+  onOpenDatasetModal,
+  liveStatus,
+  onNavigateToLive,
+  onReloadDemo
 }: DashboardTabProps) {
+  const [noticeDismissed, setNoticeDismissed] = useState<boolean>(false);
   const riskDist = overview?.risk_distribution || {};
   const lotsList = overview?.lots_summary || overview?.lot_summary || [];
   const prioritiesList = overview?.top_priorities || overview?.inspection_priority || [];
@@ -90,16 +111,139 @@ export function DashboardTab({
 
   const currentParamObj = paramsList.find(p => p.id === heroParam) || paramsList[0];
 
+  const isPhysicallyConnected = Boolean(
+    ((liveStatus as any)?.data_source === "LIVE HARDWARE" || (liveStatus as any)?.source_type === "LIVE_HARDWARE") &&
+    (liveStatus as any)?.physical_hardware_connected
+  );
+  const isReplay = (liveStatus as any)?.source_type === "csv_replay" || (liveStatus as any)?.data_source === "REPLAY";
+  const dataSourceLabel = isPhysicallyConnected ? "LIVE HARDWARE" : isReplay ? "REPLAY" : "SIMULATION";
+  const connStatus = liveStatus?.connection_status || "DISCONNECTED";
+  const sourceName = liveStatus?.source_name || "LIVE TELEMETRY SIMULATOR";
+  const handleGoToLive = () => {
+    if (onNavigateToLive) onNavigateToLive();
+    else if (onNavigateTab) onNavigateTab("live_telemetry");
+  };
+
   return (
     <div className="tab-pane active">
-      {/* 1. Page Header */}
-      <div id="section-overview-header" className="hero-header mb-4">
-        <h1 className="page-main-title">RELIABILITY OVERVIEW & SCREENING INTELLIGENCE</h1>
-        <p className="page-main-subtitle">
-          Early detection of non-linear component degradation during Burn-In and Environmental Stress Screening (ESS).
-          Anticipates latent wearout and limits prior to physical test failures.
-        </p>
+      {/* 1. LARGE DASHBOARD HERO (Exact match to reference) */}
+      <SectionHero
+        id="section-overview-header"
+        className="dashboard-hero-spacious"
+        badge="DASHBOARD"
+        title="Dashboard Overview"
+        subtitle="AI-assisted reliability intelligence for component screening, anomaly detection, and engineering decision support."
+      />
+
+      {/* 2. STATUS ROW BELOW HERO */}
+      <div className="dashboard-status-row">
+        {/* Data Source Pill */}
+        <div
+          className="dashboard-data-source-pill"
+          title="Strict Telemetry Source Provenance (SIMULATION vs LIVE HARDWARE)"
+        >
+          <span className="source-label-prefix">DATA SOURCE:</span>
+          <span className="source-dot">●</span>
+          <span className="source-name-bold">{dataSourceLabel}</span>
+        </div>
+
+        {/* Connection Status Pill */}
+        <div
+          className={`dashboard-connection-pill status-${connStatus.toLowerCase()}`}
+          onClick={handleGoToLive}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              handleGoToLive();
+            }
+          }}
+          title="Click to open Live Screening view"
+          aria-label={`Connection status: ${connStatus}. Data source: ${sourceName}`}
+        >
+          <span className="status-dot">●</span>
+          <span className="status-label">{connStatus}</span>
+          <span className="source-text">{sourceName}</span>
+          <span className="standby-text">Standby</span>
+        </div>
       </div>
+
+      {/* 3. CONTROL ROW */}
+      <div className="dashboard-control-row">
+        {/* Left: Search Bar + Demo Benchmark placed near each other */}
+        <div className="dashboard-search-benchmark-group">
+          <form onSubmit={onSearchSubmit || ((e) => e.preventDefault())} className="dashboard-search-container">
+            <IconSearch />
+            <input
+              type="text"
+              placeholder="Search components (e.g. C-01008)..."
+              value={globalSearch}
+              onChange={(e) => onSearchChange?.(e.target.value)}
+              aria-label="Search components"
+            />
+          </form>
+
+          {/* Demo Benchmark Option placed near the search bar */}
+          <div className="dashboard-dataset-pill">
+            <span className="dataset-dot"></span>
+            <span className="dataset-name">
+              {!activeDataset?.dataset_id || activeDataset.dataset_id.startsWith("demo")
+                ? "Demo Benchmark"
+                : activeDataset?.name || "User Dataset"}
+            </span>
+            <button
+              type="button"
+              className="dataset-change-btn"
+              onClick={onOpenDatasetModal}
+            >
+              Change
+            </button>
+          </div>
+        </div>
+
+        {/* Right: Export CSV & Reload Demo */}
+        <div className="dashboard-actions-group">
+          <button
+            type="button"
+            className="dashboard-btn-export"
+            onClick={() => (window.location.href = `${API_BASE}/reports/export-csv`)}
+          >
+            Export CSV
+          </button>
+          <button
+            type="button"
+            className="dashboard-btn-reload"
+            onClick={onReloadDemo}
+          >
+            Reload Demo
+          </button>
+        </div>
+      </div>
+
+      {/* 4. ENGINEERING DECISION-SUPPORT NOTICE */}
+      {!noticeDismissed && (
+        <div className="dashboard-engineering-notice" role="alert">
+          <div className="dashboard-notice-content">
+            <span className="dashboard-notice-icon" aria-hidden="true">⚠️</span>
+            <div className="dashboard-notice-text-wrap">
+              <strong className="dashboard-notice-title">ENGINEERING DECISION-SUPPORT NOTICE:</strong>
+              <span className="dashboard-notice-text">
+                AI screening provides statistical early warnings and degradation forecasts. Official specifications and QA review remain authoritative.
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="dashboard-notice-close-btn"
+            onClick={() => setNoticeDismissed(true)}
+            title="Dismiss notice"
+            aria-label="Dismiss banner"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* 2. System State Alert if Screening Data is Unavailable */}
       {!loading && !overview && (
@@ -154,7 +298,7 @@ export function DashboardTab({
       {/* 3 & 4. Main 2-Column Grid (Left: 68% Trajectory Chart, Right: 32% Component Insight) */}
       <div id="section-trajectory-simulation" className="dashboard-hero-grid mb-4">
         {/* Left / Center: Trajectory Chart & What-If Simulator */}
-        <div className="card" style={{ padding: "18px" }}>
+        <div className="card" style={{ padding: "22px" }}>
           <div className="card-header trajectory-card-header">
             <div className="trajectory-title-control-group">
               <span className="card-title">COMPONENT RELIABILITY TRAJECTORY</span>

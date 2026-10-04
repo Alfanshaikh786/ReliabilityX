@@ -64,6 +64,7 @@ def ensure_db_ready(db_path: str = None):
                 with open(target_path, "wb") as f:
                     f.write(blob)
                 logger.info(f"Initialized database from embedded seed blob -> {target_path} ({len(blob)} bytes)")
+                init_db(target_path)
                 return
         except Exception as e:
             logger.warning(f"Could not initialize from seed blob: {e}")
@@ -81,6 +82,7 @@ def ensure_db_ready(db_path: str = None):
                 try:
                     shutil.copyfile(sp, target_path)
                     logger.info(f"Initialized database from seed benchmark ({sp}) -> {target_path}")
+                    init_db(target_path)
                     return
                 except Exception as e:
                     logger.warning(f"Could not copy seed database from {sp}: {e}")
@@ -204,6 +206,51 @@ def init_db(db_path: str = None):
         unit TEXT NOT NULL,
         source TEXT NOT NULL,
         quality TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        source_type TEXT DEFAULT 'SIMULATED',
+        test_station_id TEXT,
+        channel_id TEXT,
+        instrument_id TEXT,
+        calibration_metadata_json TEXT
+    )
+    """)
+
+    # Ensure hardware provenance columns exist on live_telemetry_raw
+    for col, col_type in [
+        ("source_type", "TEXT DEFAULT 'SIMULATED'"),
+        ("test_station_id", "TEXT"),
+        ("channel_id", "TEXT"),
+        ("instrument_id", "TEXT"),
+        ("calibration_metadata_json", "TEXT"),
+        ("adapter_session_id", "TEXT"),
+        ("source_verified_at", "TEXT"),
+        ("device_identity_hash", "TEXT"),
+        ("source_verification_method", "TEXT")
+    ]:
+        try:
+            cursor.execute(f"ALTER TABLE live_telemetry_raw ADD COLUMN {col} {col_type}")
+        except Exception:
+            pass
+
+    # Hardware Device Registry persistence
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS hardware_devices (
+        device_id TEXT PRIMARY KEY,
+        manufacturer TEXT NOT NULL,
+        model TEXT NOT NULL,
+        serial_number TEXT NOT NULL,
+        interface_type TEXT NOT NULL,
+        host TEXT,
+        port INTEGER,
+        gpib_address INTEGER,
+        station_id TEXT NOT NULL,
+        channel_id TEXT NOT NULL,
+        instrument_id TEXT NOT NULL,
+        calibration_id TEXT NOT NULL,
+        calibration_status TEXT NOT NULL,
+        calibration_expiry TEXT NOT NULL,
+        source_type TEXT NOT NULL,
+        notes TEXT,
         created_at TEXT NOT NULL
     )
     """)
