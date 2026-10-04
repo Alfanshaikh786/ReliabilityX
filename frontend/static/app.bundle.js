@@ -1,4 +1,4 @@
-// ReliabilityX Bundled Application (2026-10-04T19:06:27.268Z)
+// ReliabilityX Bundled Application (2026-10-04T20:25:44.598Z)
 (function() {
   if (typeof window !== 'undefined') {
     if (window.React && !window.React.default) window.React.default = window.React;
@@ -315,7 +315,7 @@ function ReliabilityXApp() {
     if (viewport && !prefersReduced) {
       viewport.style.scrollBehavior = "smooth";
     }
-    const targetSelectors = [".hero-header", ".page-header", ".kpi-grid > .kpi-card", ".live-kpi-grid > .live-kpi-card", ".dashboard-hero-grid > .card", ".lot-summary-grid > .lot-summary-card", ".lots-grid > .lot-summary-card", ".card", ".insight-panel", ".table-container", ".table-responsive", ".alert-stream-card", ".flowchart-node", ".whatif-card", ".dossier-tab-strip", ".rx-scroll-reveal", ".rx-floating-card", ".rx-reveal-item"];
+    const targetSelectors = [".hero-header", ".page-header", ".kpi-grid > .kpi-card", ".live-kpi-grid > .live-kpi-card", ".dashboard-hero-grid > .card", ".lot-summary-grid > .lot-summary-card", ".lots-grid > .lot-summary-card", ".card", ".insight-panel", ".table-container", ".table-responsive", ".alert-stream-card", ".flowchart-node", ".whatif-card", ".rx-scroll-reveal", ".rx-floating-card", ".rx-reveal-item"];
 
     // Immediate reveal for reduced-motion or old browsers
     if (prefersReduced || !("IntersectionObserver" in window)) {
@@ -398,6 +398,11 @@ function ReliabilityXApp() {
         height: window.innerHeight
       };
       candidateElements.forEach(el => {
+        // Skip elements inside modals (prevents transforms/overlap bugs)
+        if (el.closest(".modal-overlay, .modal-card")) {
+          return;
+        }
+
         // Skip nested inner cards (no double-animation)
         if (el.matches(".card .card, .insight-panel .card, .card .table-container, .card .table-responsive, .card .chart-metric-card")) {
           return;
@@ -2270,20 +2275,38 @@ function ComponentDetailModal({
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "modal-card modal-lg"
   }, /*#__PURE__*/_react.default.createElement("div", {
-    className: "modal-header"
+    className: "modal-header",
+    style: {
+      flexShrink: 0,
+      position: "relative",
+      zIndex: 11
+    }
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "modal-header-content"
   }, /*#__PURE__*/_react.default.createElement("div", {
     id: "modal-dossier-title",
     className: "modal-category-title"
   }, "COMPONENT SCREENING DOSSIER"), /*#__PURE__*/_react.default.createElement("div", {
-    className: "modal-header-meta"
+    className: "modal-header-meta",
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: "12px",
+      flexWrap: "wrap",
+      marginTop: "4px"
+    }
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "modal-comp-id-title"
   }, compId), /*#__PURE__*/_react.default.createElement("span", {
-    className: "modal-lot-tag"
+    className: "modal-lot-tag",
+    style: {
+      marginLeft: "4px"
+    }
   }, "Lot: ", /*#__PURE__*/_react.default.createElement("strong", null, comp?.lot_id || "LOT-2411C")), /*#__PURE__*/_react.default.createElement("div", {
-    className: "modal-status-badge-wrap"
+    className: "modal-status-badge-wrap",
+    style: {
+      marginLeft: "4px"
+    }
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "modal-status-label"
   }, "Status:"), /*#__PURE__*/_react.default.createElement(_Badges.RiskBadge, {
@@ -2295,7 +2318,15 @@ function ComponentDetailModal({
   }, "\u2715")), /*#__PURE__*/_react.default.createElement("div", {
     className: "dossier-tab-strip",
     role: "tablist",
-    "aria-label": "Component Dossier Sections"
+    "aria-label": "Component Dossier Sections",
+    style: {
+      flexShrink: 0,
+      position: "relative",
+      zIndex: 10,
+      minHeight: "56px",
+      margin: 0,
+      transform: "none"
+    }
   }, sectionsList.map(tab => /*#__PURE__*/_react.default.createElement("button", {
     key: tab.id,
     role: "tab",
@@ -2308,7 +2339,12 @@ function ComponentDetailModal({
       padding: "24px 28px",
       display: "flex",
       flexDirection: "column",
-      gap: "24px"
+      gap: "24px",
+      position: "relative",
+      zIndex: 1,
+      margin: 0,
+      overflowY: "auto",
+      transform: "none"
     }
   }, loading ? /*#__PURE__*/_react.default.createElement("div", {
     style: {
@@ -4379,13 +4415,7 @@ function HardwareConnectivityTab({
     title: "Hardware Connectivity",
     subtitle: "Hardware-ready telemetry ingestion and engineering decision support for compatible test-cell instrumentation."
   }), /*#__PURE__*/_react.default.createElement("div", {
-    className: "hw-header-badges-bar mb-3",
-    style: {
-      display: "flex",
-      justifyContent: "flex-end",
-      flexWrap: "wrap",
-      gap: "8px"
-    }
+    className: "hw-header-badges-bar mb-3"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: `hw-status-pill hw-source-${dataSource === "LIVE HARDWARE" ? "live" : dataSource === "REPLAY" ? "replay" : "sim"}`
   }, /*#__PURE__*/_react.default.createElement("span", {

@@ -301,6 +301,13 @@
         } catch(e){}
       }, 600);
     }
+    window.finishIntro = finishIntro;
+    try {
+      var searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.has("nointro") || searchParams.has("skip_intro")) {
+        finishIntro();
+      }
+    } catch(e){}
 
     if (video) {
       // Safely ensure playback always starts from frame 0

@@ -311,7 +311,6 @@ export function ReliabilityXApp() {
       ".alert-stream-card",
       ".flowchart-node",
       ".whatif-card",
-      ".dossier-tab-strip",
       ".rx-scroll-reveal",
       ".rx-floating-card",
       ".rx-reveal-item"
@@ -410,6 +409,11 @@ export function ReliabilityXApp() {
         : { top: 0, bottom: window.innerHeight, height: window.innerHeight };
 
       candidateElements.forEach((el) => {
+        // Skip elements inside modals (prevents transforms/overlap bugs)
+        if (el.closest(".modal-overlay, .modal-card")) {
+          return;
+        }
+
         // Skip nested inner cards (no double-animation)
         if (el.matches(".card .card, .insight-panel .card, .card .table-container, .card .table-responsive, .card .chart-metric-card")) {
           return;

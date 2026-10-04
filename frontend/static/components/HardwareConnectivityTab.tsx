@@ -436,7 +436,7 @@ export function HardwareConnectivityTab({
         />
 
         {/* Real-time Authoritative Hardware Status Indicators */}
-        <div className="hw-header-badges-bar mb-3" style={{ display: "flex", justifyContent: "flex-end", flexWrap: "wrap", gap: "8px" }}>
+        <div className="hw-header-badges-bar mb-3">
           <div className={`hw-status-pill hw-source-${dataSource === "LIVE HARDWARE" ? "live" : dataSource === "REPLAY" ? "replay" : "sim"}`}>
             <span className="hw-pill-dot">●</span>
             <span className="hw-pill-label">DATA SOURCE:</span>

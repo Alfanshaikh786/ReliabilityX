@@ -84,15 +84,15 @@ export function ComponentDetailModal({
     <div className="modal-overlay open" role="dialog" aria-modal="true" aria-labelledby="modal-dossier-title">
       <div className="modal-card modal-lg">
         {/* Modal Top Header */}
-        <div className="modal-header">
+        <div className="modal-header" style={{ flexShrink: 0, position: "relative", zIndex: 11 }}>
           <div className="modal-header-content">
             <div id="modal-dossier-title" className="modal-category-title">
               COMPONENT SCREENING DOSSIER
             </div>
-            <div className="modal-header-meta">
+            <div className="modal-header-meta" style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap", marginTop: "4px" }}>
               <span className="modal-comp-id-title">{compId}</span>
-              <span className="modal-lot-tag">Lot: <strong>{comp?.lot_id || "LOT-2411C"}</strong></span>
-              <div className="modal-status-badge-wrap">
+              <span className="modal-lot-tag" style={{ marginLeft: "4px" }}>Lot: <strong>{comp?.lot_id || "LOT-2411C"}</strong></span>
+              <div className="modal-status-badge-wrap" style={{ marginLeft: "4px" }}>
                 <span className="modal-status-label">Status:</span>
                 <RiskBadge risk={comp?.risk_level || "REVIEW"} />
               </div>
@@ -104,7 +104,12 @@ export function ComponentDetailModal({
         </div>
 
         {/* Section Navigation Tabs (Horizontal Scrollable Strip, No Multi-line Wrap) */}
-        <div className="dossier-tab-strip" role="tablist" aria-label="Component Dossier Sections">
+        <div
+          className="dossier-tab-strip"
+          role="tablist"
+          aria-label="Component Dossier Sections"
+          style={{ flexShrink: 0, position: "relative", zIndex: 10, minHeight: "56px", margin: 0, transform: "none" }}
+        >
           {sectionsList.map(tab => (
             <button
               key={tab.id}
@@ -118,7 +123,20 @@ export function ComponentDetailModal({
           ))}
         </div>
 
-        <div className="modal-body" style={{ padding: "24px 28px", display: "flex", flexDirection: "column", gap: "24px" }}>
+        <div
+          className="modal-body"
+          style={{
+            padding: "24px 28px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "24px",
+            position: "relative",
+            zIndex: 1,
+            margin: 0,
+            overflowY: "auto",
+            transform: "none"
+          }}
+        >
           {loading ? (
             <div style={{ padding: "60px", textAlign: "center", color: "var(--text-muted)" }}>
               Loading component telemetry and degradation trajectory...
