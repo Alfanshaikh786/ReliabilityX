@@ -5164,9 +5164,9 @@ video::-webkit-media-controls-overlay-play-button,
   height: 100dvh !important;
   z-index: 2147483640 !important;
   background: transparent !important;
-  touch-action: manipulation !important;
+  touch-action: none !important;
   -webkit-tap-highlight-color: transparent !important;
-  cursor: pointer !important;
+  cursor: default !important;
   pointer-events: auto !important;
 }
 
