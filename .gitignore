@@ -62,3 +62,6 @@ dist/
 *REPORT*.md
 !REPORT X.md
 
+# Media recordings
+*.mp4
+

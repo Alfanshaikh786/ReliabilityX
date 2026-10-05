@@ -1,4 +1,4 @@
-// ReliabilityX Bundled Application (2026-10-05T12:54:37.020Z)
+// ReliabilityX Bundled Application (2026-10-05T13:47:14.027Z)
 (function() {
   if (typeof window !== 'undefined') {
     if (window.React && !window.React.default) window.React.default = window.React;
@@ -843,10 +843,11 @@ var _react = _interopRequireWildcard(require("react"));
 var _SectionHero = require("./SectionHero");
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
 function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
-function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); } // ==============================================================================
+// ==============================================================================
 // ReliabilityX — Dedicated About Page & Team Brigebytes Component
 // Separate Informational View Accessible from Left Sidebar
 // ==============================================================================
+
 const TEAM_MEMBERS = [{
   id: "alfan",
   name: "Alfan Yaseen Shaikh",
@@ -1179,63 +1180,6 @@ const VALUES = [{
 }];
 function AboutSection() {
   const sectionRef = (0, _react.useRef)(null);
-
-  // Independent touch interaction state for mobile / touch devices
-  const [touchedCardId, setTouchedCardId] = (0, _react.useState)(null);
-  const touchStartRef = (0, _react.useRef)(null);
-  const touchTimeoutRef = (0, _react.useRef)(null);
-  const handleTouchStart = (id, e) => {
-    if (touchTimeoutRef.current) {
-      clearTimeout(touchTimeoutRef.current);
-    }
-    const touch = e.touches && e.touches[0];
-    if (touch) {
-      touchStartRef.current = {
-        id,
-        x: touch.clientX,
-        y: touch.clientY
-      };
-    }
-  };
-  const handleTouchMove = e => {
-    if (!touchStartRef.current) return;
-    const touch = e.touches && e.touches[0];
-    if (touch) {
-      const dx = Math.abs(touch.clientX - touchStartRef.current.x);
-      const dy = Math.abs(touch.clientY - touchStartRef.current.y);
-      // If finger moves more than 8px in any direction, user is scrolling: cancel highlight
-      if (dx > 8 || dy > 8) {
-        touchStartRef.current = null;
-        setTouchedCardId(null);
-      }
-    }
-  };
-  const handleTouchEnd = id => {
-    if (touchStartRef.current && touchStartRef.current.id === id) {
-      // Genuine tap on this specific card
-      setTouchedCardId(id);
-      if (touchTimeoutRef.current) clearTimeout(touchTimeoutRef.current);
-      touchTimeoutRef.current = setTimeout(() => {
-        setTouchedCardId(prev => prev === id ? null : prev);
-      }, 480);
-    }
-    touchStartRef.current = null;
-  };
-  const handleTouchCancel = () => {
-    touchStartRef.current = null;
-    setTouchedCardId(null);
-  };
-  const getTouchProps = id => ({
-    onTouchStart: e => handleTouchStart(id, e),
-    onTouchMove: handleTouchMove,
-    onTouchEnd: () => handleTouchEnd(id),
-    onTouchCancel: handleTouchCancel
-  });
-  (0, _react.useEffect)(() => {
-    return () => {
-      if (touchTimeoutRef.current) clearTimeout(touchTimeoutRef.current);
-    };
-  }, []);
   (0, _react.useEffect)(() => {
     const rootEl = sectionRef.current;
     if (!rootEl) return;
@@ -1290,26 +1234,26 @@ function AboutSection() {
     titleId: "about-main-heading",
     subtitle: "AI-assisted reliability intelligence for high-reliability component screening and space applications."
   }), /*#__PURE__*/_react.default.createElement("div", {
-    className: "card mb-4 rx-about-fade"
+    className: "card mb-4 rx-about-fade rx-settled-in"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "card-header about-section-inner-header"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "about-section-header-left"
   }, /*#__PURE__*/_react.default.createElement("span", {
-    className: "card-title rx-about-heading"
+    className: "card-title rx-about-heading rx-settled-in"
   }, "OUR IMPACT AREAS"), /*#__PURE__*/_react.default.createElement("p", {
     className: "about-subheading-note"
   }, "Advancing high-reliability component screening through predictive reliability intelligence.")), /*#__PURE__*/_react.default.createElement("span", {
     className: "card-badge d-desktop-only"
   }, "6 OPERATIONAL DOMAINS")), /*#__PURE__*/_react.default.createElement("div", {
     className: "about-impact-grid"
-  }, IMPACT_AREAS.map((item, idx) => /*#__PURE__*/_react.default.createElement("div", _extends({
+  }, IMPACT_AREAS.map((item, idx) => /*#__PURE__*/_react.default.createElement("div", {
     key: item.id,
-    className: `about-impact-item rx-about-card rx-stagger-item ${touchedCardId === item.id ? "is-touched" : ""}`,
+    className: "about-impact-item rx-about-card rx-settled-in rx-stagger-item",
     style: {
       "--stagger-index": idx
     }
-  }, getTouchProps(item.id)), /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react.default.createElement("div", {
     className: "about-impact-icon-badge"
   }, item.icon), /*#__PURE__*/_react.default.createElement("h4", {
     className: "about-impact-title"
@@ -1317,9 +1261,9 @@ function AboutSection() {
     className: "about-impact-text"
   }, item.description))))), /*#__PURE__*/_react.default.createElement("div", {
     className: "about-two-col-grid mb-4"
-  }, /*#__PURE__*/_react.default.createElement("div", _extends({
-    className: `card about-mv-card rx-mv-mission ${touchedCardId === "mission" ? "is-touched" : ""}`
-  }, getTouchProps("mission")), /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "card about-mv-card rx-mv-mission rx-settled-in"
+  }, /*#__PURE__*/_react.default.createElement("div", {
     className: "about-card-top-icon-row"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "about-icon-box icon-mission"
@@ -1347,12 +1291,12 @@ function AboutSection() {
   }))), /*#__PURE__*/_react.default.createElement("span", {
     className: "about-mv-label"
   }, "CORE DIRECTIVE")), /*#__PURE__*/_react.default.createElement("h3", {
-    className: "about-card-title rx-about-heading"
+    className: "about-card-title rx-about-heading rx-settled-in"
   }, "Our Mission"), /*#__PURE__*/_react.default.createElement("p", {
     className: "about-card-body-text"
-  }, "To make high-reliability component screening more intelligent, predictive, and explainable by transforming Burn-In and ESS measurements into actionable reliability insights for engineering teams.")), /*#__PURE__*/_react.default.createElement("div", _extends({
-    className: `card about-mv-card rx-mv-vision ${touchedCardId === "vision" ? "is-touched" : ""}`
-  }, getTouchProps("vision")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "To make high-reliability component screening more intelligent, predictive, and explainable by transforming Burn-In and ESS measurements into actionable reliability insights for engineering teams.")), /*#__PURE__*/_react.default.createElement("div", {
+    className: "card about-mv-card rx-mv-vision rx-settled-in"
+  }, /*#__PURE__*/_react.default.createElement("div", {
     className: "about-card-top-icon-row"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "about-icon-box icon-vision"
@@ -1374,30 +1318,30 @@ function AboutSection() {
   }))), /*#__PURE__*/_react.default.createElement("span", {
     className: "about-mv-label"
   }, "FUTURE HORIZON")), /*#__PURE__*/_react.default.createElement("h3", {
-    className: "about-card-title rx-about-heading"
+    className: "about-card-title rx-about-heading rx-settled-in"
   }, "Our Vision"), /*#__PURE__*/_react.default.createElement("p", {
     className: "about-card-body-text"
   }, "To advance reliability engineering for space applications through data-driven intelligence that helps engineers identify emerging degradation earlier, understand screening behavior, and make better-informed reliability decisions."))), /*#__PURE__*/_react.default.createElement("div", {
-    className: "card mb-4 rx-about-fade"
+    className: "card mb-4 rx-about-fade rx-settled-in"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "card-header about-section-inner-header"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "about-section-header-left"
   }, /*#__PURE__*/_react.default.createElement("span", {
-    className: "card-title rx-about-heading"
+    className: "card-title rx-about-heading rx-settled-in"
   }, "OUR VALUES"), /*#__PURE__*/_react.default.createElement("p", {
     className: "about-subheading-note"
   }, "Core engineering principles guiding reliable, explainable, and evidence-based screening intelligence.")), /*#__PURE__*/_react.default.createElement("span", {
     className: "card-badge d-desktop-only"
   }, "5 PILLARS")), /*#__PURE__*/_react.default.createElement("div", {
     className: "about-values-grid"
-  }, VALUES.map((val, idx) => /*#__PURE__*/_react.default.createElement("div", _extends({
+  }, VALUES.map((val, idx) => /*#__PURE__*/_react.default.createElement("div", {
     key: val.num,
-    className: `about-value-item rx-about-card rx-stagger-item ${touchedCardId === val.num ? "is-touched" : ""}`,
+    className: "about-value-item rx-about-card rx-settled-in rx-stagger-item",
     style: {
       "--stagger-index": idx
     }
-  }, getTouchProps(val.num)), /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react.default.createElement("div", {
     className: "about-value-header"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "about-value-num"
@@ -1409,7 +1353,7 @@ function AboutSection() {
     className: "about-value-text"
   }, val.description))))), /*#__PURE__*/_react.default.createElement("div", {
     id: "section-team-brigebytes",
-    className: "card about-team-card-wrapper mb-4 rx-about-fade"
+    className: "card about-team-card-wrapper mb-4 rx-about-fade rx-settled-in"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "about-team-header-block text-center"
   }, /*#__PURE__*/_react.default.createElement("div", {
@@ -1417,20 +1361,20 @@ function AboutSection() {
   }, /*#__PURE__*/_react.default.createElement("span", {
     className: "team-tag-pulse"
   }), "TEAM BRIGEBYTES"), /*#__PURE__*/_react.default.createElement("h3", {
-    className: "team-main-heading rx-about-heading"
+    className: "team-main-heading rx-about-heading rx-settled-in"
   }, "Team Brigebytes")), /*#__PURE__*/_react.default.createElement("div", {
     className: "team-cards-grid",
     role: "list"
   }, TEAM_MEMBERS.map((member, idx) => {
     const isLeader = member.isLeader === true;
-    return /*#__PURE__*/_react.default.createElement("div", _extends({
+    return /*#__PURE__*/_react.default.createElement("div", {
       key: member.id,
       role: "listitem",
-      className: `team-card ${isLeader ? "is-leader" : "is-member"} rx-stagger-item ${touchedCardId === member.id ? "is-touched" : ""}`,
+      className: `team-card rx-settled-in ${isLeader ? "is-leader" : "is-member"} rx-stagger-item`,
       style: {
         "--stagger-index": idx
       }
-    }, getTouchProps(member.id)), /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       className: "team-card-top-bar"
     }, /*#__PURE__*/_react.default.createElement("span", {
       className: "team-identifier-label"

@@ -2,7 +2,7 @@
 // ReliabilityX — Dedicated About Page & Team Brigebytes Component
 // Separate Informational View Accessible from Left Sidebar
 // ==============================================================================
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { SectionHero } from "./SectionHero";
 
 interface TeamMember {
@@ -201,64 +201,6 @@ const VALUES = [
 export function AboutSection() {
   const sectionRef = useRef<HTMLElement | null>(null);
 
-  // Independent touch interaction state for mobile / touch devices
-  const [touchedCardId, setTouchedCardId] = useState<string | null>(null);
-  const touchStartRef = useRef<{ id: string; x: number; y: number } | null>(null);
-  const touchTimeoutRef = useRef<any>(null);
-
-  const handleTouchStart = (id: string, e: any) => {
-    if (touchTimeoutRef.current) {
-      clearTimeout(touchTimeoutRef.current);
-    }
-    const touch = e.touches && e.touches[0];
-    if (touch) {
-      touchStartRef.current = { id, x: touch.clientX, y: touch.clientY };
-    }
-  };
-
-  const handleTouchMove = (e: any) => {
-    if (!touchStartRef.current) return;
-    const touch = e.touches && e.touches[0];
-    if (touch) {
-      const dx = Math.abs(touch.clientX - touchStartRef.current.x);
-      const dy = Math.abs(touch.clientY - touchStartRef.current.y);
-      // If finger moves more than 8px in any direction, user is scrolling: cancel highlight
-      if (dx > 8 || dy > 8) {
-        touchStartRef.current = null;
-        setTouchedCardId(null);
-      }
-    }
-  };
-
-  const handleTouchEnd = (id: string) => {
-    if (touchStartRef.current && touchStartRef.current.id === id) {
-      // Genuine tap on this specific card
-      setTouchedCardId(id);
-      if (touchTimeoutRef.current) clearTimeout(touchTimeoutRef.current);
-      touchTimeoutRef.current = setTimeout(() => {
-        setTouchedCardId((prev) => (prev === id ? null : prev));
-      }, 480);
-    }
-    touchStartRef.current = null;
-  };
-
-  const handleTouchCancel = () => {
-    touchStartRef.current = null;
-    setTouchedCardId(null);
-  };
-
-  const getTouchProps = (id: string) => ({
-    onTouchStart: (e: any) => handleTouchStart(id, e),
-    onTouchMove: handleTouchMove,
-    onTouchEnd: () => handleTouchEnd(id),
-    onTouchCancel: handleTouchCancel,
-  });
-
-  useEffect(() => {
-    return () => {
-      if (touchTimeoutRef.current) clearTimeout(touchTimeoutRef.current);
-    };
-  }, []);
 
   useEffect(() => {
     const rootEl = sectionRef.current;
@@ -331,10 +273,10 @@ export function AboutSection() {
       />
 
       {/* 2. Our Impact Areas (6 Professional Cards with Staggered Upward Ingress) */}
-      <div className="card mb-4 rx-about-fade">
+      <div className="card mb-4 rx-about-fade rx-settled-in">
         <div className="card-header about-section-inner-header">
           <div className="about-section-header-left">
-            <span className="card-title rx-about-heading">OUR IMPACT AREAS</span>
+            <span className="card-title rx-about-heading rx-settled-in">OUR IMPACT AREAS</span>
             <p className="about-subheading-note">
               Advancing high-reliability component screening through predictive reliability intelligence.
             </p>
@@ -346,9 +288,8 @@ export function AboutSection() {
           {IMPACT_AREAS.map((item, idx) => (
             <div
               key={item.id}
-              className={`about-impact-item rx-about-card rx-stagger-item ${touchedCardId === item.id ? "is-touched" : ""}`}
+              className="about-impact-item rx-about-card rx-settled-in rx-stagger-item"
               style={{ "--stagger-index": idx } as any}
-              {...getTouchProps(item.id)}
             >
               <div className="about-impact-icon-badge">
                 {item.icon}
@@ -363,10 +304,7 @@ export function AboutSection() {
       {/* 3. Our Mission & 4. Our Vision (Side-by-Side Responsive Grid with Opposing Sliding Entrance) */}
       <div className="about-two-col-grid mb-4">
         {/* OUR MISSION: Left -> Center ingress */}
-        <div
-          className={`card about-mv-card rx-mv-mission ${touchedCardId === "mission" ? "is-touched" : ""}`}
-          {...getTouchProps("mission")}
-        >
+        <div className="card about-mv-card rx-mv-mission rx-settled-in">
           <div className="about-card-top-icon-row">
             <div className="about-icon-box icon-mission">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -377,17 +315,14 @@ export function AboutSection() {
             </div>
             <span className="about-mv-label">CORE DIRECTIVE</span>
           </div>
-          <h3 className="about-card-title rx-about-heading">Our Mission</h3>
+          <h3 className="about-card-title rx-about-heading rx-settled-in">Our Mission</h3>
           <p className="about-card-body-text">
             To make high-reliability component screening more intelligent, predictive, and explainable by transforming Burn-In and ESS measurements into actionable reliability insights for engineering teams.
           </p>
         </div>
 
         {/* OUR VISION: Right -> Center ingress */}
-        <div
-          className={`card about-mv-card rx-mv-vision ${touchedCardId === "vision" ? "is-touched" : ""}`}
-          {...getTouchProps("vision")}
-        >
+        <div className="card about-mv-card rx-mv-vision rx-settled-in">
           <div className="about-card-top-icon-row">
             <div className="about-icon-box icon-vision">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -397,7 +332,7 @@ export function AboutSection() {
             </div>
             <span className="about-mv-label">FUTURE HORIZON</span>
           </div>
-          <h3 className="about-card-title rx-about-heading">Our Vision</h3>
+          <h3 className="about-card-title rx-about-heading rx-settled-in">Our Vision</h3>
           <p className="about-card-body-text">
             To advance reliability engineering for space applications through data-driven intelligence that helps engineers identify emerging degradation earlier, understand screening behavior, and make better-informed reliability decisions.
           </p>
@@ -405,10 +340,10 @@ export function AboutSection() {
       </div>
 
       {/* 5. Our Values (5 Values Grid with 60ms Staggered Upward Entrance) */}
-      <div className="card mb-4 rx-about-fade">
+      <div className="card mb-4 rx-about-fade rx-settled-in">
         <div className="card-header about-section-inner-header">
           <div className="about-section-header-left">
-            <span className="card-title rx-about-heading">OUR VALUES</span>
+            <span className="card-title rx-about-heading rx-settled-in">OUR VALUES</span>
             <p className="about-subheading-note">
               Core engineering principles guiding reliable, explainable, and evidence-based screening intelligence.
             </p>
@@ -420,9 +355,8 @@ export function AboutSection() {
           {VALUES.map((val, idx) => (
             <div
               key={val.num}
-              className={`about-value-item rx-about-card rx-stagger-item ${touchedCardId === val.num ? "is-touched" : ""}`}
+              className="about-value-item rx-about-card rx-settled-in rx-stagger-item"
               style={{ "--stagger-index": idx } as any}
-              {...getTouchProps(val.num)}
             >
               <div className="about-value-header">
                 <div className="about-value-num">{val.num}</div>
@@ -436,13 +370,13 @@ export function AboutSection() {
       </div>
 
       {/* 6. TEAM BRIGEBYTES SECTION (6 Cards with Upward Staggered Entrance) */}
-      <div id="section-team-brigebytes" className="card about-team-card-wrapper mb-4 rx-about-fade">
+      <div id="section-team-brigebytes" className="card about-team-card-wrapper mb-4 rx-about-fade rx-settled-in">
         <div className="about-team-header-block text-center">
           <div className="team-identifier-tag">
             <span className="team-tag-pulse" />
             TEAM BRIGEBYTES
           </div>
-          <h3 className="team-main-heading rx-about-heading">Team Brigebytes</h3>
+          <h3 className="team-main-heading rx-about-heading rx-settled-in">Team Brigebytes</h3>
         </div>
 
         {/* 3 cards/row desktop, 2 cards/row tablet, 1 card/row mobile */}
@@ -454,9 +388,8 @@ export function AboutSection() {
               <div
                 key={member.id}
                 role="listitem"
-                className={`team-card ${isLeader ? "is-leader" : "is-member"} rx-stagger-item ${touchedCardId === member.id ? "is-touched" : ""}`}
+                className={`team-card rx-settled-in ${isLeader ? "is-leader" : "is-member"} rx-stagger-item`}
                 style={{ "--stagger-index": idx } as any}
-                {...getTouchProps(member.id)}
               >
                 {/* Top identifier */}
                 <div className="team-card-top-bar">

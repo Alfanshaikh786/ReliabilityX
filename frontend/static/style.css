@@ -8118,61 +8118,61 @@ button.d-desktop-only {
    ============================================================================== */
 
 .rx-about-fade {
-  opacity: 0;
-  transform: translate3d(0, 24px, 0);
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
   transition: opacity 640ms cubic-bezier(0.16, 1, 0.3, 1),
               transform 640ms cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, transform;
+  will-change: auto;
 }
 
 .rx-about-heading {
-  opacity: 0;
-  transform: translate3d(0, 18px, 0);
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
   transition: opacity 600ms cubic-bezier(0.16, 1, 0.3, 1),
               transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, transform;
+  will-change: auto;
 }
 
 /* Base Bottom → Top Vertical Entrance for Cards */
 .rx-about-card {
-  opacity: 0;
-  transform: translate3d(0, 30px, 0);
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
   transition: opacity 620ms cubic-bezier(0.16, 1, 0.3, 1),
               transform 620ms cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, transform;
+  will-change: auto;
 }
 
 /* Mission: Opposing Slide from Left → Center */
 .rx-mv-mission {
-  opacity: 0;
-  transform: translate3d(-30px, 0, 0);
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
   transition: opacity 660ms cubic-bezier(0.16, 1, 0.3, 1),
               transform 660ms cubic-bezier(0.16, 1, 0.3, 1),
               box-shadow 240ms cubic-bezier(0.16, 1, 0.3, 1),
               border-color 240ms ease;
-  will-change: opacity, transform;
+  will-change: auto;
 }
 
 /* Vision: Opposing Slide from Right → Center */
 .rx-mv-vision {
-  opacity: 0;
-  transform: translate3d(30px, 0, 0);
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
   transition: opacity 660ms cubic-bezier(0.16, 1, 0.3, 1),
               transform 660ms cubic-bezier(0.16, 1, 0.3, 1),
               box-shadow 240ms cubic-bezier(0.16, 1, 0.3, 1),
               border-color 240ms ease;
-  will-change: opacity, transform;
+  will-change: auto;
 }
 
 /* Team Card: Bottom → Top Vertical Entrance */
 .team-card {
-  opacity: 0;
-  transform: translate3d(0, 30px, 0);
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
   transition: opacity 660ms cubic-bezier(0.16, 1, 0.3, 1),
               transform 660ms cubic-bezier(0.16, 1, 0.3, 1),
               box-shadow 240ms cubic-bezier(0.16, 1, 0.3, 1),
               border-color 240ms ease;
-  will-change: opacity, transform;
+  will-change: auto;
 }
 
 /* Revealed Settled State: Elements Arrive and Stay */
@@ -8182,8 +8182,8 @@ button.d-desktop-only {
 .rx-mv-mission.rx-settled-in,
 .rx-mv-vision.rx-settled-in,
 .team-card.rx-settled-in {
-  opacity: 1;
-  transform: translate3d(0, 0, 0);
+  opacity: 1 !important;
+  transform: translate3d(0, 0, 0) !important;
   will-change: auto;
 }
 
@@ -8290,12 +8290,14 @@ button.d-desktop-only {
     gap: 12px;
   }
 
-  .rx-mv-mission {
-    transform: translate3d(-20px, 0, 0);
-  }
-
-  .rx-mv-vision {
-    transform: translate3d(20px, 0, 0);
+  .rx-about-fade,
+  .rx-about-card,
+  .rx-mv-mission,
+  .rx-mv-vision,
+  .team-card,
+  .rx-about-heading {
+    opacity: 1 !important;
+    transform: translate3d(0, 0, 0) !important;
   }
 }
 
@@ -8377,19 +8379,21 @@ button.d-desktop-only {
     gap: 12px;
   }
 
-  /* Mobile initial vertical movement: 12px (subtle vertical, zero horizontal overflow) */
+  /* Mobile: ensure About Section cards & headings are always 100% visible and NEVER hidden with opacity: 0 */
   .rx-about-fade,
   .rx-about-card,
   .rx-mv-mission,
   .rx-mv-vision,
   .team-card {
-    transform: translate3d(0, 12px, 0);
-    transition-duration: 620ms;
+    opacity: 1 !important;
+    transform: translate3d(0, 0, 0) !important;
+    transition-duration: 300ms;
   }
 
   .rx-about-heading {
-    transform: translate3d(0, 10px, 0);
-    transition-duration: 580ms;
+    opacity: 1 !important;
+    transform: translate3d(0, 0, 0) !important;
+    transition-duration: 300ms;
   }
 }
 
