@@ -69,7 +69,7 @@ ALLOW_ALL_ORIGINS = "*" in ALLOWED_ORIGINS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"] if ALLOW_ALL_ORIGINS else ALLOWED_ORIGINS,
-    allow_origin_regex=r"^https://.*\.vercel\.app$" if not ALLOW_ALL_ORIGINS else None,
+    allow_origin_regex=r"^https://.*(\.vercel\.app|\.up\.railway\.app|\.onrender\.com)$" if not ALLOW_ALL_ORIGINS else None,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],

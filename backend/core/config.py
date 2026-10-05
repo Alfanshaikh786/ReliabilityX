@@ -145,7 +145,7 @@ class SystemConfig(BaseModel):
     default_prediction_model: str = "gradient_boosting"
 
     # Database (supports Vercel serverless ephemeral /tmp path)
-    db_path: str = os.environ.get("RELIABILITYX_DB_PATH", "/tmp/reliabilityx.db" if os.environ.get("VERCEL") else "reliabilityx.db")
+    db_path: str = os.environ.get("RELIABILITYX_DB_PATH", os.environ.get("DATABASE_PATH", "/tmp/reliabilityx.db" if os.environ.get("VERCEL") else "reliabilityx.db"))
 
     # Versioning
     model_version: str = "v1.5.0-prognostic-support"

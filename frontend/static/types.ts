@@ -216,23 +216,53 @@ export interface ToastInfo {
 
 export const getApiBase = (): string => {
   try {
-    const custom = typeof window !== "undefined" ? localStorage.getItem("rx_backend_url") : null;
-    if (custom && custom.trim()) {
-      const clean = custom.trim().replace(/\/+$/, "");
-      return clean.endsWith("/api") ? clean : `${clean}/api`;
-    }
     if (typeof window !== "undefined") {
+      // 1. Check URL query parameter: ?backend=https://your-backend-url or ?backend=railway
+      const urlParams = new URLSearchParams(window.location.search);
+      const backendQuery = urlParams.get("backend");
+      if (backendQuery && backendQuery.trim()) {
+        let target = backendQuery.trim();
+        if (!target.startsWith("http")) target = `https://${target}`;
+        target = target.replace(/\/+$/, "");
+        const formatted = target.endsWith("/api") ? target : `${target}/api`;
+        try { localStorage.setItem("rx_backend_url", formatted); } catch {}
+        return formatted;
+      }
+
+      // 2. Check localStorage override
+      const custom = localStorage.getItem("rx_backend_url");
+      if (custom && custom.trim()) {
+        const clean = custom.trim().replace(/\/+$/, "");
+        return clean.endsWith("/api") ? clean : `${clean}/api`;
+      }
+
+      // 3. Global injection override
       if ((window as any).__RELIABILITYX_API_URL__) {
         return (window as any).__RELIABILITYX_API_URL__;
       }
-      if (window.location.port === "8000") {
+
+      // 4. Running directly on Railway, Render, or any unified fullstack host
+      if (
+        window.location.hostname.includes("railway.app") ||
+        window.location.hostname.includes("onrender.com") ||
+        window.location.port === "8000"
+      ) {
         return `${window.location.origin}/api`;
       }
+
+      // 5. Localhost development
       if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
         return `${window.location.protocol}//${window.location.hostname}:8000/api`;
       }
+
+      // 6. Standalone frontend on Vercel
       if (window.location.hostname.includes("vercel.app")) {
         return "https://reliabilityx.onrender.com/api";
+      }
+
+      // 7. Any other self-hosted origin
+      if (window.location.origin && window.location.origin !== "null") {
+        return `${window.location.origin}/api`;
       }
     }
   } catch {}
