@@ -3,7 +3,7 @@
 // Aerospace Enterprise Dark Sidebar with Thin Crisp SVG Icons
 // ==============================================================================
 import React from "react";
-import { TabType, API_BASE } from "../types";
+import { TabType, API_BASE, downloadCsvReport } from "../types";
 import {
   IconDashboard,
   IconLivePulse,
@@ -215,7 +215,7 @@ export function Sidebar({ activeTab, onSelectTab, collapsed, onToggleCollapse, m
             className="btn btn-secondary btn-sm btn-block"
             onClick={() => {
               if (onCloseMobile) onCloseMobile();
-              window.location.href = `${API_BASE}/reports/export-csv`;
+              downloadCsvReport();
             }}
           >
             Export Telemetry CSV

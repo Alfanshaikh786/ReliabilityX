@@ -1,5 +1,5 @@
 import React from "react";
-import { TabType, LiveStreamStatus, API_BASE } from "../types";
+import { TabType, LiveStreamStatus, API_BASE, downloadCsvReport } from "../types";
 import { IconSearch } from "./Icons";
 
 interface TopbarProps {
@@ -212,7 +212,7 @@ export function Topbar({
           <button
             type="button"
             className="btn btn-secondary btn-sm"
-            onClick={() => (window.location.href = `${API_BASE}/reports/export-csv`)}
+            onClick={() => downloadCsvReport()}
           >
             Export CSV
           </button>

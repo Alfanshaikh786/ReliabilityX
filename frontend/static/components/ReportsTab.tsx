@@ -3,7 +3,7 @@
 // AEC-Q001-Referenced Statistical Screening Analysis & Parametric Data Export
 // ==============================================================================
 import React, { useState, useEffect } from "react";
-import { API_BASE } from "../types";
+import { API_BASE, downloadCsvReport } from "../types";
 import { SectionHero } from "./SectionHero";
 
 interface ReportsTabProps {
@@ -103,7 +103,7 @@ export function ReportsTab({ onInspectComp }: ReportsTabProps) {
             <button
               type="button"
               className="btn btn-primary btn-sm"
-              onClick={() => (window.location.href = `${API_BASE}/reports/export-csv`)}
+              onClick={() => downloadCsvReport()}
             >
               Export Telemetry CSV
             </button>

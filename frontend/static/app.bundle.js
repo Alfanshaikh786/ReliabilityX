@@ -1,4 +1,4 @@
-// ReliabilityX Bundled Application (2026-10-05T13:47:14.027Z)
+// ReliabilityX Bundled Application (2026-10-05T14:08:07.431Z)
 (function() {
   if (typeof window !== 'undefined') {
     if (window.React && !window.React.default) window.React.default = window.React;
@@ -2980,6 +2980,24 @@ function DashboardTab({
   onReloadDemo
 }) {
   const [noticeDismissed, setNoticeDismissed] = (0, _react.useState)(false);
+  const [isExporting, setIsExporting] = (0, _react.useState)(false);
+  const [exportFeedback, setExportFeedback] = (0, _react.useState)(null);
+  const handleExportCsv = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    setExportFeedback("Exporting CSV...");
+    try {
+      await (0, _types.downloadCsvReport)(st => {
+        if (st.message) setExportFeedback(st.message);
+      });
+      setTimeout(() => setExportFeedback(null), 3500);
+    } catch (err) {
+      setExportFeedback("Export failed: " + (err?.message || "network error"));
+      setTimeout(() => setExportFeedback(null), 4000);
+    } finally {
+      setIsExporting(false);
+    }
+  };
   const riskDist = overview?.risk_distribution || {};
   const lotsList = overview?.lots_summary || overview?.lot_summary || [];
   const prioritiesList = overview?.top_priorities || overview?.inspection_priority || [];
@@ -3120,13 +3138,45 @@ function DashboardTab({
     className: "dashboard-actions-group"
   }, /*#__PURE__*/_react.default.createElement("button", {
     type: "button",
-    className: "dashboard-btn-export",
-    onClick: () => window.location.href = `${_types.API_BASE}/reports/export-csv`
-  }, "Export CSV"), /*#__PURE__*/_react.default.createElement("button", {
+    className: `dashboard-btn-export ${isExporting ? "is-loading" : ""}`,
+    onClick: handleExportCsv,
+    disabled: isExporting,
+    title: "Export screening telemetry and predictions as CSV"
+  }, isExporting ? /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("span", {
+    className: "btn-spinner",
+    "aria-hidden": "true"
+  }), /*#__PURE__*/_react.default.createElement("span", null, "Exporting...")) : /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("svg", {
+    width: "13",
+    height: "13",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2.2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    style: {
+      marginRight: 6,
+      verticalAlign: "-2px"
+    }
+  }, /*#__PURE__*/_react.default.createElement("path", {
+    d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+  }), /*#__PURE__*/_react.default.createElement("polyline", {
+    points: "7 10 12 15 17 10"
+  }), /*#__PURE__*/_react.default.createElement("line", {
+    x1: "12",
+    y1: "15",
+    x2: "12",
+    y2: "3"
+  })), /*#__PURE__*/_react.default.createElement("span", null, "Export CSV"))), /*#__PURE__*/_react.default.createElement("button", {
     type: "button",
     className: "dashboard-btn-reload",
     onClick: onReloadDemo
-  }, "Reload Demo"))), !noticeDismissed && /*#__PURE__*/_react.default.createElement("div", {
+  }, "Reload Demo")), exportFeedback && /*#__PURE__*/_react.default.createElement("div", {
+    className: "export-status-pill",
+    role: "status"
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: "status-dot-pulse"
+  }), /*#__PURE__*/_react.default.createElement("span", null, exportFeedback))), !noticeDismissed && /*#__PURE__*/_react.default.createElement("div", {
     className: "dashboard-engineering-notice",
     role: "alert"
   }, /*#__PURE__*/_react.default.createElement("div", {
@@ -7593,7 +7643,7 @@ function ReportsTab({
   }, "View Standalone Report"), /*#__PURE__*/_react.default.createElement("button", {
     type: "button",
     className: "btn btn-primary btn-sm",
-    onClick: () => window.location.href = `${_types.API_BASE}/reports/export-csv`
+    onClick: () => (0, _types.downloadCsvReport)()
   }, "Export Telemetry CSV"))), /*#__PURE__*/_react.default.createElement("div", {
     className: `report-iframe-container ${isExpanded ? "is-expanded" : ""}`,
     style: {
@@ -8327,7 +8377,7 @@ function SectionHeader({
   }, /*#__PURE__*/_react.default.createElement("button", {
     type: "button",
     className: "btn btn-secondary btn-sm",
-    onClick: () => window.location.href = `${_types.API_BASE}/reports/export-csv`
+    onClick: () => (0, _types.downloadCsvReport)()
   }, "Export CSV"), /*#__PURE__*/_react.default.createElement("button", {
     type: "button",
     className: "btn btn-primary btn-sm",
@@ -8568,7 +8618,7 @@ function Sidebar({
     className: "btn btn-secondary btn-sm btn-block",
     onClick: () => {
       if (onCloseMobile) onCloseMobile();
-      window.location.href = `${_types.API_BASE}/reports/export-csv`;
+      (0, _types.downloadCsvReport)();
     }
   }, "Export Telemetry CSV"), onReloadDemo && /*#__PURE__*/_react.default.createElement("button", {
     type: "button",
@@ -8792,7 +8842,7 @@ function Topbar({
   }, /*#__PURE__*/_react.default.createElement("button", {
     type: "button",
     className: "btn btn-secondary btn-sm",
-    onClick: () => window.location.href = `${_types.API_BASE}/reports/export-csv`
+    onClick: () => (0, _types.downloadCsvReport)()
   }, "Export CSV"), /*#__PURE__*/_react.default.createElement("button", {
     type: "button",
     className: "btn btn-primary btn-sm",
@@ -9081,7 +9131,9 @@ function TrajectorySvgChart({
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.getApiBase = exports.API_BASE = void 0;
+exports.API_BASE = void 0;
+exports.downloadCsvReport = downloadCsvReport;
+exports.getApiBase = void 0;
 // ==============================================================================
 // ReliabilityX — Data Types & Interface Specifications
 // SIH26170: AI-Driven Anomaly Detection in Component Burn-In & Screening
@@ -9113,6 +9165,165 @@ const getApiBase = () => {
 };
 exports.getApiBase = getApiBase;
 const API_BASE = exports.API_BASE = getApiBase();
+
+/**
+ * Universal, cross-platform CSV download & export utility.
+ * Guarantees reliable operation across Android Chrome, Android WebView/Apps, iOS Safari, and Desktop.
+ * - Stage 1: Fetches CSV binary/text via fetch() with exact stream parsing.
+ * - Stage 2: In Android WebViews/Apps, uses Web Share API if supported to allow direct saving to Drive, Downloads, WhatsApp, Files.
+ * - Stage 3: Programmatic anchor download with Blob Object URL and same-origin scope.
+ * - Stage 4: Data URI fallback for locked-down WebViews where Object URLs are blocked.
+ * - Stage 5: Fallback to direct anchor navigation with download attribute.
+ */
+async function downloadCsvReport(onStatus) {
+  const url = `${API_BASE}/reports/export-csv`;
+  const defaultFilename = `ReliabilityX_Screening_Report_${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 15)}.csv`;
+  if (onStatus) {
+    onStatus({
+      loading: true,
+      message: "Exporting CSV...",
+      type: "info"
+    });
+  }
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Accept": "text/csv, application/octet-stream, */*"
+      }
+    });
+    if (!res.ok) {
+      throw new Error(`Server returned HTTP ${res.status}`);
+    }
+    let filename = defaultFilename;
+    const disposition = res.headers.get("Content-Disposition") || res.headers.get("content-disposition");
+    if (disposition) {
+      const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (match && match[1]) {
+        filename = match[1].replace(/['"]/g, "").trim();
+      }
+    }
+    const csvText = await res.text();
+    if (!csvText || csvText.trim().length === 0) {
+      throw new Error("Received empty CSV from server.");
+    }
+    const blob = new Blob([csvText], {
+      type: "text/csv;charset=utf-8;"
+    });
+
+    // Method 1: Web Share API for Mobile WebViews & Apps (Android & iOS)
+    const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    const isAndroidApp = isMobile && typeof navigator !== "undefined" && (/wv|WebView|Version\/4\.0/i.test(navigator.userAgent) || !window.chrome);
+    if (isAndroidApp && typeof navigator !== "undefined" && typeof navigator.canShare === "function") {
+      try {
+        const file = new File([blob], filename, {
+          type: "text/csv"
+        });
+        if (navigator.canShare({
+          files: [file]
+        })) {
+          await navigator.share({
+            files: [file],
+            title: filename,
+            text: "ReliabilityX Component Screening Report CSV"
+          });
+          if (onStatus) onStatus({
+            loading: false,
+            message: "CSV exported successfully!",
+            type: "success"
+          });
+          return true;
+        }
+      } catch (shareErr) {
+        if (shareErr?.name === "AbortError") {
+          if (onStatus) onStatus({
+            loading: false
+          });
+          return true;
+        }
+      }
+    }
+
+    // Method 2: Standard Anchor download with Blob Object URL (works on Android Chrome, iOS Safari, Desktop)
+    if (typeof window !== "undefined" && window.URL && window.URL.createObjectURL) {
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.style.display = "none";
+      link.href = blobUrl;
+      link.setAttribute("download", filename);
+      link.setAttribute("target", "_blank");
+      link.rel = "noopener noreferrer";
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        try {
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(blobUrl);
+        } catch {}
+      }, 1500);
+      if (onStatus) onStatus({
+        loading: false,
+        message: "CSV downloaded successfully!",
+        type: "success"
+      });
+      return true;
+    }
+
+    // Method 3: Data URI fallback for environments where Blob URLs are blocked
+    const dataUri = "data:text/csv;charset=utf-8," + encodeURIComponent(csvText);
+    const fallbackLink = document.createElement("a");
+    fallbackLink.style.display = "none";
+    fallbackLink.href = dataUri;
+    fallbackLink.setAttribute("download", filename);
+    fallbackLink.setAttribute("target", "_blank");
+    document.body.appendChild(fallbackLink);
+    fallbackLink.click();
+    setTimeout(() => {
+      try {
+        document.body.removeChild(fallbackLink);
+      } catch {}
+    }, 1500);
+    if (onStatus) onStatus({
+      loading: false,
+      message: "CSV exported successfully!",
+      type: "success"
+    });
+    return true;
+  } catch (err) {
+    console.warn("[ReliabilityX] Direct CSV export failed, falling back to direct anchor link:", err);
+
+    // Method 4: Fallback to direct anchor navigation with download attribute
+    try {
+      const link = document.createElement("a");
+      link.style.display = "none";
+      link.href = url;
+      link.setAttribute("download", defaultFilename);
+      link.setAttribute("target", "_blank");
+      link.rel = "noopener noreferrer";
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        try {
+          document.body.removeChild(link);
+        } catch {}
+      }, 1500);
+      if (onStatus) onStatus({
+        loading: false,
+        message: "Downloading CSV via browser link...",
+        type: "info"
+      });
+      return true;
+    } catch {
+      window.location.href = url;
+      if (onStatus) onStatus({
+        loading: false,
+        message: "Navigating to CSV download...",
+        type: "info"
+      });
+      return false;
+    }
+  }
+}
   });
 
   makeRequire('')('app.tsx');

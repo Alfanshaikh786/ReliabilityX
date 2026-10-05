@@ -13,7 +13,7 @@
 // Identical height, padding, spacing, alignment, and typography across all 7 sections.
 // ==============================================================================
 import React from "react";
-import { TabType, LiveStreamStatus, API_BASE } from "../types";
+import { TabType, LiveStreamStatus, API_BASE, downloadCsvReport } from "../types";
 import { IconSearch } from "./Icons";
 
 export const SECTION_HEADER_TABS: TabType[] = [
@@ -206,7 +206,7 @@ export function SectionHeader({
           <button
             type="button"
             className="btn btn-secondary btn-sm"
-            onClick={() => (window.location.href = `${API_BASE}/reports/export-csv`)}
+            onClick={() => downloadCsvReport()}
           >
             Export CSV
           </button>

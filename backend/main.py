@@ -24,7 +24,7 @@ for p in [project_root, backend_dir]:
         sys.path.insert(0, p)
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, JSONResponse, FileResponse, HTMLResponse
+from fastapi.responses import StreamingResponse, JSONResponse, FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from backend.core.config import CONFIG, DEFAULT_PARAMETER_SPECS, ParameterSpec
@@ -73,6 +73,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition", "Content-Length", "Content-Type"],
 )
 
 # In-memory Rate Limiting for high-cost computational endpoints (Section 22)
@@ -1724,12 +1725,20 @@ def export_csv_report():
     conn.close()
 
     df_out = pd.DataFrame([dict(r) for r in rows])
-    stream = io.StringIO()
-    df_out.to_csv(stream, index=False)
+    csv_str = df_out.to_csv(index=False)
+    csv_bytes = csv_str.encode("utf-8")
+    filename = f"ReliabilityX_Screening_Report_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
     
-    response = StreamingResponse(iter([stream.getvalue()]), media_type="text/csv")
-    response.headers["Content-Disposition"] = f"attachment; filename=ReliabilityX_Screening_Report_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
-    return response
+    headers = {
+        "Content-Disposition": f'attachment; filename="{filename}"',
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Length": str(len(csv_bytes)),
+        "Access-Control-Expose-Headers": "Content-Disposition, Content-Length",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+    }
+    return Response(content=csv_bytes, media_type="text/csv", headers=headers)
 
 
 @app.get("/api/reports/summary")

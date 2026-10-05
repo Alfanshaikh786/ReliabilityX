@@ -7,7 +7,7 @@ import { StateBadge, RiskBadge } from "./Badges";
 import { TrajectorySvgChart } from "./TrajectorySvgChart";
 import { SectionHero } from "./SectionHero";
 import { IconSearch } from "./Icons";
-import { API_BASE } from "../types";
+import { API_BASE, downloadCsvReport } from "../types";
 
 interface DashboardTabProps {
   overview: any;
@@ -60,6 +60,25 @@ export function DashboardTab({
   onReloadDemo
 }: DashboardTabProps) {
   const [noticeDismissed, setNoticeDismissed] = useState<boolean>(false);
+  const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [exportFeedback, setExportFeedback] = useState<string | null>(null);
+
+  const handleExportCsv = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    setExportFeedback("Exporting CSV...");
+    try {
+      await downloadCsvReport((st) => {
+        if (st.message) setExportFeedback(st.message);
+      });
+      setTimeout(() => setExportFeedback(null), 3500);
+    } catch (err: any) {
+      setExportFeedback("Export failed: " + (err?.message || "network error"));
+      setTimeout(() => setExportFeedback(null), 4000);
+    } finally {
+      setIsExporting(false);
+    }
+  };
   const riskDist = overview?.risk_distribution || {};
   const lotsList = overview?.lots_summary || overview?.lot_summary || [];
   const prioritiesList = overview?.top_priorities || overview?.inspection_priority || [];
@@ -206,10 +225,26 @@ export function DashboardTab({
         <div className="dashboard-actions-group">
           <button
             type="button"
-            className="dashboard-btn-export"
-            onClick={() => (window.location.href = `${API_BASE}/reports/export-csv`)}
+            className={`dashboard-btn-export ${isExporting ? "is-loading" : ""}`}
+            onClick={handleExportCsv}
+            disabled={isExporting}
+            title="Export screening telemetry and predictions as CSV"
           >
-            Export CSV
+            {isExporting ? (
+              <>
+                <span className="btn-spinner" aria-hidden="true" />
+                <span>Exporting...</span>
+              </>
+            ) : (
+              <>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6, verticalAlign: "-2px" }}>
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                <span>Export CSV</span>
+              </>
+            )}
           </button>
           <button
             type="button"
@@ -219,6 +254,12 @@ export function DashboardTab({
             Reload Demo
           </button>
         </div>
+        {exportFeedback && (
+          <div className="export-status-pill" role="status">
+            <span className="status-dot-pulse" />
+            <span>{exportFeedback}</span>
+          </div>
+        )}
       </div>
 
       {/* 4. ENGINEERING DECISION-SUPPORT NOTICE */}

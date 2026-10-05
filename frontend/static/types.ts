@@ -240,3 +240,144 @@ export const getApiBase = (): string => {
 };
 
 export const API_BASE = getApiBase();
+
+/**
+ * Universal, cross-platform CSV download & export utility.
+ * Guarantees reliable operation across Android Chrome, Android WebView/Apps, iOS Safari, and Desktop.
+ * - Stage 1: Fetches CSV binary/text via fetch() with exact stream parsing.
+ * - Stage 2: In Android WebViews/Apps, uses Web Share API if supported to allow direct saving to Drive, Downloads, WhatsApp, Files.
+ * - Stage 3: Programmatic anchor download with Blob Object URL and same-origin scope.
+ * - Stage 4: Data URI fallback for locked-down WebViews where Object URLs are blocked.
+ * - Stage 5: Fallback to direct anchor navigation with download attribute.
+ */
+export async function downloadCsvReport(
+  onStatus?: (status: { loading: boolean; message?: string; type?: "info" | "success" | "error" }) => void
+): Promise<boolean> {
+  const url = `${API_BASE}/reports/export-csv`;
+  const defaultFilename = `ReliabilityX_Screening_Report_${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 15)}.csv`;
+
+  if (onStatus) {
+    onStatus({ loading: true, message: "Exporting CSV...", type: "info" });
+  }
+
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Accept": "text/csv, application/octet-stream, */*"
+      }
+    });
+
+    if (!res.ok) {
+      throw new Error(`Server returned HTTP ${res.status}`);
+    }
+
+    let filename = defaultFilename;
+    const disposition = res.headers.get("Content-Disposition") || res.headers.get("content-disposition");
+    if (disposition) {
+      const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (match && match[1]) {
+        filename = match[1].replace(/['"]/g, "").trim();
+      }
+    }
+
+    const csvText = await res.text();
+    if (!csvText || csvText.trim().length === 0) {
+      throw new Error("Received empty CSV from server.");
+    }
+
+    const blob = new Blob([csvText], { type: "text/csv;charset=utf-8;" });
+
+    // Method 1: Web Share API for Mobile WebViews & Apps (Android & iOS)
+    const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    const isAndroidApp = isMobile && typeof navigator !== "undefined" && (/wv|WebView|Version\/4\.0/i.test(navigator.userAgent) || !(window as any).chrome);
+
+    if (isAndroidApp && typeof navigator !== "undefined" && typeof (navigator as any).canShare === "function") {
+      try {
+        const file = new File([blob], filename, { type: "text/csv" });
+        if ((navigator as any).canShare({ files: [file] })) {
+          await (navigator as any).share({
+            files: [file],
+            title: filename,
+            text: "ReliabilityX Component Screening Report CSV"
+          });
+          if (onStatus) onStatus({ loading: false, message: "CSV exported successfully!", type: "success" });
+          return true;
+        }
+      } catch (shareErr: any) {
+        if (shareErr?.name === "AbortError") {
+          if (onStatus) onStatus({ loading: false });
+          return true;
+        }
+      }
+    }
+
+    // Method 2: Standard Anchor download with Blob Object URL (works on Android Chrome, iOS Safari, Desktop)
+    if (typeof window !== "undefined" && window.URL && window.URL.createObjectURL) {
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.style.display = "none";
+      link.href = blobUrl;
+      link.setAttribute("download", filename);
+      link.setAttribute("target", "_blank");
+      link.rel = "noopener noreferrer";
+      document.body.appendChild(link);
+      link.click();
+
+      setTimeout(() => {
+        try {
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(blobUrl);
+        } catch {}
+      }, 1500);
+
+      if (onStatus) onStatus({ loading: false, message: "CSV downloaded successfully!", type: "success" });
+      return true;
+    }
+
+    // Method 3: Data URI fallback for environments where Blob URLs are blocked
+    const dataUri = "data:text/csv;charset=utf-8," + encodeURIComponent(csvText);
+    const fallbackLink = document.createElement("a");
+    fallbackLink.style.display = "none";
+    fallbackLink.href = dataUri;
+    fallbackLink.setAttribute("download", filename);
+    fallbackLink.setAttribute("target", "_blank");
+    document.body.appendChild(fallbackLink);
+    fallbackLink.click();
+
+    setTimeout(() => {
+      try {
+        document.body.removeChild(fallbackLink);
+      } catch {}
+    }, 1500);
+
+    if (onStatus) onStatus({ loading: false, message: "CSV exported successfully!", type: "success" });
+    return true;
+
+  } catch (err: any) {
+    console.warn("[ReliabilityX] Direct CSV export failed, falling back to direct anchor link:", err);
+
+    // Method 4: Fallback to direct anchor navigation with download attribute
+    try {
+      const link = document.createElement("a");
+      link.style.display = "none";
+      link.href = url;
+      link.setAttribute("download", defaultFilename);
+      link.setAttribute("target", "_blank");
+      link.rel = "noopener noreferrer";
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        try { document.body.removeChild(link); } catch {}
+      }, 1500);
+      
+      if (onStatus) onStatus({ loading: false, message: "Downloading CSV via browser link...", type: "info" });
+      return true;
+    } catch {
+      window.location.href = url;
+      if (onStatus) onStatus({ loading: false, message: "Navigating to CSV download...", type: "info" });
+      return false;
+    }
+  }
+}
+

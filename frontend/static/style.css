@@ -10486,6 +10486,48 @@ button.d-desktop-only {
   border-color: rgba(56, 189, 248, 0.4);
 }
 
+.dashboard-btn-export.is-loading,
+.dashboard-btn-export:disabled {
+  opacity: 0.8;
+  cursor: wait;
+}
+
+.btn-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #38BDF8;
+  border-radius: 50%;
+  animation: rxSpin 0.7s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes rxSpin {
+  to { transform: rotate(360deg); }
+}
+
+.export-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(13, 27, 46, 0.95);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #38BDF8;
+  margin-top: 6px;
+  animation: rxFadeIn 0.2s ease;
+}
+
+@keyframes rxFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .dashboard-btn-reload {
   background: #38BDF8;
   border: none;
