@@ -42,6 +42,21 @@
   <script src="/static/vendor/react-dom.production.min.js"></script>
 
   <style>
+    /* Complete suppression of native media controls & touch interference on Android & iOS */
+    video,
+    #rx-intro-video,
+    .intro-video,
+    .rx-intro-video,
+    .rx-mobile-intro-video {
+      pointer-events: none !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
+      -webkit-touch-callout: none !important;
+      outline: none !important;
+      border: none !important;
+      -webkit-tap-highlight-color: transparent !important;
+    }
+
     /* Immediate WebKit Media Controls suppression to prevent iOS Safari play button flash */
     video::-webkit-media-controls,
     video::-webkit-media-controls-start-playback-button,
@@ -55,6 +70,26 @@
       pointer-events: none !important;
       width: 0 !important;
       height: 0 !important;
+    }
+
+    /* Transparent touch shield covering the entire screen to intercept taps safely without pausing video */
+    .rx-intro-touch-shield {
+      position: absolute !important;
+      inset: 0 !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100vw !important;
+      width: 100dvw !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+      z-index: 2147483640 !important;
+      background: transparent !important;
+      touch-action: manipulation !important;
+      -webkit-tap-highlight-color: transparent !important;
+      cursor: pointer !important;
+      pointer-events: auto !important;
     }
 
     /* Floating Modern Sound Capsule (Audio Pipeline Affordance) */
@@ -180,12 +215,19 @@
       playsinline
       webkit-playsinline
       x5-playsinline
+      disablePictureInPicture
+      disableRemotePlayback
+      controlsList="nodownload nofullscreen noremoteplayback"
+      tabindex="-1"
       preload="auto"
       title="ReliabilityX Introduction Video"
     >
       <source src="/static/mobile-intro.mp4" type="video/mp4" media="(max-width: 768px), (orientation: portrait)">
       <source src="/static/intro.mp4" type="video/mp4">
     </video>
+
+    <!-- Invisible Full-Screen Touch Shield: intercepts all touches and taps to prevent Android Chromium native pause -->
+    <div id="rx-intro-touch-shield" class="rx-intro-touch-shield"></div>
 
     <!-- Modern Audio Pipeline Affordance: Floating Glass Sound Capsule -->
     <div id="rx-sound-capsule" class="rx-sound-capsule" role="button" aria-label="Toggle Sound" tabindex="0">
@@ -346,24 +388,110 @@
       });
 
       // -----------------------------------------------------------------------
+      // BULLETPROOF ANDROID/IOS PLAYBACK LOCK & PAUSE PREVENTION ENGINE
+      // -----------------------------------------------------------------------
+      function ensurePlaying() {
+        if (!video || finished) return;
+        if (video.paused) {
+          var p = video.play();
+          if (p !== undefined) {
+            p.catch(function(err) {
+              console.warn("[ReliabilityX Intro] Playback resume error, enforcing muted playback:", err);
+              video.muted = true;
+              video.play().catch(function(){});
+            });
+          }
+        }
+      }
+
+      // 1. Intercept ANY pause event before intro finishes and immediately resume
+      video.addEventListener("pause", function(e) {
+        if (!finished) {
+          console.log("[ReliabilityX Intro] Pause event intercepted on Android/browser; forcing immediate resume.");
+          ensurePlaying();
+        }
+      });
+
+      video.addEventListener("waiting", function() {
+        if (!finished) ensurePlaying();
+      });
+
+      video.addEventListener("suspend", function() {
+        if (!finished && video.paused) ensurePlaying();
+      });
+
+      // Prevent native Android context menu on long-press
+      video.addEventListener("contextmenu", function(e) { e.preventDefault(); return false; });
+      if (overlay) overlay.addEventListener("contextmenu", function(e) { e.preventDefault(); return false; });
+
+      // Page visibility recovery (resumes if user switches back to tab)
+      document.addEventListener("visibilitychange", function() {
+        if (document.visibilityState === "visible" && !finished) {
+          ensurePlaying();
+        }
+      });
+
+      // Active watchdog heartbeat: continuously guarantees playback every 300ms while active
+      var playbackWatchdog = setInterval(function() {
+        if (finished) {
+          clearInterval(playbackWatchdog);
+          return;
+        }
+        if (video && video.paused) {
+          ensurePlaying();
+        }
+      }, 300);
+
+      // -----------------------------------------------------------------------
       // UNIFIED AUDIO PIPELINE (Hardware Audio + Web Audio API Unlocking)
       // -----------------------------------------------------------------------
       var audioCtx = null;
       var audioUnlocked = false;
 
       function unlockAudio() {
+        // Guarantee video keeps playing first
+        ensurePlaying();
+
         if (audioUnlocked) return;
         audioUnlocked = true;
 
-        // 1. Hardware-level unmuting of HTML5 video element
+        // 1. Hardware-level unmuting of HTML5 video element with instant fallback
         try {
           if (video) {
             video.muted = false;
             video.defaultMuted = false;
             video.removeAttribute("muted");
             video.volume = 1.0;
+
+            var p = video.play();
+            if (p !== undefined) {
+              p.then(function() {
+                // Audio unmuting succeeded and playback is active
+                if (capsule) {
+                  capsule.classList.remove("rx-visible");
+                  capsule.classList.add("rx-audio-active");
+                  if (soundTxt) soundTxt.textContent = "Sound On";
+                  setTimeout(function() {
+                    if (capsule) capsule.classList.add("rx-fading-out");
+                  }, 1800);
+                }
+              }).catch(function(err) {
+                console.warn("[ReliabilityX Audio] Browser blocked unmuted autoplay, falling back to muted video:", err);
+                // CRITICAL FOR ANDROID: Re-mute immediately so video NEVER freezes!
+                video.muted = true;
+                video.defaultMuted = true;
+                video.setAttribute("muted", "");
+                video.play().catch(function(){});
+                audioUnlocked = false; // Allow user to tap sound capsule directly
+              });
+            }
           }
-        } catch(e){}
+        } catch(e) {
+          if (video) {
+            video.muted = true;
+            video.play().catch(function(){});
+          }
+        }
 
         // 2. Initialize / Resume Web Audio Context
         try {
@@ -376,35 +504,44 @@
           }
         } catch(e){}
 
-        // 3. Update Audio Capsule to Active State & smoothly fade out
-        if (capsule) {
-          capsule.classList.remove("rx-visible");
-          capsule.classList.add("rx-audio-active");
-          if (soundTxt) soundTxt.textContent = "Sound On";
-          setTimeout(function() {
-            if (capsule) capsule.classList.add("rx-fading-out");
-          }, 1800);
-        }
-
         try {
           localStorage.setItem("rx_sound_enabled", "true");
         } catch(e){}
       }
 
+      // Safe screen tap handler (connects to transparent touch shield & window)
+      var touchShield = document.getElementById("rx-intro-touch-shield");
+
+      function handleScreenInteraction(e) {
+        // If tapping directly on the sound capsule, let capsule's own listener handle it
+        if (e && e.target && (e.target.closest && e.target.closest("#rx-sound-capsule") || e.target.id === "rx-sound-capsule")) {
+          return;
+        }
+        unlockAudio();
+        ensurePlaying();
+      }
+
+      if (touchShield) {
+        touchShield.addEventListener("click", handleScreenInteraction, { passive: true });
+        touchShield.addEventListener("touchend", handleScreenInteraction, { passive: true });
+      }
+
       // Capture-phase global interaction unlock: any tap/touch on screen immediately unmutes
       ['touchstart', 'touchend', 'click', 'pointerdown', 'keydown'].forEach(function(ev) {
-        window.addEventListener(ev, unlockAudio, { passive: true, capture: true });
-        document.addEventListener(ev, unlockAudio, { passive: true, capture: true });
+        window.addEventListener(ev, handleScreenInteraction, { passive: true, capture: true });
+        document.addEventListener(ev, handleScreenInteraction, { passive: true, capture: true });
       });
 
       if (capsule) {
         capsule.addEventListener("click", function(e) {
           e.stopPropagation();
           unlockAudio();
+          ensurePlaying();
         });
         capsule.addEventListener("touchstart", function(e) {
           e.stopPropagation();
           unlockAudio();
+          ensurePlaying();
         }, { passive: true });
       }
 

@@ -5135,7 +5135,7 @@ video::-webkit-media-controls-overlay-play-button,
   object-fit: cover !important;
   object-position: center center !important;
   display: block !important;
-  z-index: 2147483647 !important;
+  z-index: 2147483630 !important;
   opacity: 1 !important;
   visibility: visible !important;
   margin: 0 !important;
@@ -5144,6 +5144,30 @@ video::-webkit-media-controls-overlay-play-button,
   outline: none !important;
   background: transparent !important;
   background-color: transparent !important;
+  pointer-events: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+
+/* Transparent touch shield covering the entire viewport to intercept taps safely without pausing video */
+.rx-intro-touch-shield {
+  position: absolute !important;
+  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  width: 100dvw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  z-index: 2147483640 !important;
+  background: transparent !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
 }
 
 @media (orientation: landscape) and (max-width: 900px) {
